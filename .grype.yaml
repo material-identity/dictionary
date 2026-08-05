@@ -1,0 +1,16 @@
+# Scoped ignores for the pr-checks vulnerability gate (grype reads this file automatically).
+#
+# Both findings live in the Go toolchain embedded in esbuild's prebuilt binary
+# (tsx → esbuild, a dev-time bundler; validate/build are offline and never feed it
+# untrusted input). As of 2026-08-06 the latest esbuild (0.28.1) is still built with
+# go1.26.4 — no release on a fixed Go exists to bump to. Dependabot bumps esbuild
+# weekly; DELETE these entries as soon as the bump lands (ratchet rule, plan §2.7).
+ignore:
+  - vulnerability: GO-2026-4970 # Go stdlib go1.26.4, fixed in 1.26.5
+    package:
+      type: go-module
+      name: stdlib
+  - vulnerability: GO-2026-5970 # golang.org/x/text v0.38.0, fixed in 0.39.0
+    package:
+      type: go-module
+      name: golang.org/x/text
