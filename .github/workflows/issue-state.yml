@@ -1,0 +1,126 @@
+# State-label machine for dictionary requests (plan §5.2):
+#  - exactly one state:* label at all times
+#  - transitions forward-only, except the proposed ↔ needs-info loop
+#  - auto: state:in-review when a publish PR links the issue, state:published on merge
+#  - shortName pattern validation (issue forms have no native regex support)
+# Label changes made here use GITHUB_TOKEN, whose events do not re-trigger workflows — no loops.
+name: issue-state
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled]
+  pull_request:
+    types: [opened, edited, closed]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  issue-state:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            // proposed and needs-info share a rank: that pair is the one sanctioned loop.
+            const RANK = {
+              'state:proposed': 0, 'state:needs-info': 0,
+              'state:accepted': 1, 'state:drafting': 2, 'state:in-review': 3,
+              'state:published': 4, 'state:rejected': 5, 'state:withdrawn': 5,
+            };
+            const isRequest = (labels) => labels.includes('type:dictionary-request');
+            const stateLabels = (labels) => labels.filter((l) => l.startsWith('state:'));
+            const names = (issue) => issue.labels.map((l) => (typeof l === 'string' ? l : l.name));
+
+            async function setState(issue_number, next, current) {
+              for (const old of current.filter((l) => l !== next)) {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number, name: old }).catch(() => {});
+              }
+              if (!current.includes(next)) {
+                await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [next] });
+              }
+            }
+
+            async function closingRequestIssues(pull_number) {
+              const res = await github.graphql(`
+                query($owner: String!, $repo: String!, $num: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $num) {
+                      closingIssuesReferences(first: 50) {
+                        nodes { number labels(first: 100) { nodes { name } } }
+                      }
+                    }
+                  }
+                }`, { owner, repo, num: pull_number });
+              return (res.repository.pullRequest.closingIssuesReferences.nodes ?? [])
+                .map((n) => ({ number: n.number, labels: n.labels.nodes.map((l) => l.name) }))
+                .filter((n) => isRequest(n.labels));
+            }
+
+            if (context.eventName === 'issues') {
+              const issue = context.payload.issue;
+              const labels = names(issue);
+              if (!isRequest(labels)) return;
+              const states = stateLabels(labels);
+
+              if (context.payload.action === 'opened') {
+                if (states.length === 0) {
+                  await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['state:proposed'] });
+                }
+                const m = /### shortName\s+([^\n]+)/.exec(issue.body ?? '');
+                const shortName = m ? m[1].trim() : '';
+                if (!/^[a-z][A-Za-z0-9]*$/.test(shortName)) {
+                  await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body:
+                    `\`shortName\` \`${shortName || '(missing)'}\` does not match \`^[a-z][A-Za-z0-9]*$\` ` +
+                    '(lowerCamelCase, letters and digits, starting lowercase). Please edit the issue; ' +
+                    'a maintainer will move it back to `state:proposed` once fixed.' });
+                  await setState(issue.number, 'state:needs-info', stateLabels(names(issue)).concat('state:proposed'));
+                }
+                return;
+              }
+
+              if (context.payload.action === 'labeled') {
+                const added = context.payload.label?.name;
+                if (!added || !added.startsWith('state:') || !(added in RANK)) return;
+                const others = states.filter((l) => l !== added);
+                if (others.length === 0) return;
+                const backward = others.some((old) => RANK[added] < RANK[old]);
+                if (backward) {
+                  await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name: added }).catch(() => {});
+                  await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body:
+                    `Rejected \`${added}\`: state transitions are forward-only ` +
+                    '(active states: proposed ↔ needs-info → accepted → drafting → in-review → published; plan §5.2).' });
+                } else {
+                  await setState(issue.number, added, states);
+                }
+                return;
+              }
+
+              if (context.payload.action === 'unlabeled') {
+                if (issue.state !== 'open' || states.length > 0) return;
+                await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: ['state:proposed'] });
+                await github.rest.issues.createComment({ owner, repo, issue_number: issue.number, body:
+                  'Every dictionary request carries exactly one `state:*` label — re-added `state:proposed` (plan §5.2).' });
+                return;
+              }
+              return;
+            }
+
+            // pull_request events
+            const pr = context.payload.pull_request;
+            if (context.payload.action === 'closed') {
+              if (!pr.merged) return;
+              for (const issue of await closingRequestIssues(pr.number)) {
+                await setState(issue.number, 'state:published', stateLabels(issue.labels));
+              }
+              return;
+            }
+            // opened / edited: a linked publish PR moves accepted/drafting requests to in-review
+            for (const issue of await closingRequestIssues(pr.number)) {
+              const states = stateLabels(issue.labels);
+              if (states.some((s) => s === 'state:accepted' || s === 'state:drafting')) {
+                await setState(issue.number, 'state:in-review', states);
+              }
+            }

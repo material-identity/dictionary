@@ -1,0 +1,9 @@
+id: https://material-identity.eu/def/9c02e5ea-dcc9-4bd7-81bc-95fe5545b8f2
+isVersionOf: https://material-identity.eu/concept/7363276d-63c1-4e4e-966b-65dcb9072867
+version: "1"
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: missingRecordA
+preferredName:
+  en: missingRecordA
+valueDataType: xsd:string

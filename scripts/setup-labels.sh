@@ -31,4 +31,11 @@ label "size:S" "76d7c4" "Small — hours"
 label "size:M" "f9e79f" "Medium — about a day"
 label "size:L" "f1948a" "Large — multiple days"
 
+# GitHub default labels that duplicate the type:* taxonomy are removed so nothing
+# competes with the issue forms' auto-labels (M2 decision, issue #17). The remaining
+# defaults (documentation, duplicate, question, wontfix, …) stay as auxiliary markers.
+for dup in "bug" "enhancement"; do
+  gh label delete "$dup" --yes "${REPO_FLAG[@]}" 2>/dev/null || true
+done
+
 echo "Labels seeded."

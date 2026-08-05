@@ -1,0 +1,152 @@
+name: Dictionary request
+description: Request to create or version a dictionary entry
+labels: ["type:dictionary-request", "state:proposed"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        This form mirrors the entry envelope so triage can generate the draft YAML mechanically.
+        Path: proposed → accepted (maintainer triage, Yes #1) → drafting → in-review (publish PR,
+        code-owner review is Yes #2) → published. Required fields cover the minimum for triage;
+        everything else can be added during drafting.
+  - type: input
+    id: short-name
+    attributes:
+      label: shortName
+      description: >-
+        lowerCamelCase, letters and digits only, starting lowercase — pattern
+        `^[a-z][A-Za-z0-9]*$` (checked automatically after submission).
+      placeholder: maxPressure
+    validations:
+      required: true
+  - type: dropdown
+    id: object-type
+    attributes:
+      label: objectType
+      description: How the value is shaped (EN 18223 element kinds + dictionary-only kinds).
+      options:
+        - SingleValuedDataElement
+        - MultiLanguageDataElement
+        - RelatedResource
+        - MultiValuedDataElement
+        - DataElementCollection
+        - MeasurementUnit
+        - Quantity
+        - Value
+    validations:
+      required: true
+  - type: input
+    id: preferred-name-en
+    attributes:
+      label: preferredName (en)
+      placeholder: Maximum allowable pressure
+    validations:
+      required: true
+  - type: textarea
+    id: definition-en
+    attributes:
+      label: definition (en)
+      description: Precise, standard-quality definition — this text is what consumers will read.
+    validations:
+      required: true
+  - type: textarea
+    id: justification
+    attributes:
+      label: Justification / use case
+      description: Why does this concept belong in the dictionary? Which DPP use needs it?
+    validations:
+      required: true
+  - type: input
+    id: preferred-name-de
+    attributes:
+      label: preferredName (de)
+      placeholder: Maximal zulässiger Druck
+    validations:
+      required: false
+  - type: textarea
+    id: definition-de
+    attributes:
+      label: definition (de)
+    validations:
+      required: false
+  - type: dropdown
+    id: value-data-type
+    attributes:
+      label: valueDataType
+      options:
+        - "xsd:string"
+        - "xsd:float"
+        - "xsd:decimal"
+        - "xsd:integer"
+        - "xsd:boolean"
+        - "xsd:date"
+        - "xsd:dateTime"
+        - "xsd:anyURI"
+        - "rdf:langString"
+        - not applicable / decided in drafting
+    validations:
+      required: false
+  - type: input
+    id: unit
+    attributes:
+      label: unit
+      description: URI of an existing MeasurementUnit entry — or "new unit needed:" plus its name.
+      placeholder: "https://material-identity.eu/def/<uuid> — or: new unit needed: megapascal"
+    validations:
+      required: false
+  - type: input
+    id: quantity-kind
+    attributes:
+      label: quantityKind
+      description: For units/quantities — URI of the Quantity entry, or its name if new.
+    validations:
+      required: false
+  - type: input
+    id: definition-standard
+    attributes:
+      label: definitionStandard
+      description: Where the concept is normatively defined — "name · clause · URI".
+      placeholder: EN 13445-3 · 5.3 · https://cen.eu/standards/EN13445-3
+    validations:
+      required: false
+  - type: input
+    id: test-standard
+    attributes:
+      label: testStandard
+      description: How the value is measured — "name · clause · URI".
+      placeholder: EN 13445-5 · 10 · https://cen.eu/standards/EN13445-5
+    validations:
+      required: false
+  - type: textarea
+    id: example-value
+    attributes:
+      label: exampleValue
+    validations:
+      required: false
+  - type: textarea
+    id: enumeration
+    attributes:
+      label: Enumeration values
+      description: One permitted value per line — "value · preferredName (en)". Each becomes its own Value entry.
+      placeholder: |-
+        EAF · Electric arc furnace
+        BF-BOF · Blast furnace / basic oxygen furnace
+    validations:
+      required: false
+  - type: textarea
+    id: collection-members
+    attributes:
+      label: Collection members
+      description: For DataElementCollection — one member per line, "shortName or URI · mandatory|optional".
+      placeholder: |-
+        tensileStrength · mandatory
+        elongationAtFracture · optional
+    validations:
+      required: false
+  - type: textarea
+    id: identical-to
+    attributes:
+      label: identicalTo
+      description: Asserted-equivalent entries in other dictionaries — one URI per line.
+    validations:
+      required: false

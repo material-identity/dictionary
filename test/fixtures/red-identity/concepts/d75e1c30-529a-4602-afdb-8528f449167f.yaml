@@ -4,8 +4,17 @@ objectType: Concept
 shortName: identityCases
 preferredName:
   en: Identity cases
-currentVersion: https://material-identity.eu/def/e4b19150-09b5-4dea-b72a-5a1500d60c97
+currentVersion: https://material-identity.eu/def/0f2d1e47-f350-4de1-b99e-2d450c655250
 versions:
-  - entry: https://material-identity.eu/def/e4b19150-09b5-4dea-b72a-5a1500d60c97
+  - entry: https://material-identity.eu/def/0f2d1e47-f350-4de1-b99e-2d450c655250
     version: "1"
     status: active
+  - entry: https://dictionary1.eu/def/1fa6187e-6b0c-4fc0-b090-e78405ba4430
+    version: "2"
+    status: deprecated
+  - entry: https://material-identity.eu/def/not-a-uuid
+    version: "3"
+    status: deprecated
+  - entry: https://material-identity.eu/def/748cf51d-6569-4ee8-88d0-23c78541ff89
+    version: "5"
+    status: deprecated
