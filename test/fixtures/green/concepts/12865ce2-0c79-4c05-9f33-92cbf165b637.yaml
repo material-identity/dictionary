@@ -1,0 +1,11 @@
+id: https://material-identity.eu/concept/12865ce2-0c79-4c05-9f33-92cbf165b637
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: route-eaf
+preferredName:
+  en: Electric arc furnace
+currentVersion: https://material-identity.eu/def/05f03d05-6b62-476d-8f1e-66964174ce9a
+versions:
+  - entry: https://material-identity.eu/def/05f03d05-6b62-476d-8f1e-66964174ce9a
+    version: "1"
+    status: active

@@ -1,0 +1,26 @@
+{
+  "name": "@material-identity/dictionary",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Public data dictionary for EN 18xxx digital product passports — immutable entries at https://material-identity.eu/def/<uuid>",
+  "type": "module",
+  "license": "CC0-1.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "validate": "tsx scripts/validate.ts",
+    "build": "echo 'build.ts lands in M3 (issue #20)' && exit 1",
+    "test": "node --import tsx --test --experimental-test-coverage --test-coverage-lines=85 --test-coverage-exclude='test/**' 'test/*.test.ts'",
+    "prepare": "git config core.hooksPath .githooks"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.2",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "tsx": "4.23.8",
+    "typescript": "7.0.2",
+    "uuid": "14.0.1",
+    "yaml": "2.9.0"
+  }
+}

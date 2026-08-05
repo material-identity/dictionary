@@ -1,0 +1,11 @@
+id: https://material-identity.eu/concept/5a2266c0-1ca7-4036-82af-4b92b7ffb213
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: broken
+preferredName:
+  en: Broken
+currentVersion: https://material-identity.eu/def/d626443f-60bf-40c3-b4a4-0370148acda5
+versions:
+  - entry: https://material-identity.eu/def/d626443f-60bf-40c3-b4a4-0370148acda5
+    version: "1"
+    status: active

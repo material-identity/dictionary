@@ -1,0 +1,11 @@
+id: https://material-identity.eu/concept/f9e91b18-1ff0-4a9f-b99c-69724d0fb5fc
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: mechanicalProperties
+preferredName:
+  en: Mechanical properties
+currentVersion: https://material-identity.eu/def/1cb7f442-a090-4df7-9ae7-8171d1f043ea
+versions:
+  - entry: https://material-identity.eu/def/1cb7f442-a090-4df7-9ae7-8171d1f043ea
+    version: "1"
+    status: active
