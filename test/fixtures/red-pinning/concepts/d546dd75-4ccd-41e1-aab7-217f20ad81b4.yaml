@@ -1,0 +1,11 @@
+id: https://material-identity.eu/concept/d546dd75-4ccd-41e1-aab7-217f20ad81b4
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: pinningCases
+preferredName:
+  en: Pinning cases
+currentVersion: https://material-identity.eu/def/3bf4310f-181c-4bc7-9fb8-83f08b55a1bb
+versions:
+  - entry: https://material-identity.eu/def/3bf4310f-181c-4bc7-9fb8-83f08b55a1bb
+    version: "1"
+    status: active

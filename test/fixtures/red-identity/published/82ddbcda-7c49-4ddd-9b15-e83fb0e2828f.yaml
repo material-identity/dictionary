@@ -1,0 +1,9 @@
+id: https://material-identity.eu/def/748cf51d-6569-4ee8-88d0-23c78541ff89
+isVersionOf: https://material-identity.eu/concept/d75e1c30-529a-4602-afdb-8528f449167f
+version: "5"
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: duplicateB
+preferredName:
+  en: Duplicate id B
+valueDataType: xsd:string

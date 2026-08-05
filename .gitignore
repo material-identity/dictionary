@@ -24,3 +24,18 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Claude Code — personal local settings, never committed
+.claude/settings.local.json
+
+# Dependencies and generated output
+node_modules/
+site/
+
+# Secrets — no .env files, 1Password op only (plan §2.5); .env.op holds only op:// references
+.env*
+!.env.op
+
+# Licensed CEN standards and WG N-documents — local-only, never committed (plan §4 M1 item 6)
+standards/*
+!standards/README.md

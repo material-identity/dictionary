@@ -1,0 +1,11 @@
+id: https://material-identity.eu/def/2ea0d6d1-96f4-4a61-a4ee-2dd4b71f8be1
+isVersionOf: https://material-identity.eu/concept/d546dd75-4ccd-41e1-aab7-217f20ad81b4
+version: "2"
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: unpinnedEnum
+preferredName:
+  en: Enumeration member not published
+valueDataType: xsd:string
+enumeration:
+  - https://material-identity.eu/def/d42eafdc-e7a6-4001-8567-2e31dad60c37

@@ -1,0 +1,13 @@
+id: https://material-identity.eu/def/93946327-ccc4-4581-ac7c-229ea5c2f832
+isVersionOf: https://material-identity.eu/concept/ca087cb9-f189-41a1-b082-2288eaacd5e7
+version: "1"
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: maxPressure
+preferredName:
+  en: Maximum allowable pressure
+  de: Maximal zulässiger Druck
+definition:
+  en: Highest internal pressure for which the component is designed.
+valueDataType: xsd:float
+unit: https://material-identity.eu/def/5e50004e-7e03-40f6-933e-b63708c9ab47

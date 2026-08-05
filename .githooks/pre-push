@@ -1,0 +1,5 @@
+#!/bin/sh
+# Fast local feedback before CI; CI remains the authority (hooks are bypassable with --no-verify).
+set -e
+npm run validate
+npm test

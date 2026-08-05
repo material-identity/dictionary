@@ -1,0 +1,9 @@
+id: https://material-identity.eu/def/not-a-uuid
+isVersionOf: https://material-identity.eu/concept/d75e1c30-529a-4602-afdb-8528f449167f
+version: "3"
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: notAUuid
+preferredName:
+  en: Not a UUID
+valueDataType: xsd:string

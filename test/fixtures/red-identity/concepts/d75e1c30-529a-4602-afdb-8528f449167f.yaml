@@ -1,0 +1,11 @@
+id: https://material-identity.eu/concept/d75e1c30-529a-4602-afdb-8528f449167f
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: identityCases
+preferredName:
+  en: Identity cases
+currentVersion: https://material-identity.eu/def/e4b19150-09b5-4dea-b72a-5a1500d60c97
+versions:
+  - entry: https://material-identity.eu/def/e4b19150-09b5-4dea-b72a-5a1500d60c97
+    version: "1"
+    status: active

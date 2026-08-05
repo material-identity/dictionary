@@ -1,0 +1,11 @@
+id: https://material-identity.eu/concept/eca546af-bc55-4150-a62f-475d79758ce5
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: otherConcept
+preferredName:
+  en: Other concept
+currentVersion: https://material-identity.eu/def/d27f4450-c89f-4429-bbab-f738cdc2e197
+versions:
+  - entry: https://material-identity.eu/def/d27f4450-c89f-4429-bbab-f738cdc2e197
+    version: "1"
+    status: active

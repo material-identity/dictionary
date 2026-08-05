@@ -1,0 +1,13 @@
+id: https://material-identity.eu/def/8141c12f-7c66-4373-b828-d1907891d92f
+isVersionOf: https://material-identity.eu/concept/59222b28-a951-4a87-8104-76d3a7e61115
+version: "1"
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: steelmakingRoute
+preferredName:
+  en: Primary steelmaking route
+definition:
+  en: Process route by which the crude steel was produced.
+valueDataType: xsd:string
+enumeration:
+  - https://material-identity.eu/def/05f03d05-6b62-476d-8f1e-66964174ce9a

@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "https://dictionary1.eu/schema/dictionary-entry.json",
+  "title": "DPP dictionary entry (proposed envelope)",
+  "description": "Response shape returned by GET <dictionaryReference>. NOTE: this is the proposed dictionary-entry envelope, NOT the EN 18223 DPP data-element schema. Version resources are immutable; lifecycle status lives only in the Concept resource (versions[]).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "isDefinedBy", "objectType"],
+  "properties": {
+    "id":          { "type": "string", "format": "uri", "description": "Resolvable identity. For version resources: immutable, this is the value carried as dictionaryReference. For the Concept resource: the concept-level URI." },
+    "isVersionOf": { "type": "string", "format": "uri", "description": "Concept identity grouping all versions (version resources only)." },
+    "version":     { "type": "string" },
+    "replaces":    { "type": "string", "format": "uri", "description": "Backward link to the predecessor version. Set at publication, never changed." },
+    "isDefinedBy": { "type": "string", "format": "uri", "description": "Origin dictionary, carried as data (not parsed from the key)." },
+
+    "objectType": {
+      "type": "string",
+      "enum": [
+        "SingleValuedDataElement", "MultiLanguageDataElement", "RelatedResource",
+        "MultiValuedDataElement", "DataElementCollection",
+        "MeasurementUnit", "Quantity", "Value", "Concept"
+      ]
+    },
+    "shortName":     { "type": "string" },
+    "preferredName": { "$ref": "#/$defs/langMap" },
+    "definition":    { "$ref": "#/$defs/langMap" },
+    "inheritsFrom":  { "type": "array", "items": { "type": "string", "format": "uri" }, "description": "Entries this entry is derived from (N1355 UML: inheritsFrom)." },
+    "identicalTo":   { "type": "array", "items": { "type": "string", "format": "uri" }, "description": "Asserted-equivalent entries in other dictionaries (N1355 UML: identicalTo)." },
+
+    "valueDataType":     { "type": "string" },
+    "unit":              { "type": "string", "format": "uri" },
+    "exampleValue":      true,
+    "enumeration":       { "type": "array", "items": { "type": "string", "format": "uri" } },
+    "definitionStandard":{ "$ref": "#/$defs/standardRef" },
+    "testStandard":      { "$ref": "#/$defs/standardRef" },
+    "resourceMediaType": { "type": "string" },
+    "itemType":          { "type": "string", "format": "uri" },
+    "elements":          { "type": "array", "items": { "$ref": "#/$defs/collectionMember" } },
+
+    "symbol":         { "$ref": "#/$defs/langMap" },
+    "quantityKind":   { "type": "string", "format": "uri" },
+    "dimension":      { "type": "string" },
+    "coherentSiUnit": { "type": "string", "format": "uri" },
+    "crossReferences":{ "$ref": "#/$defs/crossReferences" },
+    "conversions":    { "type": "array", "items": { "$ref": "#/$defs/conversion" } },
+
+    "currentVersion": { "type": "string", "format": "uri", "description": "Concept resource only: the currently active version." },
+    "versions":       { "type": "array", "items": { "$ref": "#/$defs/versionRecord" }, "description": "Concept resource only: append-only list of all versions with their lifecycle status." },
+
+    "value": { "type": ["string", "number", "boolean"] }
+  },
+
+  "allOf": [
+    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "Concept" } } },
+      "then": { "required": ["currentVersion", "versions"] },
+      "else": { "required": ["isVersionOf", "version"] } },
+    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "SingleValuedDataElement" } } },
+      "then": { "required": ["valueDataType"] } },
+    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "MultiLanguageDataElement" } } },
+      "then": { "required": ["valueDataType"] } },
+    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "RelatedResource" } } },
+      "then": { "required": ["valueDataType"] } },
+    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "MultiValuedDataElement" } } },
+      "then": { "required": ["itemType"] } },
+    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "DataElementCollection" } } },
+      "then": { "required": ["elements"] } },
+    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "MeasurementUnit" } } },
+      "then": { "required": ["symbol"] } },
+    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "Quantity" } } },
+      "then": { "required": ["dimension"] } },
+    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "Value" } } },
+      "then": { "required": ["value"] } }
+  ],
+
+  "$defs": {
+    "langMap": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$" },
+      "additionalProperties": { "type": "string" }
+    },
+    "standardRef": {
+      "type": "object",
+      "required": ["name", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "name":   { "type": "string" },
+        "clause": { "type": "string" },
+        "uri":    { "type": "string", "format": "uri" }
+      }
+    },
+    "conversion": {
+      "type": "object",
+      "required": ["toUnit", "factor"],
+      "additionalProperties": false,
+      "properties": {
+        "toUnit": { "type": "string", "format": "uri" },
+        "factor": { "type": "number" },
+        "offset": { "type": "number" }
+      }
+    },
+    "collectionMember": {
+      "type": "object",
+      "required": ["dictionaryReference", "isMandatory"],
+      "additionalProperties": false,
+      "properties": {
+        "dictionaryReference": { "type": "string", "format": "uri" },
+        "isMandatory":         { "type": "boolean" }
+      }
+    },
+    "versionRecord": {
+      "type": "object",
+      "required": ["entry", "version", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "entry":        { "type": "string", "format": "uri" },
+        "version":      { "type": "string" },
+        "status":       { "type": "string", "enum": ["active", "deprecated", "tombstoned"] },
+        "deprecatedOn": { "type": "string", "format": "date" },
+        "replacedBy":   { "type": "string", "format": "uri" }
+      }
+    },
+    "crossReferences": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "uneceCommonCode": { "type": "string" },
+        "ucumCode":        { "type": "string" },
+        "qudtUnit":        { "type": "string", "format": "uri" }
+      }
+    }
+  }
+}
