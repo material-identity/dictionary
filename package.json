@@ -10,7 +10,7 @@
   },
   "scripts": {
     "validate": "tsx scripts/validate.ts",
-    "build": "echo 'build.ts lands in M3 (issue #20)' && exit 1",
+    "build": "tsx scripts/build.ts",
     "test": "node --import tsx --test --experimental-test-coverage --test-coverage-lines=85 --test-coverage-exclude='test/**' 'test/*.test.ts'",
     "prepare": "git config core.hooksPath .githooks"
   },
