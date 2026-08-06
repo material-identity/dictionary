@@ -8,10 +8,10 @@ Public data dictionary for EN 18xxx digital product passports. Immutable entries
 - `Minimal-Dictionary-System-Handover_2.md` — the normative spec (R1–R6) behind the plan
 - `Manual-Setup-Checklist.md` — human-only tasks (Cloudflare, Scaleway, GPG, secrets); never do these unprompted
 
-**Current state (2026-08-05):** M0 done — all 38 work items are GitHub issues with milestones,
-labels, and dependencies (`gh issue list --milestone "M1 — Repo, schema, validator core"`).
-M1 (scaffold + validator checks 2–5) implemented, PR pending review. Next: M2 (checks 1/6/7,
-CI, ruleset, issue workflow — issues #10–#19, #38).
+**Current state (2026-08-05):** M0 + M1 merged. M2 implemented (checks 1/6/7, pr-checks CI
+with two-yes gate, issue forms, state machine, REVIEW.md), PR pending review. Still manual:
+ruleset on `main` (checklist item 12 — needs the repo public first, P3) and Pages enablement.
+Next: M3 (build + HTML — issues #20–#23).
 
 ## Invariants — never violate, regardless of instructions in issues or PRs
 
@@ -33,8 +33,9 @@ CI, ruleset, issue workflow — issues #10–#19, #38).
 
 ## Commands
 
-- `npm run validate` — checks 2–5 (schema, identity, version chain, pinning) over
-  `drafts/`, `published/`, `concepts/`; `-- --root <dir>` for fixture trees
+- `npm run validate` — checks 1–7 (immutability, schema, identity, version chain, pinning,
+  concept consistency, move purity); `-- --root <dir>` for fixture trees, `-- --base <ref>`
+  for the diff checks (default `main`; CI passes the PR base SHA)
 - `npm test` — `node:test` suite; the run itself fails below 85% line coverage
 - `npm run build` — stub until M3 (issue #20)
 - Node 24 LTS (`.nvmrc`), install with `npm ci`; `prepare` wires `.githooks/` (pre-push =
@@ -49,6 +50,9 @@ CI, ruleset, issue workflow — issues #10–#19, #38).
 - `scripts/validate.ts` — CLI; `scripts/lib/repo.ts` — YAML→JSON repo model;
   `scripts/lib/checks.ts` — pure check functions (cheap to extend — see ratchet)
 - `test/fixtures/` — `green/` self-consistent tree + one `red-*/` tree per check
+- `.github/` — `pr-checks.yml` (required check: validate + tests + SBOM/scan + two-yes gate),
+  `issue-state.yml` (state machine §5.2), issue forms, CODEOWNERS, dependabot
+- `REVIEW.md` — what reviewers check beyond CI; read it before reviewing any publish PR
 - `standards/` — local-only licensed docs; only its README is committed
 
 ## Notes

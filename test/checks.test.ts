@@ -77,11 +77,16 @@ test('check 5 — isVersionOf and isDefinedBy are exempt from pinning', () => {
   assert.deepEqual(checkPinning(load('green')), []);
 });
 
-test('runChecks aggregates load errors and all four checks', () => {
+test('runChecks aggregates load errors and all checks 1–7', () => {
   const results = runChecks(load('red-yaml'));
-  assert.equal(results.length, 5);
+  assert.equal(results.length, 8);
   const loadResult = results.find((r) => r.name === 'load');
   assert.ok(loadResult && loadResult.issues.length === 1);
   const failing = results.filter((r) => r.issues.length > 0);
   assert.deepEqual(failing.map((r) => r.name), ['load']);
+  // without a git context the diff-dependent checks are reported as skipped, never silent
+  assert.deepEqual(
+    results.filter((r) => r.skipped).map((r) => r.name),
+    ['check 1 — immutability', 'check 7 — move purity'],
+  );
 });

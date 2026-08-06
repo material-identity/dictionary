@@ -1,0 +1,26 @@
+name: Bug
+description: Wrong behavior of validator, build, Worker, or site
+labels: ["type:bug"]
+body:
+  - type: input
+    id: affected-uri
+    attributes:
+      label: Affected entry URI
+      description: If the bug concerns a specific entry, its canonical URI.
+      placeholder: https://material-identity.eu/def/<uuid>
+    validations:
+      required: false
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: Expected vs actual
+      description: What should happen, and what happens instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Steps or command (e.g. the exact curl / npm invocation) that shows the problem.
+    validations:
+      required: true

@@ -1,0 +1,6 @@
+# Yes #2 of the two-yes principle (plan §5.3): changes to these paths demand
+# code-owner review, enforced by the main ruleset (checklist item 12).
+# Add the second maintainer here once they join (checklist item 8).
+/published/ @stiebitzhofer
+/concepts/  @stiebitzhofer
+/schema/    @stiebitzhofer

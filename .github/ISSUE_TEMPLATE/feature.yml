@@ -1,0 +1,28 @@
+name: Feature
+description: New capability (e.g. a step of the RDF track)
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What need is unmet today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should be built?
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope-test
+    attributes:
+      label: Out-of-scope test (plan §7)
+      description: >-
+        The test every addition must pass: does this change any identifier or any published
+        byte? Explain why it does not, and why it is not on the §7 exclusion list
+        (search, SPARQL, RDF track, trust-ladder 2–3, access categories, federation).
+    validations:
+      required: true

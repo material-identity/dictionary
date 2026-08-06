@@ -1,0 +1,16 @@
+name: Chore
+description: Dependencies, CI, docs, housekeeping
+labels: ["type:chore"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+    validations:
+      required: true

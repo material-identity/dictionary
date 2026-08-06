@@ -1,0 +1,16 @@
+name: Enhancement
+description: Improvement of an existing capability
+labels: ["type:enhancement"]
+body:
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behavior
+    validations:
+      required: true
+  - type: textarea
+    id: desired
+    attributes:
+      label: Desired behavior
+    validations:
+      required: true
