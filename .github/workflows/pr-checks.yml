@@ -48,6 +48,9 @@ jobs:
           sbom: sbom.cdx.json
           fail-build: true
           severity-cutoff: high
+          # the action's default grype (0.110.0) mishandles .grype.yaml ignore rules
+          # against this SBOM; 0.116.1 applies them correctly (verified locally)
+          grype-version: v0.116.1
 
       - name: check 8 — two-yes gate (plan §5.3)
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
