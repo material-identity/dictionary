@@ -1,0 +1,40 @@
+/* One small stylesheet, no client-side JS anywhere (plan §4 M3 item 2). */
+:root {
+  --ink: #1a1a1a;
+  --muted: #666;
+  --line: #ddd;
+  --accent: #0b5fa5;
+  --warn-bg: #fff3cd;
+  --warn-edge: #b8860b;
+  --dead-bg: #f8d7da;
+  --dead-edge: #a94442;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto;
+  max-width: 56rem;
+  padding: 1.5rem 1rem 3rem;
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+}
+h1 { margin: 0.5rem 0 0.25rem; font-size: 1.6rem; }
+h2 { margin-top: 2rem; font-size: 1.2rem; }
+a { color: var(--accent); }
+code { background: #f4f4f4; padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.9em; }
+.meta { color: var(--muted); margin: 0 0 0.25rem; }
+.links { margin: 0.25rem 0 1.25rem; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; vertical-align: top; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--line); }
+table.fields th[scope="row"] { width: 11rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+table.inner th, table.inner td { padding: 0.25rem 0.5rem; }
+dl.langmap { margin: 0; display: grid; grid-template-columns: 3rem 1fr; gap: 0.1rem 0.5rem; }
+dl.langmap dt { color: var(--muted); font-weight: 600; }
+dl.langmap dd { margin: 0; }
+.banner { padding: 0.75rem 1rem; border-left: 4px solid; border-radius: 3px; margin-bottom: 1rem; }
+.banner.tombstoned { background: var(--dead-bg); border-color: var(--dead-edge); }
+.banner.deprecated { background: var(--warn-bg); border-color: var(--warn-edge); }
+.status { padding: 0.1em 0.5em; border-radius: 999px; font-size: 0.85em; }
+.status.active { background: #d4edda; }
+.status.deprecated { background: var(--warn-bg); }
+.status.tombstoned { background: var(--dead-bg); }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--muted); max-width: 56rem; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; }
