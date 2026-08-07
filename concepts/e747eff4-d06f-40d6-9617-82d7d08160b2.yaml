@@ -1,0 +1,12 @@
+id: https://material-identity.eu/concept/e747eff4-d06f-40d6-9617-82d7d08160b2
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: steelmakingRoute
+preferredName:
+  en: Primary steelmaking route
+  de: Primäre Stahlerzeugungsroute
+currentVersion: https://material-identity.eu/def/9c6bc44c-5d04-4e3b-8c36-c854a1b55a4d
+versions:
+  - entry: https://material-identity.eu/def/9c6bc44c-5d04-4e3b-8c36-c854a1b55a4d
+    version: "1"
+    status: active

@@ -1,0 +1,13 @@
+id: https://material-identity.eu/def/5f2d70db-8385-4fc8-94ae-eefbd6c8d209
+isVersionOf: https://material-identity.eu/concept/85533286-6d23-40ff-b2bf-47712895a91c
+version: "1"
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: EAF
+preferredName:
+  en: Electric arc furnace
+  de: Elektrolichtbogenofen
+  no: lysbueovn
+definition:
+  en: Steelmaking in which the charge is melted primarily by an electric arc;
+    typically scrap-based.

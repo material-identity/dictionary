@@ -1,0 +1,12 @@
+id: https://material-identity.eu/concept/32000dbe-38fc-4901-a66b-3221ea44b502
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: concentrationRange
+preferredName:
+  en: Concentration range
+  de: Konzentrationsbereich
+currentVersion: https://material-identity.eu/def/cd239910-eae2-4e57-9472-f44c9dbd23bb
+versions:
+  - entry: https://material-identity.eu/def/cd239910-eae2-4e57-9472-f44c9dbd23bb
+    version: "1"
+    status: active

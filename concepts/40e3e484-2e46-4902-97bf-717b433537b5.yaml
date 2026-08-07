@@ -1,0 +1,12 @@
+id: https://material-identity.eu/concept/40e3e484-2e46-4902-97bf-717b433537b5
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: route-bf-bof
+preferredName:
+  en: Blast furnace / basic oxygen furnace
+  de: Hochofen / Sauerstoffaufblasverfahren
+currentVersion: https://material-identity.eu/def/77982ce2-f7c9-4e2c-88d6-e94ed81e0db7
+versions:
+  - entry: https://material-identity.eu/def/77982ce2-f7c9-4e2c-88d6-e94ed81e0db7
+    version: "1"
+    status: active

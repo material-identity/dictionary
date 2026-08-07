@@ -1,0 +1,13 @@
+id: https://material-identity.eu/concept/3e0c3b7a-7c7d-43a2-b2c9-fff5f06bac1c
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: megapascal
+preferredName:
+  en: megapascal
+  de: Megapascal
+  no: megapascal
+currentVersion: https://material-identity.eu/def/52f3e92c-cca4-4f37-abfd-8ef7b846f076
+versions:
+  - entry: https://material-identity.eu/def/52f3e92c-cca4-4f37-abfd-8ef7b846f076
+    version: "1"
+    status: active

@@ -1,0 +1,12 @@
+id: https://material-identity.eu/def/77982ce2-f7c9-4e2c-88d6-e94ed81e0db7
+isVersionOf: https://material-identity.eu/concept/40e3e484-2e46-4902-97bf-717b433537b5
+version: "1"
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: BF-BOF
+preferredName:
+  en: Blast furnace / basic oxygen furnace
+  de: Hochofen / Sauerstoffaufblasverfahren
+definition:
+  en: "Primary steelmaking route: iron ore is reduced to hot metal in a blast
+    furnace, then refined to steel in a basic oxygen furnace."
