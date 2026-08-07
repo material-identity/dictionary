@@ -3,7 +3,7 @@
  * client-side JS. Internal references render as links with resolved labels; the
  * status banner is read from the concept resource — the entry carries no status.
  */
-import { CONCEPT_PREFIX, DEF_PREFIX, type RepoFile, type RepoModel } from './repo.ts';
+import { CANONICAL_BASE, CONCEPT_PREFIX, DEF_PREFIX, type RepoFile, type RepoModel } from './repo.ts';
 
 export function esc(s: unknown): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -57,7 +57,21 @@ export class RefIndex {
   }
 }
 
-function pageShell(title: string, alternateJson: string | undefined, body: string): string {
+/**
+ * GitHub Pages is build-artifact/origin only and must never be advertised as a reference
+ * (plan §2.2) — but this org's Pages custom domain (a different repo,
+ * material-identity.github.io -> materialidentity.org) makes every project site, this one
+ * included, reachable as a subpath of it. That's a structural property of GitHub Pages, not
+ * a setting this repo controls, and the Worker fetches from this exact same origin — so
+ * there is no way to serve different content or headers per hostname from here (no `noindex`
+ * meta tag either: the origin file is identical whichever host requests it, and that would
+ * just as wrongly de-index the real material-identity.eu pages). A `<link rel="canonical">`
+ * is the one mechanism designed for exactly this: it names the one true URL regardless of
+ * which host served the bytes, so any crawler or tool consolidates there instead of treating
+ * the Pages/materialidentity.org copy as authoritative.
+ */
+function pageShell(title: string, canonicalPath: string, alternateJson: string | undefined, body: string): string {
+  const canonicalUrl = `${CANONICAL_BASE}${canonicalPath}`;
   const alternate = alternateJson === undefined
     ? ''
     : `\n<link rel="alternate" type="application/json" href="${esc(alternateJson)}">`;
@@ -67,6 +81,7 @@ function pageShell(title: string, alternateJson: string | undefined, body: strin
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
+<link rel="canonical" href="${esc(canonicalUrl)}">
 <link rel="stylesheet" href="/styles.css">${alternate}
 </head>
 <body>
@@ -161,7 +176,7 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
 <p class="links"><a href="/def/${esc(file.stem)}.json">Raw JSON</a>${doc.isVersionOf !== undefined ? ` · concept: ${refs.link(doc.isVersionOf)}` : ''}</p>
 <table class="fields"><tbody>${rows.join('\n')}</tbody></table>`;
 
-  return pageShell(title, `/def/${file.stem}.json`, body);
+  return pageShell(title, `/def/${file.stem}`, `/def/${file.stem}.json`, body);
 }
 
 export const INDEX_PAGE_SIZE = 25;
@@ -209,7 +224,8 @@ ${rows}
 </tbody>
 </table>${nav}`;
 
-    return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, undefined, body) };
+    const canonicalPath = page === 1 ? '/' : `/${pageName(page)}`;
+    return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, undefined, body) };
   });
 }
 
@@ -239,5 +255,5 @@ ${rows}
 </tbody>
 </table>`;
 
-  return pageShell(title, `/concept/${file.stem}.json`, body);
+  return pageShell(title, `/concept/${file.stem}`, `/concept/${file.stem}.json`, body);
 }

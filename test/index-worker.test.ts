@@ -82,6 +82,8 @@ test('index paginates at the 25 boundary: 26 entries → two pages with prev/nex
   assert.match(pages[0].html, /Entry 00/);
   assert.match(pages[1].html, /Entry 25/);
   assert.ok(!pages[1].html.includes('Entry 24'));
+  assert.match(pages[0].html, /<link rel="canonical" href="https:\/\/material-identity\.eu\/">/);
+  assert.match(pages[1].html, /<link rel="canonical" href="https:\/\/material-identity\.eu\/page-2\.html">/);
 });
 
 test('exactly 25 entries stay on one page; empty repo still renders an index', () => {
