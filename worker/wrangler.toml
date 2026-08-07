@@ -1,0 +1,15 @@
+# Deploys are CI-only via deploy-worker.yml (plan §2.5) — never `wrangler deploy` locally.
+# Local testing: `npx wrangler dev worker/index.ts --config worker/wrangler.toml` runs in
+# credential-free local simulation.
+name = "dictionary"
+main = "index.ts"
+compatibility_date = "2026-08-01"
+workers_dev = false
+
+routes = [
+  { pattern = "material-identity.eu/*", zone_name = "material-identity.eu" },
+]
+
+[vars]
+# GitHub Pages origin (project page → repo subpath). Never advertised (plan §2.2).
+ORIGIN = "https://material-identity.github.io/dictionary"

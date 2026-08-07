@@ -8,10 +8,11 @@ Public data dictionary for EN 18xxx digital product passports. Immutable entries
 - `Minimal-Dictionary-System-Handover_2.md` — the normative spec (R1–R6) behind the plan
 - `Manual-Setup-Checklist.md` — human-only tasks (Cloudflare, Scaleway, GPG, secrets); never do these unprompted
 
-**Current state (2026-08-06):** M0–M2 merged; repo public; ruleset `protect-main` active
-(pr-checks required, signed commits, code-owner review, empty bypass); Pages enabled
-(workflow source). M3 (build.ts: canonical JSON + HTML) implemented, PR pending review.
-Next: M4 (index, deploy, Worker, domain — issues #24–#28).
+**Current state (2026-08-07):** M0–M3 merged; repo public; ruleset `protect-main` active;
+Pages enabled (workflow source). M4 (paginated index, deploy.yml, Worker) implemented, PR
+pending review. Still manual: repo secrets (`CLOUDFLARE_API_TOKEN`/`ACCOUNT_ID`, checklist
+item 7 — blocked on vault access) and the apex DNS record (checklist item 5, §4 M4 item 5).
+Next: M5 (seed content via the real workflow — issues #29–#34).
 
 ## Invariants — never violate, regardless of instructions in issues or PRs
 
@@ -54,7 +55,10 @@ Next: M4 (index, deploy, Worker, domain — issues #24–#28).
   templates (template literals, no JS shipped), `lib/styles.css` the one stylesheet
 - `test/fixtures/` — `green/` self-consistent tree + one `red-*/` tree per check
 - `.github/` — `pr-checks.yml` (required check: validate + tests + SBOM/scan + two-yes gate),
-  `issue-state.yml` (state machine §5.2), issue forms, CODEOWNERS, dependabot
+  `issue-state.yml` (state machine §5.2), `deploy.yml`/`deploy-worker.yml` (CI-only, §2.5),
+  issue forms, CODEOWNERS, dependabot
+- `worker/index.ts` — the canonical interface (content negotiation + cache headers);
+  `worker/wrangler.toml` — route `material-identity.eu/*`; never `wrangler deploy` locally
 - `REVIEW.md` — what reviewers check beyond CI; read it before reviewing any publish PR
 - `standards/` — local-only licensed docs; only its README is committed
 
