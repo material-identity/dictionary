@@ -139,7 +139,7 @@ test('concept page renders the version table with status, dates, replacedBy', ()
   }
 });
 
-test('every HTML page carries the alternate JSON link, a stylesheet link, and no scripts', () => {
+test('every HTML page carries the alternate JSON link, a canonical link to the real domain, a stylesheet link, and no scripts', () => {
   const out = buildGreen();
   try {
     for (const dir of ['def', 'concept']) {
@@ -147,8 +147,10 @@ test('every HTML page carries the alternate JSON link, a stylesheet link, and no
         const html = readFileSync(join(out, dir, name), 'utf8');
         const stem = name.replace(/\.html$/, '');
         assert.ok(html.includes(`<link rel="alternate" type="application/json" href="/${dir}/${stem}.json">`), `${dir}/${name} alternate link`);
+        assert.ok(html.includes(`<link rel="canonical" href="https://material-identity.eu/${dir}/${stem}">`), `${dir}/${name} canonical link`);
         assert.ok(html.includes('<link rel="stylesheet" href="/styles.css">'), `${dir}/${name} stylesheet`);
         assert.ok(!/<script/i.test(html), `${dir}/${name} must not contain scripts`);
+        assert.ok(!/noindex/i.test(html), `${dir}/${name} must not de-index the real canonical domain`);
       }
     }
   } finally {
