@@ -1,0 +1,19 @@
+id: https://material-identity.eu/def/ff59c18d-6d9c-4180-94f6-99a1224440fe
+isVersionOf: https://material-identity.eu/concept/79a59475-94f2-4bf6-9a36-e2b1d7ef8e83
+version: "1"
+isDefinedBy: https://material-identity.eu/
+objectType: Quantity
+shortName: pressure
+symbol:
+  en: p
+preferredName:
+  en: pressure
+  de: Druck
+definition:
+  en: Force acting normal to a surface per unit area.
+dimension: M L^-1 T^-2
+coherentSiUnit: https://material-identity.eu/def/3c39fd0a-be3a-4f98-af85-0e89652b8cbe
+definitionStandard:
+  name: ISO 80000-4
+  clause: 4-14.1
+  uri: https://iso.org/standard/iso-80000-4

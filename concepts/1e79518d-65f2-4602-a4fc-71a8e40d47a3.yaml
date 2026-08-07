@@ -1,0 +1,12 @@
+id: https://material-identity.eu/concept/1e79518d-65f2-4602-a4fc-71a8e40d47a3
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: substancesOfConcern
+preferredName:
+  en: Substances of concern
+  de: Besorgniserregende Stoffe
+currentVersion: https://material-identity.eu/def/096c7d7e-3860-44f6-a95f-75319d848515
+versions:
+  - entry: https://material-identity.eu/def/096c7d7e-3860-44f6-a95f-75319d848515
+    version: "1"
+    status: active

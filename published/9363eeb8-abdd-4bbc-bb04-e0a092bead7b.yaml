@@ -1,0 +1,17 @@
+id: https://material-identity.eu/def/9363eeb8-abdd-4bbc-bb04-e0a092bead7b
+isVersionOf: https://material-identity.eu/concept/aeabde6f-7b69-47c2-8fd6-0f4401e98b4a
+version: "1"
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: yieldStrength
+symbol:
+  en: Re / Rp0.2
+preferredName:
+  en: Yield strength
+  de: Streckgrenze
+definition:
+  en: Engineering stress at which a material begins to deform plastically — the
+    upper or lower yield point for materials with a distinct yield phenomenon,
+    or the 0.2% proof stress otherwise.
+valueDataType: xsd:float
+unit: https://material-identity.eu/def/52f3e92c-cca4-4f37-abfd-8ef7b846f076

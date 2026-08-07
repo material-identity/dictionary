@@ -1,0 +1,17 @@
+id: https://material-identity.eu/def/096c7d7e-3860-44f6-a95f-75319d848515
+isVersionOf: https://material-identity.eu/concept/1e79518d-65f2-4602-a4fc-71a8e40d47a3
+version: "1"
+isDefinedBy: https://material-identity.eu/
+objectType: MultiValuedDataElement
+shortName: substancesOfConcern
+preferredName:
+  en: Substances of concern
+  de: Besorgniserregende Stoffe
+definition:
+  en: List of substances of concern present in the product above the applicable
+    threshold.
+itemType: https://material-identity.eu/def/0edb2e42-0cf1-4240-af17-5124298689ba
+definitionStandard:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(27)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781

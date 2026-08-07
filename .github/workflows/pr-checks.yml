@@ -75,15 +75,21 @@ jobs:
                 }
               }`, { owner, repo, num: pull_number });
             const nodes = res.repository.pullRequest.closingIssuesReferences.nodes ?? [];
+            // issue-state.yml (this same PR-open event) races this job and may already have
+            // flipped state:accepted -> state:in-review before this step runs. That transition
+            // only ever fires FROM accepted/drafting, so in-review here still proves Yes #1 —
+            // accept both states rather than depend on job ordering between two workflows.
             const accepted = nodes.filter(n => {
               const labels = n.labels.nodes.map(l => l.name);
-              return labels.includes('type:dictionary-request') && labels.includes('state:accepted');
+              if (!labels.includes('type:dictionary-request')) return false;
+              return labels.includes('state:accepted') || labels.includes('state:in-review');
             });
             if (accepted.length === 0) {
               core.setFailed(
                 `PR adds ${added.length} file(s) under published/ but closes no issue labeled ` +
-                'type:dictionary-request + state:accepted. Yes #1 (triage acceptance) is missing — ' +
-                'link the accepted request with "Closes #<n>" (plan §5.3).');
+                'type:dictionary-request + state:accepted (or state:in-review, once issue-state.yml ' +
+                'has advanced it). Yes #1 (triage acceptance) is missing — link the accepted request ' +
+                'with "Closes #<n>" (plan §5.3).');
             } else {
               core.info(`Two-yes gate satisfied by issue(s): ${accepted.map(n => '#' + n.number).join(', ')}`);
             }

@@ -1,0 +1,12 @@
+id: https://material-identity.eu/concept/a930b6c4-cc47-4d56-9239-c63f954757d4
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: pascal
+preferredName:
+  en: pascal
+  de: Pascal
+currentVersion: https://material-identity.eu/def/3c39fd0a-be3a-4f98-af85-0e89652b8cbe
+versions:
+  - entry: https://material-identity.eu/def/3c39fd0a-be3a-4f98-af85-0e89652b8cbe
+    version: "1"
+    status: active
