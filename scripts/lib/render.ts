@@ -48,17 +48,26 @@ export class RefIndex {
     const uri = String(entry.isVersionOf ?? '');
     return uri.startsWith(CONCEPT_PREFIX) ? this.concepts.get(uri.slice(CONCEPT_PREFIX.length)) : undefined;
   }
+
+  /** The entry's lifecycle record from its concept's versions[] — the only place status lives. */
+  recordFor(entry: Doc): Doc | undefined {
+    const concept = this.conceptFor(entry);
+    const records = Array.isArray(concept?.versions) ? (concept.versions as Doc[]) : [];
+    return records.find((r) => String(r.entry) === String(entry.id));
+  }
 }
 
-function pageShell(title: string, alternateJson: string, body: string): string {
+function pageShell(title: string, alternateJson: string | undefined, body: string): string {
+  const alternate = alternateJson === undefined
+    ? ''
+    : `\n<link rel="alternate" type="application/json" href="${esc(alternateJson)}">`;
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
-<link rel="stylesheet" href="/styles.css">
-<link rel="alternate" type="application/json" href="${esc(alternateJson)}">
+<link rel="stylesheet" href="/styles.css">${alternate}
 </head>
 <body>
 <main>
@@ -87,9 +96,7 @@ function row(label: string, valueHtml: string): string {
 
 /** Status banner sourced from the concept's versions[] — never from the entry. */
 export function statusBanner(entry: Doc, refs: RefIndex): string {
-  const concept = refs.conceptFor(entry);
-  const records = Array.isArray(concept?.versions) ? (concept.versions as Doc[]) : [];
-  const record = records.find((r) => String(r.entry) === String(entry.id));
+  const record = refs.recordFor(entry);
   if (!record || record.status === 'active') return '';
   if (record.status === 'tombstoned') {
     const when = record.deprecatedOn !== undefined ? ` on ${esc(record.deprecatedOn)}` : '';
@@ -155,6 +162,55 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
 <table class="fields"><tbody>${rows.join('\n')}</tbody></table>`;
 
   return pageShell(title, `/def/${file.stem}.json`, body);
+}
+
+export const INDEX_PAGE_SIZE = 25;
+
+/**
+ * Paginated index (plan §4 M4 item 1): 25 entries per page, static pagination —
+ * index.html, page-2.html, …. Current status comes from the concept resource.
+ */
+export function renderIndexPages(repo: RepoModel, refs: RefIndex): Array<{ name: string; html: string }> {
+  const entries = repo.published
+    .filter((f) => f.doc)
+    .map((f) => {
+      const doc = f.doc as Doc;
+      return { stem: f.stem, doc, label: en(doc.preferredName) ?? String(doc.shortName ?? f.stem) };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label, 'en') || a.stem.localeCompare(b.stem, 'en'));
+
+  const pageCount = Math.max(1, Math.ceil(entries.length / INDEX_PAGE_SIZE));
+  const pageName = (n: number): string => (n === 1 ? 'index.html' : `page-${n}.html`);
+
+  return Array.from({ length: pageCount }, (_, i) => {
+    const page = i + 1;
+    const rows = entries.slice(i * INDEX_PAGE_SIZE, page * INDEX_PAGE_SIZE).map(({ stem, doc, label }) => {
+      const status = String(refs.recordFor(doc)?.status ?? '—');
+      return `<tr>
+<td><a href="/def/${esc(stem)}">${esc(label)}</a></td>
+<td><code>${esc(doc.shortName ?? '')}</code></td>
+<td>${esc(doc.objectType)}</td>
+<td><span class="status ${esc(status)}">${esc(status)}</span></td>
+</tr>`;
+    }).join('\n');
+
+    const nav = pageCount === 1 ? '' : `\n<nav class="pages">${[
+      page > 1 ? `<a href="/${pageName(page - 1)}">← previous</a>` : '',
+      `page ${page} of ${pageCount}`,
+      page < pageCount ? `<a href="/${pageName(page + 1)}">next →</a>` : '',
+    ].filter(Boolean).join(' · ')}</nav>`;
+
+    const body = `<h1>Dictionary index</h1>
+<p class="meta">${entries.length} published ${entries.length === 1 ? 'entry' : 'entries'} · immutable versions at <code>https://material-identity.eu/def/&lt;uuid&gt;</code></p>
+<table class="versions">
+<thead><tr><th>preferredName (en)</th><th>shortName</th><th>objectType</th><th>status</th></tr></thead>
+<tbody>
+${rows}
+</tbody>
+</table>${nav}`;
+
+    return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, undefined, body) };
+  });
 }
 
 export function renderConceptPage(file: RepoFile, refs: RefIndex): string {
