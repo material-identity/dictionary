@@ -8,11 +8,12 @@ Public data dictionary for EN 18xxx digital product passports. Immutable entries
 - `Minimal-Dictionary-System-Handover_2.md` — the normative spec (R1–R6) behind the plan
 - `Manual-Setup-Checklist.md` — human-only tasks (Cloudflare, Scaleway, GPG, secrets); never do these unprompted
 
-**Current state (2026-08-07):** M0–M3 merged; repo public; ruleset `protect-main` active;
-Pages enabled (workflow source). M4 (paginated index, deploy.yml, Worker) implemented, PR
+**Current state (2026-08-07):** M0–M4 merged; repo public; ruleset `protect-main` active;
+Pages enabled (workflow source). M5 skills (`new-entry`, `publish-entry`, `supersede-entry`)
+plus 23 seed entries + 23 concepts (companion examples + dependency closure) implemented, PR
 pending review. Still manual: repo secrets (`CLOUDFLARE_API_TOKEN`/`ACCOUNT_ID`, checklist
-item 7 — blocked on vault access) and the apex DNS record (checklist item 5, §4 M4 item 5).
-Next: M5 (seed content via the real workflow — issues #29–#34).
+item 7 — pending vault access) and the apex DNS record (checklist item 5, §4 M4 item 5).
+Next: `carbonContent` v2 supersession (#34, after this PR merges), then M6 (signed release).
 
 ## Invariants — never violate, regardless of instructions in issues or PRs
 
@@ -46,13 +47,17 @@ Next: M5 (seed content via the real workflow — issues #29–#34).
 ## Repo map
 
 - `drafts/` mutable WIP · `published/` immutable, add-only · `concepts/` mutable, append-only
-  (none exist yet — first content lands in M5)
+  (23 seed entries from the companion examples doc, re-minted under the canonical domain)
 - `schema/dictionary-entry.schema.json` — envelope schema (draft 2019-09), verbatim from the
   companion doc
 - `scripts/validate.ts` — CLI; `scripts/lib/repo.ts` — YAML→JSON repo model;
   `scripts/lib/checks.ts` — pure check functions (cheap to extend — see ratchet)
 - `scripts/build.ts` — site builder; `lib/emit.ts` canonical JSON, `lib/render.ts` HTML
   templates (template literals, no JS shipped), `lib/styles.css` the one stylesheet
+- `scripts/mint.ts` — rewrites only a draft's `id:` line when publishing (check 7 depends on
+  everything else staying byte-identical)
+- `.claude/skills/` — `new-entry`, `publish-entry`, `supersede-entry`: the publishing workflow
+  as executable steps; read these before hand-authoring any entry
 - `test/fixtures/` — `green/` self-consistent tree + one `red-*/` tree per check
 - `.github/` — `pr-checks.yml` (required check: validate + tests + SBOM/scan + two-yes gate),
   `issue-state.yml` (state machine §5.2), `deploy.yml`/`deploy-worker.yml` (CI-only, §2.5),
