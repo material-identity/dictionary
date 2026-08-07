@@ -1,0 +1,12 @@
+id: https://material-identity.eu/concept/773442b4-31ad-48e4-93ec-486141cb977c
+isDefinedBy: https://material-identity.eu/
+objectType: Concept
+shortName: location
+preferredName:
+  en: Location in product
+  de: Ort im Produkt
+currentVersion: https://material-identity.eu/def/e412cabd-7812-47aa-b27e-9c8510fba399
+versions:
+  - entry: https://material-identity.eu/def/e412cabd-7812-47aa-b27e-9c8510fba399
+    version: "1"
+    status: active

@@ -1,0 +1,12 @@
+id: https://material-identity.eu/def/255834d4-c4e5-4d11-b5aa-921859a46c85
+isVersionOf: https://material-identity.eu/concept/be53b848-3b8d-4689-8633-b590ba1181f4
+version: "1"
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: carbonContent
+preferredName:
+  en: Carbon content
+  de: Kohlenstoffgehalt
+definition:
+  en: Mass fraction of carbon in the steel.
+valueDataType: xsd:decimal
