@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadRepo } from './lib/repo.ts';
 import { canonicalJson } from './lib/emit.ts';
-import { RefIndex, renderConceptPage, renderEntryPage } from './lib/render.ts';
+import { RefIndex, renderConceptPage, renderEntryPage, renderIndexPages } from './lib/render.ts';
 
 const LIB_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -43,6 +43,9 @@ export function build(root: string, out: string): BuildResult {
     writeFileSync(join(out, 'concept', `${file.stem}.json`), canonicalJson(file.doc));
     writeFileSync(join(out, 'concept', `${file.stem}.html`), renderConceptPage(file, refs));
     concepts += 1;
+  }
+  for (const page of renderIndexPages(repo, refs)) {
+    writeFileSync(join(out, page.name), page.html);
   }
   return { entries, concepts, out };
 }
