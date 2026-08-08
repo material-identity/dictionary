@@ -17,10 +17,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, 'fixtures');
 const GREEN = join(fixtures, 'green');
 
-const MP1 = '93946327-ccc4-4581-ac7c-229ea5c2f832'; // maxPressure v1, tombstoned
-const MP2 = '450ecc7b-4cb6-4abf-bacb-35661132d321'; // maxPressure v2, active
-const UNIT = '5e50004e-7e03-40f6-933e-b63708c9ab47'; // megapascal
-const CM = 'ca087cb9-f189-41a1-b082-2288eaacd5e7'; // maxPressure concept
+const MP1 = '73425bc9-3734-4f26-a647-89fd8d9e435d'; // maxPressure v1, superseded
+const MP2 = 'c38a85eb-1a37-416d-ab21-7ddcc599754d'; // maxPressure v2, current
+const UNIT = '50e8081d-3319-4cd5-8edb-a26cb6bd8078'; // megapascal
 
 function hashTree(dir: string): string {
   const hash = createHash('sha256');
@@ -44,13 +43,11 @@ function buildGreen(): string {
   return out;
 }
 
-test('build emits JSON + HTML for every entry and concept, plus the stylesheet', () => {
+test('build emits JSON + HTML for every entry, plus the stylesheet', () => {
   const out = buildGreen();
   try {
     const defs = readdirSync(join(out, 'def')).sort();
-    const concepts = readdirSync(join(out, 'concept')).sort();
     assert.equal(defs.length, 14); // 7 entries × (json + html)
-    assert.equal(concepts.length, 12); // 6 concepts × (json + html)
     assert.ok(defs.includes(`${MP2}.json`) && defs.includes(`${MP2}.html`));
     assert.ok(readFileSync(join(out, 'styles.css'), 'utf8').length > 0);
   } finally {
@@ -73,20 +70,17 @@ test('emitted JSON is canonical: identity block first, nested keys ordered, sche
   const out = buildGreen();
   try {
     const entry = JSON.parse(readFileSync(join(out, 'def', `${MP2}.json`), 'utf8'));
-    assert.deepEqual(Object.keys(entry).slice(0, 5), ['id', 'isVersionOf', 'version', 'replaces', 'isDefinedBy']);
+    assert.deepEqual(Object.keys(entry).slice(0, 3), ['id', 'replaces', 'isDefinedBy']);
     assert.deepEqual(Object.keys(entry.definitionStandard), ['name', 'clause', 'uri']);
-
-    const concept = JSON.parse(readFileSync(join(out, 'concept', `${CM}.json`), 'utf8'));
-    assert.deepEqual(Object.keys(concept.versions[0]), ['version', 'entry', 'status', 'deprecatedOn', 'replacedBy']);
+    assert.equal(entry.version, undefined);
+    assert.equal(entry.isVersionOf, undefined);
 
     const ajv = new Ajv2019({ allErrors: true, strict: false });
     addFormats(ajv);
-    const validate = ajv.compile(JSON.parse(readFileSync(join(here, '..', 'schema', 'dictionary-entry.schema.json'), 'utf8')));
-    for (const dir of ['def', 'concept']) {
-      for (const name of readdirSync(join(out, dir)).filter((n) => n.endsWith('.json'))) {
-        const doc = JSON.parse(readFileSync(join(out, dir, name), 'utf8'));
-        assert.ok(validate(doc), `${dir}/${name} violates the schema: ${JSON.stringify(validate.errors)}`);
-      }
+    const validateSchema = ajv.compile(JSON.parse(readFileSync(join(here, '..', 'schema', 'dictionary-entry.schema.json'), 'utf8')));
+    for (const name of readdirSync(join(out, 'def')).filter((n) => n.endsWith('.json'))) {
+      const doc = JSON.parse(readFileSync(join(out, 'def', name), 'utf8'));
+      assert.ok(validateSchema(doc), `def/${name} violates the schema: ${JSON.stringify(validateSchema.errors)}`);
     }
   } finally {
     rmSync(out, { recursive: true, force: true });
@@ -99,16 +93,16 @@ test('canonicalJson output ends with a newline and is stable for unknown keys', 
   assert.deepEqual(Object.keys(JSON.parse(a)), ['id', 'alpha', 'zebra']);
 });
 
-test('superseded entry page shows the banner sourced from the concept', () => {
+test('superseded entry page shows the banner, derived from replaces, never stored', () => {
   const out = buildGreen();
   try {
     const v1 = readFileSync(join(out, 'def', `${MP1}.html`), 'utf8');
-    assert.match(v1, /class="banner tombstoned"/);
-    assert.match(v1, /tombstoned on 2026-07-01/);
+    assert.match(v1, /class="banner superseded"/);
     assert.match(v1, new RegExp(`Superseded by <a href="/def/${MP2}">Maximum allowable pressure</a>`));
 
     const v2 = readFileSync(join(out, 'def', `${MP2}.html`), 'utf8');
-    assert.ok(!v2.includes('class="banner'), 'active version carries no banner');
+    assert.ok(!v2.includes('class="banner'), 'current version carries no banner');
+    assert.match(v2, new RegExp(`<a href="/def/${MP1}">Maximum allowable pressure</a>`)); // its own replaces row
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
@@ -119,40 +113,35 @@ test('internal references render as links with resolved labels', () => {
   try {
     const v2 = readFileSync(join(out, 'def', `${MP2}.html`), 'utf8');
     assert.match(v2, new RegExp(`<a href="/def/${UNIT}">megapascal</a>`)); // unit link shows the unit's preferredName
-    assert.match(v2, new RegExp(`<a href="/concept/${CM}">Maximum allowable pressure</a>`)); // concept link
     assert.match(v2, new RegExp(`<a href="/def/${MP2}.json">Raw JSON</a>`));
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
 });
 
-test('concept page renders the version table with status, dates, replacedBy', () => {
+test('every HTML page carries a canonical link, a stylesheet link, and no scripts', () => {
   const out = buildGreen();
   try {
-    const html = readFileSync(join(out, 'concept', `${CM}.html`), 'utf8');
-    assert.match(html, /<span class="status tombstoned">tombstoned<\/span>/);
-    assert.match(html, /<span class="status active">active<\/span>/);
-    assert.match(html, /2026-07-01/);
-    assert.match(html, new RegExp(`<a href="/def/${MP2}">`));
+    for (const name of readdirSync(join(out, 'def')).filter((n) => n.endsWith('.html'))) {
+      const html = readFileSync(join(out, 'def', name), 'utf8');
+      const stem = name.replace(/\.html$/, '');
+      assert.ok(html.includes(`<link rel="alternate" type="application/json" href="/def/${stem}.json">`), `def/${name} alternate link`);
+      assert.ok(html.includes(`<link rel="canonical" href="https://material-identity.eu/def/${stem}">`), `def/${name} canonical link`);
+      assert.ok(html.includes('<link rel="stylesheet" href="/styles.css">'), `def/${name} stylesheet`);
+      assert.ok(!/<script/i.test(html), `def/${name} must not contain scripts`);
+    }
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
 });
 
-test('every HTML page carries the alternate JSON link, a canonical link to the real domain, a stylesheet link, and no scripts', () => {
+test('index lists only current entries — superseded maxPressure v1 is omitted', () => {
   const out = buildGreen();
   try {
-    for (const dir of ['def', 'concept']) {
-      for (const name of readdirSync(join(out, dir)).filter((n) => n.endsWith('.html'))) {
-        const html = readFileSync(join(out, dir, name), 'utf8');
-        const stem = name.replace(/\.html$/, '');
-        assert.ok(html.includes(`<link rel="alternate" type="application/json" href="/${dir}/${stem}.json">`), `${dir}/${name} alternate link`);
-        assert.ok(html.includes(`<link rel="canonical" href="https://material-identity.eu/${dir}/${stem}">`), `${dir}/${name} canonical link`);
-        assert.ok(html.includes('<link rel="stylesheet" href="/styles.css">'), `${dir}/${name} stylesheet`);
-        assert.ok(!/<script/i.test(html), `${dir}/${name} must not contain scripts`);
-        assert.ok(!/noindex/i.test(html), `${dir}/${name} must not de-index the real canonical domain`);
-      }
-    }
+    const html = readFileSync(join(out, 'index.html'), 'utf8');
+    assert.equal((html.match(/<tr>\n<td>/g) ?? []).length, 6); // 7 published, 1 superseded
+    assert.match(html, new RegExp(`<a href="/def/${MP2}">Maximum allowable pressure</a>`));
+    assert.ok(!html.includes(`/def/${MP1}"`), 'superseded v1 must not appear in the index');
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
@@ -164,7 +153,7 @@ test('build refuses an unloadable repo; empty tree builds an empty site', () => 
   const out = mkdtempSync(join(tmpdir(), 'dict-site-'));
   try {
     const result = build(join(fixtures, 'empty'), out);
-    assert.deepEqual({ entries: result.entries, concepts: result.concepts }, { entries: 0, concepts: 0 });
+    assert.equal(result.entries, 0);
     assert.deepEqual(readdirSync(join(out, 'def')), []);
   } finally {
     rmSync(out, { recursive: true, force: true });

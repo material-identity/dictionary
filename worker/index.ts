@@ -1,5 +1,6 @@
 /**
- * Canonical interface on material-identity.eu (plan §4 M4 item 3; handover §8).
+ * Canonical interface on material-identity.eu (plan §4 M4 item 3; handover §8; redesigned
+ * per issue #57 — no concept resource, so no /concept/<uuid> route).
  * Stateless mapping: URI + Accept → origin file + headers. No entry knowledge —
  * reproducible on any reverse proxy (D3). Deploys are CI-only (deploy-worker.yml).
  */
@@ -12,19 +13,16 @@ export interface RouteDecision {
 
 /** Pure mapping, unit-tested. JSON is the default; HTML only when Accept names text/html (handover §8). */
 export function decide(pathname: string, accept: string | null): RouteDecision {
-  const m = /^\/(def|concept)\/([^/]+)$/.exec(pathname);
-  if (m && UUID.test(m[2])) {
-    const [, kind, uuid] = m;
+  const m = /^\/def\/([^/]+)$/.exec(pathname);
+  if (m && UUID.test(m[1])) {
+    const uuid = m[1];
     const wantsHtml = (accept ?? '').includes('text/html');
-    const cache = kind === 'def'
-      ? 'public, max-age=31536000, immutable' // version resources never change (R6)
-      : 'public, max-age=300'; // the concept resource is the mutable one
     const headers: Record<string, string> = {
       'content-type': wantsHtml ? 'text/html; charset=utf-8' : 'application/json; charset=utf-8',
-      'cache-control': cache,
+      'cache-control': 'public, max-age=31536000, immutable', // entries never change (R6)
     };
-    if (wantsHtml) headers.link = `</${kind}/${uuid}>; rel="canonical"`;
-    return { originPath: `/${kind}/${uuid}.${wantsHtml ? 'html' : 'json'}`, headers };
+    if (wantsHtml) headers.link = `</def/${uuid}>; rel="canonical"`;
+    return { originPath: `/def/${uuid}.${wantsHtml ? 'html' : 'json'}`, headers };
   }
   // index, pagination, styles, raw origin files: pass through with a short cache
   return { originPath: pathname === '/' ? '/index.html' : pathname, headers: { 'cache-control': 'public, max-age=300' } };

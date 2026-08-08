@@ -7,16 +7,14 @@
 // Envelope keys in canonical order: identity/lifecycle block first, then semantics.
 // Keys not listed (langMap languages, crossReferences extras) sort alphabetically after.
 const KEY_ORDER = [
-  'id', 'isVersionOf', 'version', 'replaces', 'isDefinedBy',
+  'id', 'replaces', 'isDefinedBy',
   'objectType', 'shortName', 'symbol', 'preferredName', 'definition',
   'inheritsFrom', 'identicalTo',
   'valueDataType', 'unit', 'exampleValue', 'enumeration',
   'definitionStandard', 'testStandard', 'resourceMediaType', 'itemType', 'elements',
   'quantityKind', 'dimension', 'coherentSiUnit', 'crossReferences', 'conversions',
-  'currentVersion', 'versions',
   'value',
   // nested record keys
-  'entry', 'status', 'deprecatedOn', 'replacedBy',
   'name', 'clause', 'uri',
   'toUnit', 'factor', 'offset',
   'dictionaryReference', 'isMandatory',

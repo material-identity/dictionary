@@ -31,10 +31,5 @@ dl.langmap { margin: 0; display: grid; grid-template-columns: 3rem 1fr; gap: 0.1
 dl.langmap dt { color: var(--muted); font-weight: 600; }
 dl.langmap dd { margin: 0; }
 .banner { padding: 0.75rem 1rem; border-left: 4px solid; border-radius: 3px; margin-bottom: 1rem; }
-.banner.tombstoned { background: var(--dead-bg); border-color: var(--dead-edge); }
-.banner.deprecated { background: var(--warn-bg); border-color: var(--warn-edge); }
-.status { padding: 0.1em 0.5em; border-radius: 999px; font-size: 0.85em; }
-.status.active { background: #d4edda; }
-.status.deprecated { background: var(--warn-bg); }
-.status.tombstoned { background: var(--dead-bg); }
+.banner.superseded { background: var(--dead-bg); border-color: var(--dead-edge); }
 footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--muted); max-width: 56rem; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; }

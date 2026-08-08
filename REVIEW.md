@@ -1,8 +1,8 @@
 # REVIEW.md — what reviewers check beyond CI
 
 The reviewer contract for CODEOWNERS and review agents (`/code-review` reads this file).
-CI (`pr-checks`) already enforces structure: schema validity, identity, version chains,
-pinning, immutability, concept consistency, move purity, the two-yes gate, coverage.
+CI (`pr-checks`) already enforces structure: schema validity, identity, replaces integrity,
+pinning, immutability, move purity, the two-yes gate, coverage.
 **Do not re-review what CI proves.** Review what only judgment can catch:
 
 ## 1 Definition quality and precision
@@ -41,7 +41,8 @@ pinning, immutability, concept consistency, move purity, the two-yes gate, cover
 - [ ] Multilingual *values* (not metadata) use `rdf:langString` + `MultiLanguageDataElement`.
 - [ ] `isMandatory` sits on collection **membership**; specification-independent collections
       omit the flags (mandatoriness belongs to the spec context, not the concept).
-- [ ] Version resources carry no status/lifecycle fields — lifecycle lives in the concept file.
+- [ ] Entries carry no status/lifecycle fields at all — supersession is only ever expressed
+      via `replaces`; "current" and "superseded" are derived at build time, never stored.
 
 ## Process
 

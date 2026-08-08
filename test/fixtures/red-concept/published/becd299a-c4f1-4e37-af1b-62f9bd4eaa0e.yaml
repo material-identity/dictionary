@@ -1,9 +1,0 @@
-id: https://material-identity.eu/def/becd299a-c4f1-4e37-af1b-62f9bd4eaa0e
-isVersionOf: https://material-identity.eu/concept/dfd0392a-f42f-4a4b-a25b-dc92e21ec511
-version: "1"
-isDefinedBy: https://material-identity.eu/
-objectType: SingleValuedDataElement
-shortName: versionMismatch
-preferredName:
-  en: versionMismatch
-valueDataType: xsd:string

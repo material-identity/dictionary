@@ -1,0 +1,8 @@
+id: https://material-identity.eu/def/b7344a8a-44ba-4b14-b518-71570dbffe61
+replaces: https://material-identity.eu/def/17c4f81a-b675-47d2-8988-51706ad853d4
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: replacesGhost
+preferredName:
+  en: Replaces a never-published entry
+valueDataType: xsd:string

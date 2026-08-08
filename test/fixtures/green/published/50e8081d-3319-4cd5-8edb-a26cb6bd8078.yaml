@@ -1,0 +1,16 @@
+id: https://material-identity.eu/def/50e8081d-3319-4cd5-8edb-a26cb6bd8078
+isDefinedBy: https://material-identity.eu/
+objectType: MeasurementUnit
+shortName: megapascal
+symbol:
+  en: MPa
+preferredName:
+  en: megapascal
+  de: Megapascal
+definition:
+  en: SI-derived unit of pressure equal to one million pascals.
+quantityKind: https://material-identity.eu/def/109980b4-51dc-4986-ba73-d5e407318400
+dimension: M L^-1 T^-2
+crossReferences:
+  uneceCommonCode: MPA
+  ucumCode: MPa

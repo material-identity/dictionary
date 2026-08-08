@@ -1,0 +1,9 @@
+id: https://material-identity.eu/def/6ad4a9ab-029f-44f4-b69e-0f82a590158c
+isDefinedBy: https://material-identity.eu/
+objectType: DataElementCollection
+shortName: unpinnedCollection
+preferredName:
+  en: Collection member not published
+elements:
+  - dictionaryReference: https://material-identity.eu/def/5a2cff8d-0c78-4426-a8c5-347d7f7ca00d
+    isMandatory: true

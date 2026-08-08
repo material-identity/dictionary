@@ -1,0 +1,8 @@
+id: https://material-identity.eu/def/f447325a-411e-459f-a08d-83780bd293c9
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: broken
+preferredName:
+  en: Broken entry
+definition:
+  en: Missing valueDataType, so check 2 must fail.

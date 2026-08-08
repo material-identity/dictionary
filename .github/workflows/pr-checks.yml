@@ -1,6 +1,6 @@
 # The required status check on main (ruleset context: "pr-checks", checklist item 12).
-# Carries the entire integrity guarantee: validate.ts checks 1–7, the coverage-gated
-# tests, SBOM + vulnerability scan, and check 8 (two-yes gate) as the final step —
+# Carries the entire integrity guarantee: validate.ts checks 1–6, the coverage-gated
+# tests, SBOM + vulnerability scan, and check 7 (two-yes gate) as the final step —
 # a step rather than a job so the single required context covers it (plan §4 M2 item 10).
 # All actions pinned to full commit SHAs (supply-chain house rule; Dependabot bumps them).
 name: pr-checks
@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0 # checks 1, 6, 7 diff against the PR base
+          fetch-depth: 0 # checks 1, 6 diff against the PR base
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -29,7 +29,7 @@ jobs:
 
       - run: npm ci
 
-      - name: validate (checks 1–7)
+      - name: validate (checks 1–6)
         run: npm run validate -- --base "${{ github.event.pull_request.base.sha }}"
 
       - name: tests (coverage gate ≥85%)
@@ -52,7 +52,7 @@ jobs:
           # against this SBOM; 0.116.1 applies them correctly (verified locally)
           grype-version: v0.116.1
 
-      - name: check 8 — two-yes gate (plan §5.3)
+      - name: check 7 — two-yes gate (plan §5.3)
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |

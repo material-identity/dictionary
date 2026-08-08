@@ -1,7 +1,7 @@
-id: https://material-identity.eu/def/not-a-uuid
+id: https://dictionary1.eu/def/f185d11e-7506-467f-8d44-a0f96d3d0d28
 isDefinedBy: https://material-identity.eu/
 objectType: SingleValuedDataElement
-shortName: notAUuid
+shortName: wrongDomain
 preferredName:
-  en: Not a UUID
+  en: Wrong domain
 valueDataType: xsd:string

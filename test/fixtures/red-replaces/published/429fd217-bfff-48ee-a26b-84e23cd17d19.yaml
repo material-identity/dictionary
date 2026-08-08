@@ -1,0 +1,8 @@
+id: https://material-identity.eu/def/429fd217-bfff-48ee-a26b-84e23cd17d19
+replaces: https://material-identity.eu/def/429fd217-bfff-48ee-a26b-84e23cd17d19
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: selfReplace
+preferredName:
+  en: Replaces itself
+valueDataType: xsd:string

@@ -2,21 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadRepo, DEF_PREFIX, CONCEPT_PREFIX } from '../scripts/lib/repo.ts';
+import { loadRepo, DEF_PREFIX } from '../scripts/lib/repo.ts';
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 
 test('loadRepo loads the green tree into the full model', () => {
   const repo = loadRepo(join(fixtures, 'green'));
   assert.equal(repo.published.length, 7);
-  assert.equal(repo.concepts.length, 6);
   assert.equal(repo.drafts.length, 1);
   assert.equal(repo.errors.length, 0);
 
-  const entry = repo.published.find((f) => f.stem === '450ecc7b-4cb6-4abf-bacb-35661132d321');
+  const entry = repo.published.find((f) => f.stem === 'c38a85eb-1a37-416d-ab21-7ddcc599754d');
   assert.ok(entry?.doc);
   assert.equal(entry.doc.shortName, 'maxPressure');
-  assert.equal(entry.relPath, 'published/450ecc7b-4cb6-4abf-bacb-35661132d321.yaml');
+  assert.equal(entry.relPath, 'published/c38a85eb-1a37-416d-ab21-7ddcc599754d.yaml');
   assert.equal(entry.dir, 'published');
 });
 
@@ -24,7 +23,6 @@ test('missing directories yield empty collections (fresh repo passes)', () => {
   const repo = loadRepo(join(fixtures, 'empty'));
   assert.deepEqual(repo.drafts, []);
   assert.deepEqual(repo.published, []);
-  assert.deepEqual(repo.concepts, []);
   assert.deepEqual(repo.errors, []);
 });
 
@@ -38,7 +36,6 @@ test('malformed YAML surfaces as a readable error naming the file', () => {
   assert.equal(broken.doc, undefined);
 });
 
-test('canonical URI constants', () => {
+test('canonical URI constant', () => {
   assert.equal(DEF_PREFIX, 'https://material-identity.eu/def/');
-  assert.equal(CONCEPT_PREFIX, 'https://material-identity.eu/concept/');
 });

@@ -1,0 +1,8 @@
+id: https://material-identity.eu/def/f6043296-f267-40d2-9571-58b26a64a724
+replaces: https://material-identity.eu/def/f31a09eb-bcd4-4d3a-a0e5-e360d68b675b
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: forkB
+preferredName:
+  en: Fork B
+valueDataType: xsd:string

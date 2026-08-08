@@ -1,7 +1,7 @@
-id: https://material-identity.eu/def/not-a-uuid
+id: https://material-identity.eu/def/f31a09eb-bcd4-4d3a-a0e5-e360d68b675b
 isDefinedBy: https://material-identity.eu/
 objectType: SingleValuedDataElement
-shortName: notAUuid
+shortName: forkTarget
 preferredName:
-  en: Not a UUID
+  en: Fork target
 valueDataType: xsd:string

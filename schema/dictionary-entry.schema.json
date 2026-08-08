@@ -1,16 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2019-09/schema",
   "$id": "https://dictionary1.eu/schema/dictionary-entry.json",
-  "title": "DPP dictionary entry (proposed envelope)",
-  "description": "Response shape returned by GET <dictionaryReference>. NOTE: this is the proposed dictionary-entry envelope, NOT the EN 18223 DPP data-element schema. Version resources are immutable; lifecycle status lives only in the Concept resource (versions[]).",
+  "title": "DPP dictionary entry",
+  "description": "Response shape returned by GET <dictionaryReference>. Every published entry is immutable forever. Supersession is expressed only by a newer entry's `replaces` link; nothing tracks status, versions, or lifecycle anywhere. 'Current' and 'superseded' are derived by the build, never stored.",
   "type": "object",
   "additionalProperties": false,
   "required": ["id", "isDefinedBy", "objectType"],
   "properties": {
-    "id":          { "type": "string", "format": "uri", "description": "Resolvable identity. For version resources: immutable, this is the value carried as dictionaryReference. For the Concept resource: the concept-level URI." },
-    "isVersionOf": { "type": "string", "format": "uri", "description": "Concept identity grouping all versions (version resources only)." },
-    "version":     { "type": "string" },
-    "replaces":    { "type": "string", "format": "uri", "description": "Backward link to the predecessor version. Set at publication, never changed." },
+    "id":          { "type": "string", "format": "uri", "description": "Resolvable identity. Immutable; this is the value carried as dictionaryReference." },
+    "replaces":    { "type": "string", "format": "uri", "description": "Backward link to the entry this one supersedes. Set at publication, never changed. Optional." },
     "isDefinedBy": { "type": "string", "format": "uri", "description": "Origin dictionary, carried as data (not parsed from the key)." },
 
     "objectType": {
@@ -18,7 +16,7 @@
       "enum": [
         "SingleValuedDataElement", "MultiLanguageDataElement", "RelatedResource",
         "MultiValuedDataElement", "DataElementCollection",
-        "MeasurementUnit", "Quantity", "Value", "Concept"
+        "MeasurementUnit", "Quantity", "Value"
       ]
     },
     "shortName":     { "type": "string" },
@@ -44,16 +42,10 @@
     "crossReferences":{ "$ref": "#/$defs/crossReferences" },
     "conversions":    { "type": "array", "items": { "$ref": "#/$defs/conversion" } },
 
-    "currentVersion": { "type": "string", "format": "uri", "description": "Concept resource only: the currently active version." },
-    "versions":       { "type": "array", "items": { "$ref": "#/$defs/versionRecord" }, "description": "Concept resource only: append-only list of all versions with their lifecycle status." },
-
     "value": { "type": ["string", "number", "boolean"] }
   },
 
   "allOf": [
-    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "Concept" } } },
-      "then": { "required": ["currentVersion", "versions"] },
-      "else": { "required": ["isVersionOf", "version"] } },
     { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "SingleValuedDataElement" } } },
       "then": { "required": ["valueDataType"] } },
     { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "MultiLanguageDataElement" } } },
@@ -106,18 +98,6 @@
       "properties": {
         "dictionaryReference": { "type": "string", "format": "uri" },
         "isMandatory":         { "type": "boolean" }
-      }
-    },
-    "versionRecord": {
-      "type": "object",
-      "required": ["entry", "version", "status"],
-      "additionalProperties": false,
-      "properties": {
-        "entry":        { "type": "string", "format": "uri" },
-        "version":      { "type": "string" },
-        "status":       { "type": "string", "enum": ["active", "deprecated", "tombstoned"] },
-        "deprecatedOn": { "type": "string", "format": "date" },
-        "replacedBy":   { "type": "string", "format": "uri" }
       }
     },
     "crossReferences": {

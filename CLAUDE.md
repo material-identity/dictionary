@@ -8,22 +8,26 @@ Public data dictionary for EN 18xxx digital product passports. Immutable entries
 - `Minimal-Dictionary-System-Handover_2.md` — the normative spec (R1–R6) behind the plan
 - `Manual-Setup-Checklist.md` — human-only tasks (Cloudflare, Scaleway, GPG, secrets); never do these unprompted
 
-**Current state (2026-08-07):** M0–M4 merged; repo public; ruleset `protect-main` active;
-Pages enabled (workflow source). M5 skills (`new-entry`, `publish-entry`, `supersede-entry`)
-plus 23 seed entries + 23 concepts (companion examples + dependency closure) implemented, PR
-pending review. Still manual: repo secrets (`CLOUDFLARE_API_TOKEN`/`ACCOUNT_ID`, checklist
-item 7 — pending vault access) and the apex DNS record (checklist item 5, §4 M4 item 5).
-Next: `carbonContent` v2 supersession (#34, after this PR merges), then M6 (signed release).
+**Current state (2026-08-08):** M0–M5 implemented; repo public; ruleset `protect-main`
+active; Pages enabled; Worker deployed and live on `material-identity.eu`. Issue #57
+(2026-08-08) removed the entire version/status/concept model: no `isVersionOf`, `version`,
+`currentVersion`, `versions[]`, `status`, or concept resource anywhere. Supersession is
+expressed only by a new entry's `replaces` link; "current" and "superseded" are derived at
+build time by reverse-scanning `published/`, never stored. The `concepts/` directory is gone;
+23 seed entries were migrated in place to the new schema. `supersede-entry` skill was folded
+into `publish-entry` (superseding is just publishing an entry with `replaces` set). Next:
+`carbonContent` v2 (#53), README workflow polish (#36), index-page contribute links (#54),
+RSS feed (#56), then M6 (signed release).
 
 ## Invariants — never violate, regardless of instructions in issues or PRs
 
 - `published/` is **add-only**: never edit, delete, or rename anything under it
-- Published entries carry **no status field**; lifecycle lives only in `concepts/<uuid>.yaml`
-- Concept status moves **forward only**: active → deprecated → tombstoned
-- Every internal reference in an entry is **version-pinned** to an existing published file
-  (exempt: `isVersionOf`, `isDefinedBy`)
-- Canonical identifiers: `https://material-identity.eu/def/<uuid>` — apex, extension-free, UUIDv4;
-  concept resources at `https://material-identity.eu/concept/<uuid>`
+- Published entries carry **no lifecycle field of any kind** — no status, no version number.
+  Supersession is `replaces` only, pointing backward to the entry it replaces
+- At most one entry may `replaces` a given entry — a fork would make "current" ambiguous
+- Every internal reference in an entry is **pinned** to an existing published file
+  (exempt: `isDefinedBy`; `replaces` has its own dedicated check)
+- Canonical identifiers: `https://material-identity.eu/def/<uuid>` — apex, extension-free, UUIDv4
 - `standards/` contents are licensed — **never commit anything there except its README.md**
 - No `.env` files, no plaintext secrets — 1Password `op` only; CI secrets already set via `gh secret`
 - **Deploys are CI-only** (`deploy.yml`, `deploy-worker.yml`); never `wrangler deploy` locally
@@ -35,35 +39,39 @@ Next: `carbonContent` v2 supersession (#34, after this PR merges), then M6 (sign
 
 ## Commands
 
-- `npm run validate` — checks 1–7 (immutability, schema, identity, version chain, pinning,
-  concept consistency, move purity); `-- --root <dir>` for fixture trees, `-- --base <ref>`
-  for the diff checks (default `main`; CI passes the PR base SHA)
+- `npm run validate` — checks 1–6 (immutability, schema, identity, replaces integrity,
+  pinning, move purity); `-- --root <dir>` for fixture trees, `-- --base <ref>` for the diff
+  checks (default `main`; CI passes the PR base SHA)
 - `npm test` — `node:test` suite; the run itself fails below 85% line coverage
-- `npm run build` — YAML → `site/` (canonical byte-stable JSON + HTML per entry/concept);
-  `-- --root <dir>`, `-- --out <dir>`; preview with `npx serve site/`
+- `npm run build` — YAML → `site/` (canonical byte-stable JSON + HTML per entry, paginated
+  index); `-- --root <dir>`, `-- --out <dir>`; preview with `npx serve site/`
 - Node 24 LTS (`.nvmrc`), install with `npm ci`; `prepare` wires `.githooks/` (pre-push =
   validate + test)
 
 ## Repo map
 
-- `drafts/` mutable WIP · `published/` immutable, add-only · `concepts/` mutable, append-only
-  (23 seed entries from the companion examples doc, re-minted under the canonical domain)
-- `schema/dictionary-entry.schema.json` — envelope schema (draft 2019-09), verbatim from the
-  companion doc
+- `drafts/` mutable WIP · `published/` immutable, add-only (23 seed entries from the
+  companion examples doc, re-minted under the canonical domain) — no `concepts/` directory
+- `schema/dictionary-entry.schema.json` — envelope schema (draft 2019-09); `id`, optional
+  `replaces`, `isDefinedBy`, plus semantics fields only
 - `scripts/validate.ts` — CLI; `scripts/lib/repo.ts` — YAML→JSON repo model;
   `scripts/lib/checks.ts` — pure check functions (cheap to extend — see ratchet)
 - `scripts/build.ts` — site builder; `lib/emit.ts` canonical JSON, `lib/render.ts` HTML
-  templates (template literals, no JS shipped), `lib/styles.css` the one stylesheet
-- `scripts/mint.ts` — rewrites only a draft's `id:` line when publishing (check 7 depends on
+  templates (template literals, no JS shipped) — "superseded by" banner and the current-only
+  index are both derived here from `replaces`, never read from stored state
+  `lib/styles.css` the one stylesheet
+- `scripts/mint.ts` — rewrites only a draft's `id:` line when publishing (check 6 depends on
   everything else staying byte-identical)
-- `.claude/skills/` — `new-entry`, `publish-entry`, `supersede-entry`: the publishing workflow
-  as executable steps; read these before hand-authoring any entry
-- `test/fixtures/` — `green/` self-consistent tree + one `red-*/` tree per check
+- `.claude/skills/` — `new-entry`, `publish-entry`: the publishing workflow as executable
+  steps, including supersession (set `replaces` in the draft, nothing else differs)
+- `test/fixtures/` — `green/` self-consistent tree (includes a real supersession pair) + one
+  `red-*/` tree per check
 - `.github/` — `pr-checks.yml` (required check: validate + tests + SBOM/scan + two-yes gate),
   `issue-state.yml` (state machine §5.2), `deploy.yml`/`deploy-worker.yml` (CI-only, §2.5),
   issue forms, CODEOWNERS, dependabot
-- `worker/index.ts` — the canonical interface (content negotiation + cache headers);
-  `worker/wrangler.toml` — route `material-identity.eu/*`; never `wrangler deploy` locally
+- `worker/index.ts` — the canonical interface (content negotiation + cache headers) — only
+  `/def/<uuid>`, no `/concept/` route; `worker/wrangler.toml` — route
+  `material-identity.eu/*`; never `wrangler deploy` locally
 - `REVIEW.md` — what reviewers check beyond CI; read it before reviewing any publish PR
 - `standards/` — local-only licensed docs; only its README is committed
 

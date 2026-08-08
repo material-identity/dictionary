@@ -1,34 +1,29 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse } from 'yaml';
 import Ajv2019Module from 'ajv/dist/2019.js';
 import addFormatsModule from 'ajv-formats';
+import { validate as uuidValidate, version as uuidVersion } from 'uuid';
+import { DEF_PREFIX, type RepoFile, type RepoModel, type ValidationIssue } from './repo.ts';
+import type { DiffEntry, GitContext } from './git.ts';
 
 // ajv/ajv-formats ship CJS; under native ESM the class may sit on .default or be the export itself.
 const Ajv2019 = (Ajv2019Module as unknown as { default?: typeof Ajv2019Module }).default ?? Ajv2019Module;
 const addFormats = (addFormatsModule as unknown as { default?: typeof addFormatsModule }).default ?? addFormatsModule;
-import { validate as uuidValidate, version as uuidVersion } from 'uuid';
-import { parse } from 'yaml';
-import { CONCEPT_PREFIX, DEF_PREFIX, type RepoFile, type RepoModel, type ValidationIssue } from './repo.ts';
-import type { DiffEntry, GitContext } from './git.ts';
 
 const SCHEMA_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'schema', 'dictionary-entry.schema.json');
 
 /**
  * Internal references that must be version-pinned to a published file (R5, plan §2.3).
- * Exempt by design: isVersionOf (names the concept), isDefinedBy (names the dictionary).
+ * Exempt by design: isDefinedBy (names the dictionary), replaces (its own check 4 — it
+ * additionally forbids forks, which plain pinning doesn't express).
  */
 const PINNED_URI_FIELDS = ['unit', 'quantityKind', 'coherentSiUnit', 'itemType'] as const;
 
 function defUuid(uri: unknown): string | undefined {
   if (typeof uri !== 'string' || !uri.startsWith(DEF_PREFIX)) return undefined;
   const rest = uri.slice(DEF_PREFIX.length);
-  return rest.includes('/') ? undefined : rest;
-}
-
-function conceptUuid(uri: unknown): string | undefined {
-  if (typeof uri !== 'string' || !uri.startsWith(CONCEPT_PREFIX)) return undefined;
-  const rest = uri.slice(CONCEPT_PREFIX.length);
   return rest.includes('/') ? undefined : rest;
 }
 
@@ -95,46 +90,40 @@ export function checkIdentity(repo: RepoModel): ValidationIssue[] {
   return issues;
 }
 
-/** Check 4 — isVersionOf resolves to a concept file, version unique per concept, replaces resolves within the concept. */
-export function checkVersionChain(repo: RepoModel): ValidationIssue[] {
+/**
+ * Check 4 — replaces integrity. `replaces` (if present) must resolve to an existing
+ * published entry, and at most one published entry may replace any given target — a fork
+ * would make "current" (nothing replaces me) ambiguous. No forward-only check is needed:
+ * `replaces` can only name something already published, and published entries never
+ * change, so a cycle is structurally impossible.
+ */
+export function checkReplaces(repo: RepoModel): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const check = '4 version-chain';
-  const conceptFiles = new Set(repo.concepts.map((f) => f.stem));
-  const publishedByUuid = new Map<string, RepoFile>(repo.published.map((f) => [f.stem, f]));
-  const versionsPerConcept = new Map<string, Map<string, string>>();
+  const check = '4 replaces';
+  const publishedUuids = new Set(repo.published.map((f) => f.stem));
+  const claimedBy = new Map<string, string>(); // target uuid -> first file that replaces it
 
   for (const file of repo.published) {
     if (!file.doc) continue;
-    const isVersionOf = file.doc.isVersionOf;
-
-    const cUuid = conceptUuid(isVersionOf);
-    if (cUuid === undefined) {
-      issues.push({ check, file: file.relPath, message: `isVersionOf "${String(isVersionOf)}" is not canonical (${CONCEPT_PREFIX}<uuid>)` });
-    } else if (!conceptFiles.has(cUuid)) {
-      issues.push({ check, file: file.relPath, message: `isVersionOf points to missing concept file concepts/${cUuid}.yaml` });
-    }
-
-    const version = file.doc.version;
-    if (typeof isVersionOf === 'string' && typeof version === 'string') {
-      let versions = versionsPerConcept.get(isVersionOf);
-      if (!versions) versionsPerConcept.set(isVersionOf, (versions = new Map()));
-      const other = versions.get(version);
-      if (other !== undefined) {
-        issues.push({ check, file: file.relPath, message: `version "${version}" already used by ${other} for the same concept` });
-      } else {
-        versions.set(version, file.relPath);
-      }
-    }
-
     const replaces = file.doc.replaces;
-    if (replaces !== undefined) {
-      const rUuid = defUuid(replaces);
-      const target = rUuid === undefined ? undefined : publishedByUuid.get(rUuid);
-      if (!target?.doc) {
-        issues.push({ check, file: file.relPath, message: `replaces "${String(replaces)}" does not resolve to a published entry` });
-      } else if (target.doc.isVersionOf !== isVersionOf) {
-        issues.push({ check, file: file.relPath, message: `replaces "${String(replaces)}" belongs to a different concept` });
-      }
+    if (replaces === undefined) continue;
+
+    if (replaces === file.doc.id) {
+      issues.push({ check, file: file.relPath, message: 'replaces its own id' });
+      continue;
+    }
+
+    const targetUuid = defUuid(replaces);
+    if (targetUuid === undefined || !publishedUuids.has(targetUuid)) {
+      issues.push({ check, file: file.relPath, message: `replaces "${String(replaces)}" does not resolve to a published entry` });
+      continue;
+    }
+
+    const first = claimedBy.get(targetUuid);
+    if (first !== undefined) {
+      issues.push({ check, file: file.relPath, message: `replaces "${String(replaces)}", but ${first} already does — at most one entry may replace a given entry` });
+    } else {
+      claimedBy.set(targetUuid, file.relPath);
     }
   }
   return issues;
@@ -192,120 +181,8 @@ export function checkImmutability(diff: DiffEntry[]): ValidationIssue[] {
     issues.push({
       check: '1 immutability',
       file: entry.path,
-      message: `published file ${verb} — published/ is add-only (R6); publish a new version instead`,
+      message: `published file ${verb} — published/ is add-only (R6); publish a new entry with replaces instead`,
     });
-  }
-  return issues;
-}
-
-interface VersionRecord {
-  entry?: unknown;
-  version?: unknown;
-  status?: unknown;
-  replacedBy?: unknown;
-}
-
-const STATUS_RANK: Record<string, number> = { active: 0, deprecated: 1, tombstoned: 2 };
-
-function conceptRecords(doc: Record<string, unknown>): VersionRecord[] {
-  return Array.isArray(doc.versions) ? (doc.versions as VersionRecord[]) : [];
-}
-
-/**
- * Check 6 — concept consistency. Static rules always run; the append-only rules
- * (records never removed, transitions forward-only) need the base version via git.
- */
-export function checkConceptConsistency(repo: RepoModel, git?: GitContext): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const check = '6 concept-consistency';
-  const publishedById = new Map(repo.published.filter((f) => f.doc).map((f) => [String(f.doc!.id), f]));
-
-  for (const concept of repo.concepts) {
-    if (!concept.doc) continue;
-    const conceptUri = `${CONCEPT_PREFIX}${concept.stem}`;
-    const records = conceptRecords(concept.doc);
-    if (!Array.isArray(concept.doc.versions)) {
-      issues.push({ check, file: concept.relPath, message: 'versions[] missing or not a list' });
-    }
-
-    // every published version of this concept appears exactly once in versions[]
-    const counts = new Map<string, number>();
-    for (const rec of records) counts.set(String(rec.entry), (counts.get(String(rec.entry)) ?? 0) + 1);
-    for (const entry of repo.published) {
-      if (!entry.doc || entry.doc.isVersionOf !== conceptUri) continue;
-      const n = counts.get(String(entry.doc.id)) ?? 0;
-      if (n !== 1) {
-        issues.push({ check, file: concept.relPath, message: `published version ${String(entry.doc.id)} appears ${n} times in versions[] (must be exactly once)` });
-      }
-    }
-
-    // records resolve to published entries of this concept, with matching version
-    for (const rec of records) {
-      const target = publishedById.get(String(rec.entry));
-      if (!target?.doc) {
-        issues.push({ check, file: concept.relPath, message: `versions[] entry "${String(rec.entry)}" does not resolve to a published file` });
-        continue;
-      }
-      if (target.doc.isVersionOf !== conceptUri) {
-        issues.push({ check, file: concept.relPath, message: `versions[] entry "${String(rec.entry)}" belongs to a different concept` });
-      }
-      if (String(rec.version) !== String(target.doc.version)) {
-        issues.push({ check, file: concept.relPath, message: `versions[] record for "${String(rec.entry)}" says version "${String(rec.version)}" but the entry says "${String(target.doc.version)}"` });
-      }
-      if (rec.status === 'tombstoned' && rec.replacedBy === undefined) {
-        issues.push({ check, file: concept.relPath, message: `tombstoned record "${String(rec.entry)}" has no replacedBy` });
-      }
-      if (typeof rec.status === 'string' && !(rec.status in STATUS_RANK)) {
-        issues.push({ check, file: concept.relPath, message: `record "${String(rec.entry)}" has unknown status "${rec.status}"` });
-      }
-    }
-
-    // exactly one active; currentVersion exists and is that active record
-    const active = records.filter((r) => r.status === 'active');
-    if (active.length !== 1) {
-      issues.push({ check, file: concept.relPath, message: `expected exactly one active version, found ${active.length}` });
-    }
-    const current = concept.doc.currentVersion;
-    if (current === undefined) {
-      issues.push({ check, file: concept.relPath, message: 'currentVersion missing' });
-    } else if (!records.some((r) => String(r.entry) === String(current) && r.status === 'active')) {
-      issues.push({ check, file: concept.relPath, message: `currentVersion "${String(current)}" is not an active record in versions[]` });
-    }
-  }
-
-  // append-only rules against the base (needs git)
-  if (git) {
-    for (const entry of git.diff) {
-      if (!entry.path.startsWith('concepts/')) continue;
-      if (entry.status === 'D') {
-        issues.push({ check, file: entry.path, message: 'concept file deleted — concept resources are append-only' });
-        continue;
-      }
-      if (entry.status !== 'M') continue;
-      const baseText = git.readBaseFile(entry.path);
-      if (baseText === undefined) continue;
-      let baseDoc: Record<string, unknown>;
-      try {
-        baseDoc = parse(baseText) as Record<string, unknown>;
-      } catch {
-        continue; // base was unparseable; nothing to compare against
-      }
-      const current = repo.concepts.find((f) => f.relPath === entry.path);
-      if (!current?.doc) continue;
-      const newRecords = new Map(conceptRecords(current.doc).map((r) => [String(r.entry), r]));
-      for (const oldRec of conceptRecords(baseDoc)) {
-        const newRec = newRecords.get(String(oldRec.entry));
-        if (!newRec) {
-          issues.push({ check, file: entry.path, message: `version record "${String(oldRec.entry)}" was removed — versions[] is append-only` });
-          continue;
-        }
-        const oldRank = STATUS_RANK[String(oldRec.status)] ?? 0;
-        const newRank = STATUS_RANK[String(newRec.status)] ?? 0;
-        if (newRank < oldRank) {
-          issues.push({ check, file: entry.path, message: `record "${String(oldRec.entry)}" moved backward ${String(oldRec.status)} → ${String(newRec.status)} (transitions are forward-only)` });
-        }
-      }
-    }
   }
   return issues;
 }
@@ -329,13 +206,13 @@ function withoutId(doc: Record<string, unknown>): Record<string, unknown> {
 }
 
 /**
- * Check 7 — move purity: a draft deleted while published files are added must reappear
+ * Check 6 — move purity: a draft deleted while published files are added must reappear
  * as one of those published files, content-identical apart from the minted id.
  * Deleting a draft without publishing anything is a legitimate withdrawal.
  */
 export function checkMovePurity(repo: RepoModel, git: GitContext): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const check = '7 move-purity';
+  const check = '6 move-purity';
   const deletedDrafts = git.diff.filter((e) => e.status === 'D' && e.path.startsWith('drafts/'));
   const addedPublished = new Set(git.diff.filter((e) => e.status === 'A' && e.path.startsWith('published/')).map((e) => e.path));
   if (deletedDrafts.length === 0 || addedPublished.size === 0) return issues;
@@ -370,7 +247,7 @@ export interface CheckResult {
   skipped?: string;
 }
 
-/** Run all validate.ts checks (1–7). Checks 1, 6 (append-only rules), 7 need a git context. Check 8 lives in CI. */
+/** Run all validate.ts checks (1–6). Checks 1 and 6 need a git context. Check 7 (two-yes gate) lives in CI only. */
 export function runChecks(repo: RepoModel, git?: GitContext): CheckResult[] {
   const noGit = 'no git context (base unresolvable or root is not a work-tree top level)';
   return [
@@ -380,11 +257,10 @@ export function runChecks(repo: RepoModel, git?: GitContext): CheckResult[] {
       : { name: 'check 1 — immutability', issues: [], skipped: noGit },
     { name: 'check 2 — schema', issues: checkSchema(repo) },
     { name: 'check 3 — identity', issues: checkIdentity(repo) },
-    { name: 'check 4 — version chain', issues: checkVersionChain(repo) },
+    { name: 'check 4 — replaces', issues: checkReplaces(repo) },
     { name: 'check 5 — pinning', issues: checkPinning(repo) },
-    { name: 'check 6 — concept consistency', issues: checkConceptConsistency(repo, git) },
     git
-      ? { name: 'check 7 — move purity', issues: checkMovePurity(repo, git) }
-      : { name: 'check 7 — move purity', issues: [], skipped: noGit },
+      ? { name: 'check 6 — move purity', issues: checkMovePurity(repo, git) }
+      : { name: 'check 6 — move purity', issues: [], skipped: noGit },
   ];
 }

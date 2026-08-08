@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 // Minting helper for publish-entry (plan §2.6, §4 M5): mint a UUIDv4, move
 // drafts/<shortName>.yaml -> published/<uuid>.yaml, rewriting only `id`.
-// Everything else about the file is untouched — check 7 (move purity) depends on that.
+// Everything else about the file is untouched — check 6 (move purity) depends on that.
 // Usage: npm run mint -- drafts/<shortName>.yaml
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -37,7 +37,7 @@ function main(): void {
   }
   const { uuid, publishedPath } = mint(draftPath);
   console.log(`minted ${uuid}`);
-  console.log(`wrote ${publishedPath} — now: git rm ${draftPath} && update concepts/, then git add`);
+  console.log(`wrote ${publishedPath} — now: git rm ${draftPath}, then git add and open the publish PR`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main();
