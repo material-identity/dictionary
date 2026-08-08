@@ -1,6 +1,4 @@
 id: https://material-identity.eu/def/7e193aef-7ad1-4099-8492-ee160ae26717
-isVersionOf: https://material-identity.eu/concept/4de87dd7-d5f4-4994-a0b8-2934eb1cd601
-version: "1"
 isDefinedBy: https://material-identity.eu/
 objectType: SingleValuedDataElement
 shortName: tensileStrength
