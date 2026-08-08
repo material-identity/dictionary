@@ -8,6 +8,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadRepo } from './lib/repo.ts';
 import { canonicalJson } from './lib/emit.ts';
 import { RefIndex, renderEntryPage, renderIndexPages } from './lib/render.ts';
+import { renderFeed } from './lib/feed.ts';
+import { getAddedDates } from './lib/git.ts';
 
 const LIB_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -38,6 +40,7 @@ export function build(root: string, out: string): BuildResult {
   for (const page of renderIndexPages(repo, refs)) {
     writeFileSync(join(out, page.name), page.html);
   }
+  writeFileSync(join(out, 'feed.xml'), renderFeed(repo, getAddedDates(root)));
   return { entries, out };
 }
 

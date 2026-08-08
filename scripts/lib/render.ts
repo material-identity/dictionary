@@ -10,12 +10,12 @@ export function esc(s: unknown): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-interface Doc {
+export interface Doc {
   [k: string]: unknown;
 }
 
-const lang = (v: unknown): Record<string, string> => (v && typeof v === 'object' ? (v as Record<string, string>) : {});
-const en = (v: unknown): string | undefined => lang(v).en;
+export const lang = (v: unknown): Record<string, string> => (v && typeof v === 'object' ? (v as Record<string, string>) : {});
+export const en = (v: unknown): string | undefined => lang(v).en;
 
 /** Resolves labels and hrefs for internal references, and who (if anyone) supersedes an entry. */
 export class RefIndex {
@@ -64,11 +64,14 @@ export class RefIndex {
  * which host served the bytes, so any crawler or tool consolidates there instead of treating
  * the Pages/materialidentity.org copy as authoritative.
  */
-function pageShell(title: string, canonicalPath: string, alternateJson: string | undefined, body: string): string {
+function pageShell(title: string, canonicalPath: string, body: string, options: { alternateJson?: string; rssFeed?: boolean } = {}): string {
   const canonicalUrl = `${CANONICAL_BASE}${canonicalPath}`;
-  const alternate = alternateJson === undefined
+  const alternate = options.alternateJson === undefined
     ? ''
-    : `\n<link rel="alternate" type="application/json" href="${esc(alternateJson)}">`;
+    : `\n<link rel="alternate" type="application/json" href="${esc(options.alternateJson)}">`;
+  const rss = options.rssFeed
+    ? `\n<link rel="alternate" type="application/rss+xml" title="material-identity dictionary" href="/feed.xml">`
+    : '';
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -76,7 +79,7 @@ function pageShell(title: string, canonicalPath: string, alternateJson: string |
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <link rel="canonical" href="${esc(canonicalUrl)}">
-<link rel="stylesheet" href="/styles.css">${alternate}
+<link rel="stylesheet" href="/styles.css">${alternate}${rss}
 </head>
 <body>
 <main>
@@ -163,7 +166,7 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
 <p class="links"><a href="/def/${esc(file.stem)}.json">Raw JSON</a></p>
 <table class="fields"><tbody>${rows.join('\n')}</tbody></table>`;
 
-  return pageShell(title, `/def/${file.stem}`, `/def/${file.stem}.json`, body);
+  return pageShell(title, `/def/${file.stem}`, body, { alternateJson: `/def/${file.stem}.json` });
 }
 
 export const INDEX_PAGE_SIZE = 25;
@@ -210,6 +213,6 @@ ${rows}
 </table>${nav}`;
 
     const canonicalPath = page === 1 ? '/' : `/${pageName(page)}`;
-    return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, undefined, body) };
+    return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, body, { rssFeed: true }) };
   });
 }
