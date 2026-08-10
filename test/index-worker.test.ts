@@ -51,6 +51,15 @@ test('exactly 25 entries stay on one page; empty repo still renders an index', (
   assert.match(empty[0].html, /0 current entries/);
 });
 
+test('every index/pagination page links to request-a-new-entry and the GitHub repo (#54)', () => {
+  const repo = syntheticRepo(INDEX_PAGE_SIZE + 1);
+  const pages = renderIndexPages(repo, new RefIndex(repo));
+  for (const page of pages) {
+    assert.match(page.html, /<a href="https:\/\/github\.com\/material-identity\/dictionary\/issues\/new\?template=dictionary-request\.yml">Request a new entry<\/a>/);
+    assert.match(page.html, /<a href="https:\/\/github\.com\/material-identity\/dictionary">View source \/ contribute on GitHub<\/a>/);
+  }
+});
+
 test('a superseded entry is excluded from the index, even though it is still published', () => {
   const repo = syntheticRepo(2);
   // entry01 replaces entry00 → entry00 must not appear in the index
