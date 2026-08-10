@@ -1,0 +1,11 @@
+id: https://material-identity.eu/def/2f3de2bb-0588-4513-bfc3-41d021815a81
+isDefinedBy: https://material-identity.eu/
+objectType: DataElementCollection
+shortName: mechanicalProperties
+preferredName:
+  en: Mechanical properties
+definition:
+  en: Collection of mechanical property values determined by tensile testing.
+elements:
+  - dictionaryReference: https://material-identity.eu/def/c38a85eb-1a37-416d-ab21-7ddcc599754d
+    isMandatory: true

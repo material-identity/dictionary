@@ -1,19 +1,20 @@
 #!/usr/bin/env tsx
-// Build (plan §4 M3): repo model → site/ — canonical JSON + human HTML per entry and
-// concept, one stylesheet. Deterministic transform, no network, content never altered.
-// Usage: npm run build [-- --root <dir>] [-- --out <dir>]
+// Build (plan §4 M3, redesigned per issue #57): repo model → site/ — canonical JSON +
+// human HTML per entry, one stylesheet. Deterministic transform, no network, content
+// never altered. Usage: npm run build [-- --root <dir>] [-- --out <dir>]
 import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadRepo } from './lib/repo.ts';
 import { canonicalJson } from './lib/emit.ts';
-import { RefIndex, renderConceptPage, renderEntryPage, renderIndexPages } from './lib/render.ts';
+import { RefIndex, renderEntryPage, renderIndexPages } from './lib/render.ts';
+import { renderFeed } from './lib/feed.ts';
+import { getAddedDates } from './lib/git.ts';
 
 const LIB_DIR = dirname(fileURLToPath(import.meta.url));
 
 export interface BuildResult {
   entries: number;
-  concepts: number;
   out: string;
 }
 
@@ -27,7 +28,6 @@ export function build(root: string, out: string): BuildResult {
 
   rmSync(out, { recursive: true, force: true });
   mkdirSync(join(out, 'def'), { recursive: true });
-  mkdirSync(join(out, 'concept'), { recursive: true });
   cpSync(join(LIB_DIR, 'lib', 'styles.css'), join(out, 'styles.css'));
 
   let entries = 0;
@@ -37,17 +37,11 @@ export function build(root: string, out: string): BuildResult {
     writeFileSync(join(out, 'def', `${file.stem}.html`), renderEntryPage(file, repo, refs));
     entries += 1;
   }
-  let concepts = 0;
-  for (const file of repo.concepts) {
-    if (!file.doc) continue;
-    writeFileSync(join(out, 'concept', `${file.stem}.json`), canonicalJson(file.doc));
-    writeFileSync(join(out, 'concept', `${file.stem}.html`), renderConceptPage(file, refs));
-    concepts += 1;
-  }
   for (const page of renderIndexPages(repo, refs)) {
     writeFileSync(join(out, page.name), page.html);
   }
-  return { entries, concepts, out };
+  writeFileSync(join(out, 'feed.xml'), renderFeed(repo, getAddedDates(root)));
+  return { entries, out };
 }
 
 function flagValue(args: string[], flag: string): string | undefined {
@@ -60,7 +54,7 @@ function main(): void {
   const root = flagValue(args, '--root') ?? process.cwd();
   const out = flagValue(args, '--out') ?? join(root, 'site');
   const result = build(root, out);
-  console.log(`built ${result.entries} entries and ${result.concepts} concepts into ${result.out}`);
+  console.log(`built ${result.entries} entries into ${result.out}`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

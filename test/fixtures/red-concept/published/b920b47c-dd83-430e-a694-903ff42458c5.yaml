@@ -1,9 +1,0 @@
-id: https://material-identity.eu/def/b920b47c-dd83-430e-a694-903ff42458c5
-isVersionOf: https://material-identity.eu/concept/bf06ba32-640b-4062-88f7-3f787f59759d
-version: "1"
-isDefinedBy: https://material-identity.eu/
-objectType: SingleValuedDataElement
-shortName: notActive
-preferredName:
-  en: notActive
-valueDataType: xsd:string

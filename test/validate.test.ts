@@ -10,8 +10,8 @@ test('runValidation reports OK for the green tree', () => {
   const { ok, lines } = runValidation(join(fixtures, 'green'));
   assert.equal(ok, true);
   assert.equal(lines.filter((l) => l.startsWith('FAIL')).length, 0);
-  // load + checks 2–6 pass; checks 1 and 7 are skipped (fixture trees have no git context)
-  assert.equal(lines.filter((l) => l.startsWith('ok')).length, 6);
+  // load + checks 2–5 pass; checks 1 and 6 are skipped (fixture trees have no git context)
+  assert.equal(lines.filter((l) => l.startsWith('ok')).length, 5);
   assert.equal(lines.filter((l) => l.startsWith('skip')).length, 2);
 });
 
@@ -20,7 +20,7 @@ test('runValidation reports failure with file and message for a red tree', () =>
   assert.equal(ok, false);
   const output = lines.join('\n');
   assert.match(output, /FAIL\s+check 5 — pinning/);
-  assert.match(output, /published\/3bf4310f-181c-4bc7-9fb8-83f08b55a1bb\.yaml/);
+  assert.match(output, /published\/a10d88e9-6140-41b2-bc96-782abf0ce6db\.yaml/);
   assert.match(output, /ok\s+check 2 — schema/);
 });
 

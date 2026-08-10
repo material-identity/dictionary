@@ -1,0 +1,9 @@
+id: https://material-identity.eu/def/5ed29113-a426-4b6d-a790-e6c8268b9e52
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: EAF
+preferredName:
+  en: Electric arc furnace
+  de: Elektrolichtbogenofen
+definition:
+  en: Steelmaking in which the charge is melted primarily by an electric arc.

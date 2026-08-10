@@ -1,32 +1,35 @@
 /**
- * HTML rendering (plan §4 M3 item 1): template literals only, no framework, no
- * client-side JS. Internal references render as links with resolved labels; the
- * status banner is read from the concept resource — the entry carries no status.
+ * HTML rendering (plan §4 M3 item 1, redesigned per issue #57): template literals only, no
+ * framework, no client-side JS. Internal references render as links with resolved labels.
+ * "Superseded" is never stored — derived here by reverse-scanning `replaces` across
+ * published/ and shown purely as presentation (a banner), never written back to any file.
  */
-import { CANONICAL_BASE, CONCEPT_PREFIX, DEF_PREFIX, type RepoFile, type RepoModel } from './repo.ts';
+import { CANONICAL_BASE, DEF_PREFIX, type RepoFile, type RepoModel } from './repo.ts';
 
 export function esc(s: unknown): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-interface Doc {
+export interface Doc {
   [k: string]: unknown;
 }
 
-const lang = (v: unknown): Record<string, string> => (v && typeof v === 'object' ? (v as Record<string, string>) : {});
-const en = (v: unknown): string | undefined => lang(v).en;
+export const lang = (v: unknown): Record<string, string> => (v && typeof v === 'object' ? (v as Record<string, string>) : {});
+export const en = (v: unknown): string | undefined => lang(v).en;
 
-/** Resolves labels and hrefs for internal references. */
+/** Resolves labels and hrefs for internal references, and who (if anyone) supersedes an entry. */
 export class RefIndex {
   private published = new Map<string, Doc>();
-  private concepts = new Map<string, Doc>();
+  private supersededBy = new Map<string, Doc>(); // target entry id -> the entry that replaces it
 
   constructor(repo: RepoModel) {
     for (const f of repo.published) if (f.doc) this.published.set(f.stem, f.doc);
-    for (const f of repo.concepts) if (f.doc) this.concepts.set(f.stem, f.doc);
+    for (const doc of this.published.values()) {
+      if (typeof doc.replaces === 'string') this.supersededBy.set(doc.replaces, doc);
+    }
   }
 
-  /** An <a> for any URI: internal def/concept URIs get resolved labels and site-relative hrefs. */
+  /** An <a> for any URI: internal def URIs get a resolved label and a site-relative href. */
   link(uri: unknown): string {
     const s = String(uri);
     if (s.startsWith(DEF_PREFIX)) {
@@ -35,25 +38,16 @@ export class RefIndex {
       const label = en(target?.preferredName) ?? (target?.shortName as string | undefined) ?? uuid;
       return `<a href="/def/${esc(uuid)}">${esc(label)}</a>`;
     }
-    if (s.startsWith(CONCEPT_PREFIX)) {
-      const uuid = s.slice(CONCEPT_PREFIX.length);
-      const target = this.concepts.get(uuid);
-      const label = en(target?.preferredName) ?? (target?.shortName as string | undefined) ?? uuid;
-      return `<a href="/concept/${esc(uuid)}">${esc(label)}</a>`;
-    }
     return `<a href="${esc(s)}" rel="external">${esc(s)}</a>`;
   }
 
-  conceptFor(entry: Doc): Doc | undefined {
-    const uri = String(entry.isVersionOf ?? '');
-    return uri.startsWith(CONCEPT_PREFIX) ? this.concepts.get(uri.slice(CONCEPT_PREFIX.length)) : undefined;
+  /** The entry that replaces this one, if any — derived, never stored. */
+  supersededByEntry(entry: Doc): Doc | undefined {
+    return this.supersededBy.get(String(entry.id));
   }
 
-  /** The entry's lifecycle record from its concept's versions[] — the only place status lives. */
-  recordFor(entry: Doc): Doc | undefined {
-    const concept = this.conceptFor(entry);
-    const records = Array.isArray(concept?.versions) ? (concept.versions as Doc[]) : [];
-    return records.find((r) => String(r.entry) === String(entry.id));
+  isSuperseded(entry: Doc): boolean {
+    return this.supersededBy.has(String(entry.id));
   }
 }
 
@@ -70,11 +64,14 @@ export class RefIndex {
  * which host served the bytes, so any crawler or tool consolidates there instead of treating
  * the Pages/materialidentity.org copy as authoritative.
  */
-function pageShell(title: string, canonicalPath: string, alternateJson: string | undefined, body: string): string {
+function pageShell(title: string, canonicalPath: string, body: string, options: { alternateJson?: string; rssFeed?: boolean } = {}): string {
   const canonicalUrl = `${CANONICAL_BASE}${canonicalPath}`;
-  const alternate = alternateJson === undefined
+  const alternate = options.alternateJson === undefined
     ? ''
-    : `\n<link rel="alternate" type="application/json" href="${esc(alternateJson)}">`;
+    : `\n<link rel="alternate" type="application/json" href="${esc(options.alternateJson)}">`;
+  const rss = options.rssFeed
+    ? `\n<link rel="alternate" type="application/rss+xml" title="material-identity dictionary" href="/feed.xml">`
+    : '';
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -82,7 +79,7 @@ function pageShell(title: string, canonicalPath: string, alternateJson: string |
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <link rel="canonical" href="${esc(canonicalUrl)}">
-<link rel="stylesheet" href="/styles.css">${alternate}
+<link rel="stylesheet" href="/styles.css">${alternate}${rss}
 </head>
 <body>
 <main>
@@ -109,16 +106,11 @@ function row(label: string, valueHtml: string): string {
   return `<tr><th scope="row">${esc(label)}</th><td>${valueHtml}</td></tr>`;
 }
 
-/** Status banner sourced from the concept's versions[] — never from the entry. */
+/** Banner for a superseded entry — sourced from the reverse `replaces` lookup, never the entry itself. */
 export function statusBanner(entry: Doc, refs: RefIndex): string {
-  const record = refs.recordFor(entry);
-  if (!record || record.status === 'active') return '';
-  if (record.status === 'tombstoned') {
-    const when = record.deprecatedOn !== undefined ? ` on ${esc(record.deprecatedOn)}` : '';
-    const successor = record.replacedBy !== undefined ? ` Superseded by ${refs.link(record.replacedBy)}.` : '';
-    return `<div class="banner tombstoned">This version was tombstoned${when}.${successor} It remains resolvable forever; do not use it for new passports.</div>`;
-  }
-  return `<div class="banner deprecated">This version is deprecated — discouraged for new passports, not superseded.</div>`;
+  const successor = refs.supersededByEntry(entry);
+  if (!successor) return '';
+  return `<div class="banner superseded">Superseded by ${refs.link(successor.id)}. This entry remains resolvable forever, byte-identical to its publication; do not use it for new passports.</div>`;
 }
 
 export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex): string {
@@ -127,8 +119,6 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
   const rows: string[] = [];
 
   rows.push(row('id', `<a href="/def/${esc(file.stem)}">${esc(doc.id)}</a>`));
-  if (doc.isVersionOf !== undefined) rows.push(row('isVersionOf', refs.link(doc.isVersionOf)));
-  if (doc.version !== undefined) rows.push(row('version', esc(doc.version)));
   if (doc.replaces !== undefined) rows.push(row('replaces', refs.link(doc.replaces)));
   rows.push(row('isDefinedBy', `<a href="${esc(doc.isDefinedBy)}" rel="external">${esc(doc.isDefinedBy)}</a>`));
   rows.push(row('objectType', `<code>${esc(doc.objectType)}</code>`));
@@ -172,22 +162,24 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
 
   const body = `${statusBanner(doc, refs)}
 <h1>${esc(title)}</h1>
-<p class="meta"><code>${esc(doc.shortName ?? '')}</code> · ${esc(doc.objectType)} · version ${esc(doc.version ?? '—')}</p>
-<p class="links"><a href="/def/${esc(file.stem)}.json">Raw JSON</a>${doc.isVersionOf !== undefined ? ` · concept: ${refs.link(doc.isVersionOf)}` : ''}</p>
+<p class="meta"><code>${esc(doc.shortName ?? '')}</code> · ${esc(doc.objectType)}</p>
+<p class="links"><a href="/def/${esc(file.stem)}.json">Raw JSON</a></p>
 <table class="fields"><tbody>${rows.join('\n')}</tbody></table>`;
 
-  return pageShell(title, `/def/${file.stem}`, `/def/${file.stem}.json`, body);
+  return pageShell(title, `/def/${file.stem}`, body, { alternateJson: `/def/${file.stem}.json` });
 }
 
 export const INDEX_PAGE_SIZE = 25;
 
 /**
- * Paginated index (plan §4 M4 item 1): 25 entries per page, static pagination —
- * index.html, page-2.html, …. Current status comes from the concept resource.
+ * Paginated index (plan §4 M4 item 1, redesigned per issue #57): 25 entries per page,
+ * static pagination — index.html, page-2.html, …. Lists only current entries — anything
+ * superseded (derived, never stored) is omitted; it stays reachable from its successor's
+ * page and by its own fixed URI, just not listed here.
  */
 export function renderIndexPages(repo: RepoModel, refs: RefIndex): Array<{ name: string; html: string }> {
   const entries = repo.published
-    .filter((f) => f.doc)
+    .filter((f) => f.doc && !refs.isSuperseded(f.doc))
     .map((f) => {
       const doc = f.doc as Doc;
       return { stem: f.stem, doc, label: en(doc.preferredName) ?? String(doc.shortName ?? f.stem) };
@@ -199,15 +191,11 @@ export function renderIndexPages(repo: RepoModel, refs: RefIndex): Array<{ name:
 
   return Array.from({ length: pageCount }, (_, i) => {
     const page = i + 1;
-    const rows = entries.slice(i * INDEX_PAGE_SIZE, page * INDEX_PAGE_SIZE).map(({ stem, doc, label }) => {
-      const status = String(refs.recordFor(doc)?.status ?? '—');
-      return `<tr>
+    const rows = entries.slice(i * INDEX_PAGE_SIZE, page * INDEX_PAGE_SIZE).map(({ stem, doc, label }) => `<tr>
 <td><a href="/def/${esc(stem)}">${esc(label)}</a></td>
 <td><code>${esc(doc.shortName ?? '')}</code></td>
 <td>${esc(doc.objectType)}</td>
-<td><span class="status ${esc(status)}">${esc(status)}</span></td>
-</tr>`;
-    }).join('\n');
+</tr>`).join('\n');
 
     const nav = pageCount === 1 ? '' : `\n<nav class="pages">${[
       page > 1 ? `<a href="/${pageName(page - 1)}">← previous</a>` : '',
@@ -216,44 +204,15 @@ export function renderIndexPages(repo: RepoModel, refs: RefIndex): Array<{ name:
     ].filter(Boolean).join(' · ')}</nav>`;
 
     const body = `<h1>Dictionary index</h1>
-<p class="meta">${entries.length} published ${entries.length === 1 ? 'entry' : 'entries'} · immutable versions at <code>https://material-identity.eu/def/&lt;uuid&gt;</code></p>
+<p class="meta">${entries.length} current ${entries.length === 1 ? 'entry' : 'entries'} · immutable, permanent versions at <code>https://material-identity.eu/def/&lt;uuid&gt;</code></p>
 <table class="versions">
-<thead><tr><th>preferredName (en)</th><th>shortName</th><th>objectType</th><th>status</th></tr></thead>
+<thead><tr><th>preferredName (en)</th><th>shortName</th><th>objectType</th></tr></thead>
 <tbody>
 ${rows}
 </tbody>
 </table>${nav}`;
 
     const canonicalPath = page === 1 ? '/' : `/${pageName(page)}`;
-    return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, undefined, body) };
+    return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, body, { rssFeed: true }) };
   });
-}
-
-export function renderConceptPage(file: RepoFile, refs: RefIndex): string {
-  const doc = file.doc as Doc;
-  const title = `${en(doc.preferredName) ?? String(doc.shortName ?? file.stem)} (concept)`;
-  const records = Array.isArray(doc.versions) ? (doc.versions as Doc[]) : [];
-  const rows = records.map((r) => `<tr>
-<td>${esc(r.version)}</td>
-<td>${refs.link(r.entry)}</td>
-<td><span class="status ${esc(r.status)}">${esc(r.status)}</span></td>
-<td>${r.deprecatedOn !== undefined ? esc(r.deprecatedOn) : '—'}</td>
-<td>${r.replacedBy !== undefined ? refs.link(r.replacedBy) : '—'}</td>
-</tr>`).join('\n');
-
-  const body = `<h1>${esc(title)}</h1>
-<p class="meta"><code>${esc(doc.shortName ?? '')}</code> · Concept · <a href="/concept/${esc(file.stem)}.json">Raw JSON</a></p>
-<table class="fields"><tbody>
-${row('id', `<a href="/concept/${esc(file.stem)}">${esc(doc.id)}</a>`)}
-${row('currentVersion', refs.link(doc.currentVersion))}
-</tbody></table>
-<h2>Versions</h2>
-<table class="versions">
-<thead><tr><th>version</th><th>entry</th><th>status</th><th>deprecated on</th><th>replaced by</th></tr></thead>
-<tbody>
-${rows}
-</tbody>
-</table>`;
-
-  return pageShell(title, `/concept/${file.stem}`, `/concept/${file.stem}.json`, body);
 }

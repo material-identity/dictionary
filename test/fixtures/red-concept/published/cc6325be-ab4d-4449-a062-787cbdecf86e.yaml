@@ -1,9 +1,0 @@
-id: https://material-identity.eu/def/cc6325be-ab4d-4449-a062-787cbdecf86e
-isVersionOf: https://material-identity.eu/concept/93090eab-43bb-479e-af8b-86ff41ebf496
-version: "2"
-isDefinedBy: https://material-identity.eu/
-objectType: SingleValuedDataElement
-shortName: noReplacedByB
-preferredName:
-  en: noReplacedByB
-valueDataType: xsd:string

@@ -1,0 +1,7 @@
+id: https://dictionary1.eu/def/f185d11e-7506-467f-8d44-a0f96d3d0d28
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: wrongDomain
+preferredName:
+  en: Wrong domain
+valueDataType: xsd:string

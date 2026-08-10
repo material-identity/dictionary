@@ -1,0 +1,11 @@
+id: https://material-identity.eu/def/153842cc-ae4c-4ddc-854d-7676c63a844b
+isDefinedBy: https://material-identity.eu/
+objectType: MeasurementUnit
+shortName: unpinnedConversion
+symbol:
+  en: X
+preferredName:
+  en: Conversion target not published
+conversions:
+  - toUnit: https://material-identity.eu/def/5d9ffc44-aaaa-4a62-9970-01c9ec4b5293
+    factor: 10.0

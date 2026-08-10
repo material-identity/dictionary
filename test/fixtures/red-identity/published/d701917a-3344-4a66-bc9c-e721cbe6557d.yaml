@@ -1,0 +1,7 @@
+id: https://material-identity.eu/def/d701917a-3344-4a66-bc9c-e721cbe6557d
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: duplicateA
+preferredName:
+  en: Duplicate id A
+valueDataType: xsd:string

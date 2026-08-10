@@ -1,0 +1,8 @@
+id: https://material-identity.eu/def/4ad8a75f-3f9e-4501-825b-8f442966f68a
+replaces: https://material-identity.eu/def/f31a09eb-bcd4-4d3a-a0e5-e360d68b675b
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: forkA
+preferredName:
+  en: Fork A
+valueDataType: xsd:string

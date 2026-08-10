@@ -1,0 +1,8 @@
+id: https://material-identity.eu/def/a10d88e9-6140-41b2-bc96-782abf0ce6db
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: unpinnedUnit
+preferredName:
+  en: Unit not published
+valueDataType: xsd:float
+unit: https://material-identity.eu/def/27e1fca8-8f99-434a-8388-3963e28c86e1

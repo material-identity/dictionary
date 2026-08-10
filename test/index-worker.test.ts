@@ -1,40 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { loadRepo, DEF_PREFIX, CONCEPT_PREFIX, type RepoModel } from '../scripts/lib/repo.ts';
+import { DEF_PREFIX, type RepoModel } from '../scripts/lib/repo.ts';
 import { RefIndex, renderIndexPages, INDEX_PAGE_SIZE } from '../scripts/lib/render.ts';
-import { build } from '../scripts/build.ts';
 import worker, { decide } from '../worker/index.ts';
 
-const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
-const GREEN = join(fixtures, 'green');
-const MP2 = '450ecc7b-4cb6-4abf-bacb-35661132d321';
-
-// ------------------------------------------------------------------ index (#24)
-
-test('green build emits a single index page with one row per entry, status from concept', () => {
-  const out = mkdtempSync(join(tmpdir(), 'dict-site-'));
-  try {
-    build(GREEN, out);
-    const html = readFileSync(join(out, 'index.html'), 'utf8');
-    assert.equal((html.match(/<tr>\n<td>/g) ?? []).length, 7);
-    assert.match(html, new RegExp(`<a href="/def/${MP2}">Maximum allowable pressure</a>`));
-    assert.match(html, /<span class="status tombstoned">tombstoned<\/span>/); // maxPressure v1
-    assert.match(html, /<span class="status active">active<\/span>/);
-    assert.ok(!html.includes('page-2.html'), 'seven entries fit one page');
-    assert.ok(!/<script/i.test(html));
-  } finally {
-    rmSync(out, { recursive: true, force: true });
-  }
-});
+// ------------------------------------------------------------------ index pagination (#24)
 
 function syntheticRepo(count: number): RepoModel {
   const pad = (i: number): string => String(i).padStart(2, '0');
   const uuid = (i: number): string => `${pad(i)}345678-0000-4000-8000-0000000000${pad(i)}`;
-  const cuuid = (i: number): string => `${pad(i)}345678-0000-4000-8000-1111111111${pad(i)}`;
   const published = Array.from({ length: count }, (_, i) => ({
     dir: 'published' as const,
     name: `${uuid(i)}.yaml`,
@@ -42,8 +16,6 @@ function syntheticRepo(count: number): RepoModel {
     relPath: `published/${uuid(i)}.yaml`,
     doc: {
       id: `${DEF_PREFIX}${uuid(i)}`,
-      isVersionOf: `${CONCEPT_PREFIX}${cuuid(i)}`,
-      version: '1',
       isDefinedBy: 'https://material-identity.eu/',
       objectType: 'SingleValuedDataElement',
       shortName: `entry${pad(i)}`,
@@ -51,22 +23,7 @@ function syntheticRepo(count: number): RepoModel {
       valueDataType: 'xsd:string',
     },
   }));
-  const concepts = published.map((p, i) => ({
-    dir: 'concepts' as const,
-    name: `${cuuid(i)}.yaml`,
-    stem: cuuid(i),
-    relPath: `concepts/${cuuid(i)}.yaml`,
-    doc: {
-      id: `${CONCEPT_PREFIX}${cuuid(i)}`,
-      isDefinedBy: 'https://material-identity.eu/',
-      objectType: 'Concept',
-      shortName: `entry${pad(i)}`,
-      preferredName: { en: `Entry ${pad(i)}` },
-      currentVersion: String(p.doc.id),
-      versions: [{ entry: String(p.doc.id), version: '1', status: 'active' }],
-    },
-  }));
-  return { root: '/synthetic', drafts: [], published, concepts, errors: [] };
+  return { root: '/synthetic', drafts: [], published, errors: [] };
 }
 
 test('index paginates at the 25 boundary: 26 entries → two pages with prev/next nav', () => {
@@ -91,13 +48,24 @@ test('exactly 25 entries stay on one page; empty repo still renders an index', (
   assert.deepEqual(exact.map((p) => p.name), ['index.html']);
   const empty = renderIndexPages(syntheticRepo(0), new RefIndex(syntheticRepo(0)));
   assert.deepEqual(empty.map((p) => p.name), ['index.html']);
-  assert.match(empty[0].html, /0 published entries/);
+  assert.match(empty[0].html, /0 current entries/);
+});
+
+test('a superseded entry is excluded from the index, even though it is still published', () => {
+  const repo = syntheticRepo(2);
+  // entry01 replaces entry00 → entry00 must not appear in the index
+  (repo.published[1].doc as Record<string, unknown>).replaces = repo.published[0].doc.id;
+  const pages = renderIndexPages(repo, new RefIndex(repo));
+  assert.equal(pages.length, 1);
+  assert.ok(!pages[0].html.includes('Entry 00'));
+  assert.match(pages[0].html, /Entry 01/);
+  assert.match(pages[0].html, /1 current entry\b/);
 });
 
 // ------------------------------------------------------------------ worker (#26)
 
 test('decide: JSON is the default; HTML only when Accept names text/html', () => {
-  const uuid = '450ecc7b-4cb6-4abf-bacb-35661132d321';
+  const uuid = 'c38a85eb-1a37-416d-ab21-7ddcc599754d';
 
   const json = decide(`/def/${uuid}`, 'application/json');
   assert.equal(json.originPath, `/def/${uuid}.json`);
@@ -118,21 +86,19 @@ test('decide: JSON is the default; HTML only when Accept names text/html', () =>
   assert.equal(browser.headers.link, `</def/${uuid}>; rel="canonical"`);
 });
 
-test('decide: concept resources get the short cache; everything else passes through', () => {
-  const uuid = 'ca087cb9-f189-41a1-b082-2288eaacd5e7';
-  const concept = decide(`/concept/${uuid}`, 'application/json');
-  assert.equal(concept.originPath, `/concept/${uuid}.json`);
-  assert.equal(concept.headers['cache-control'], 'public, max-age=300');
+test('decide: everything else passes through with a short cache; no /concept route', () => {
+  const uuid = 'c38a85eb-1a37-416d-ab21-7ddcc599754d';
 
   assert.deepEqual(decide('/', 'text/html'), { originPath: '/index.html', headers: { 'cache-control': 'public, max-age=300' } });
   assert.equal(decide('/page-2.html', 'text/html').originPath, '/page-2.html');
   assert.equal(decide('/styles.css', 'text/css').originPath, '/styles.css');
   assert.equal(decide(`/def/${uuid}.json`, '*/*').originPath, `/def/${uuid}.json`); // raw origin file stays reachable
   assert.equal(decide('/def/not-a-uuid', '*/*').originPath, '/def/not-a-uuid'); // no negotiation for non-UUID paths
+  assert.equal(decide(`/concept/${uuid}`, 'application/json').originPath, `/concept/${uuid}`); // no concept resource — plain pass-through
 });
 
 test('worker fetch handler maps to the origin and stamps headers (stubbed origin)', async () => {
-  const uuid = '450ecc7b-4cb6-4abf-bacb-35661132d321';
+  const uuid = 'c38a85eb-1a37-416d-ab21-7ddcc599754d';
   const seen: string[] = [];
   const realFetch = globalThis.fetch;
   globalThis.fetch = (async (input: string | URL | Request) => {

@@ -5,9 +5,8 @@ import { parse } from 'yaml';
 /** Canonical identifier authority (plan §2.3; domain amendment 2026-08-05). */
 export const CANONICAL_BASE = 'https://material-identity.eu';
 export const DEF_PREFIX = `${CANONICAL_BASE}/def/`;
-export const CONCEPT_PREFIX = `${CANONICAL_BASE}/concept/`;
 
-export type RepoDir = 'drafts' | 'published' | 'concepts';
+export type RepoDir = 'drafts' | 'published';
 
 export interface RepoFile {
   dir: RepoDir;
@@ -31,7 +30,6 @@ export interface RepoModel {
   root: string;
   drafts: RepoFile[];
   published: RepoFile[];
-  concepts: RepoFile[];
   /** Load-time problems (unparseable YAML, non-object documents). */
   errors: ValidationIssue[];
 }
@@ -60,14 +58,13 @@ function loadDir(root: string, dir: RepoDir, errors: ValidationIssue[]): RepoFil
   return files;
 }
 
-/** Load drafts/, published/, concepts/ into the single in-memory model all checks and the build consume. */
+/** Load drafts/ and published/ into the single in-memory model all checks and the build consume. */
 export function loadRepo(root: string): RepoModel {
   const errors: ValidationIssue[] = [];
   return {
     root,
     drafts: loadDir(root, 'drafts', errors),
     published: loadDir(root, 'published', errors),
-    concepts: loadDir(root, 'concepts', errors),
     errors,
   };
 }
