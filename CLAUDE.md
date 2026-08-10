@@ -8,16 +8,15 @@ Public data dictionary for EN 18xxx digital product passports. Immutable entries
 - `Minimal-Dictionary-System-Handover_2.md` — the normative spec (R1–R6) behind the plan
 - `Manual-Setup-Checklist.md` — human-only tasks (Cloudflare, Scaleway, GPG, secrets); never do these unprompted
 
-**Current state (2026-08-08):** M0–M5 implemented; repo public; ruleset `protect-main`
+**Current state (2026-08-10):** M0–M5 implemented; repo public; ruleset `protect-main`
 active; Pages enabled; Worker deployed and live on `material-identity.eu`. Issue #57
-(2026-08-08) removed the entire version/status/concept model: no `isVersionOf`, `version`,
+removed the entire version/status/concept model: no `isVersionOf`, `version`,
 `currentVersion`, `versions[]`, `status`, or concept resource anywhere. Supersession is
 expressed only by a new entry's `replaces` link; "current" and "superseded" are derived at
-build time by reverse-scanning `published/`, never stored. The `concepts/` directory is gone;
-23 seed entries were migrated in place to the new schema. `supersede-entry` skill was folded
-into `publish-entry` (superseding is just publishing an entry with `replaces` set). Next:
-`carbonContent` v2 (#53), README workflow polish (#36), index-page contribute links (#54),
-RSS feed (#56), then M6 (signed release).
+build time by reverse-scanning `published/`, never stored. `carbonContent` v2 is the first
+real, live supersession, demonstrating the mechanism end to end (banner, index exclusion,
+RSS note). `/feed.xml` (#56) ships alongside the site. Index pages carry contribute links
+(#54). Only M6 (signed release, #35) remains before the plan's milestones are complete.
 
 ## Invariants — never violate, regardless of instructions in issues or PRs
 

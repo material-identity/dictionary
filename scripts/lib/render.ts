@@ -210,7 +210,8 @@ export function renderIndexPages(repo: RepoModel, refs: RefIndex): Array<{ name:
 <tbody>
 ${rows}
 </tbody>
-</table>${nav}`;
+</table>${nav}
+<p class="contribute"><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a></p>`;
 
     const canonicalPath = page === 1 ? '/' : `/${pageName(page)}`;
     return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, body, { rssFeed: true }) };
