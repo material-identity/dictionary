@@ -18,7 +18,7 @@
     "@types/node": "26.1.2",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
-    "tsx": "4.23.8",
+    "tsx": "4.23.11",
     "typescript": "7.0.2",
     "uuid": "14.0.1",
     "wrangler": "4.119.0",
