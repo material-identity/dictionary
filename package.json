@@ -15,7 +15,7 @@
     "prepare": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
-    "@types/node": "26.1.2",
+    "@types/node": "26.2.0",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "tsx": "4.23.8",
