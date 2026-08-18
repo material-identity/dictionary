@@ -1,25 +1,22 @@
 # Scoped ignores for the pr-checks vulnerability gate (grype reads this file automatically).
 #
-# All findings live in the Go toolchain embedded in esbuild's prebuilt binary
-# (tsx → esbuild, a dev-time bundler; validate/build are offline and never feed it
-# untrusted input). As of 2026-08-15 the latest esbuild (0.28.2) embeds go1.26.5 —
-# still short of the go1.26.6 fix line, which has no stable release yet (only
-# 1.27.0-rc.3). DELETE each entry once an esbuild release embeds a fixed Go
+# Version-scoped, not per-CVE (#68): every finding below lives in the Go toolchain
+# embedded in esbuild's prebuilt binary (tsx → esbuild, a dev-time bundler;
+# validate/build are offline and never feed it untrusted input), pinned at
+# esbuild 0.28.1 as of 2026-08-17. Per-CVE entries (#66) broke again within two
+# days when the vulnerability DB reclassified four "Unknown"-severity findings
+# to High — enumerating IDs cannot keep up with reclassification. Matching by
+# package+version instead (no `vulnerability` field) covers every CVE against
+# these exact versions, known now or found later, and stops applying the moment
+# esbuild bumps either one — so a genuinely new problem at a new version still
+# surfaces. DELETE an entry once esbuild ships a fixed version of that module
 # (ratchet rule, plan §2.7); check manually — Dependabot is disabled (#66).
 ignore:
-  - vulnerability: GO-2026-4970 # Go stdlib go1.26.4, fixed in 1.26.5
-    package:
+  - package:
       type: go-module
       name: stdlib
-  - vulnerability: GO-2026-5970 # golang.org/x/text v0.38.0, fixed in 0.39.0
-    package:
+      version: go1.26.4
+  - package:
       type: go-module
       name: golang.org/x/text
-  - vulnerability: GO-2026-5026 # Go stdlib go1.26.4, fixed in 1.26.6
-    package:
-      type: go-module
-      name: stdlib
-  - vulnerability: GO-2026-5942 # Go stdlib go1.26.4, fixed in 1.26.6
-    package:
-      type: go-module
-      name: stdlib
+      version: v0.38.0
