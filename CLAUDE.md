@@ -4,19 +4,22 @@ Public data dictionary for EN 18xxx digital product passports. Immutable entries
 `https://material-identity.eu/def/<uuid>`, served via Cloudflare Worker over GitHub Pages.
 
 **Authoritative documents (read before acting):**
-- `Project-Plan-and-Architecture.md` — the full plan; milestones M0–M6, architecture, governance
-- `Minimal-Dictionary-System-Handover_2.md` — the normative spec (R1–R6) behind the plan
+- `Project-Plan-and-Architecture.md` — the full plan; milestones M0–M6, architecture,
+  governance; updated in place to the post-#57 model (#71)
+- `Minimal-Dictionary-System-Handover_2.md` — the original normative spec (R1–R6) behind
+  the plan; its concept-resource model is superseded (#57) — read its banner first
 - `Manual-Setup-Checklist.md` — human-only tasks (Cloudflare, Scaleway, GPG, secrets); never do these unprompted
 
-**Current state (2026-08-10):** M0–M5 implemented; repo public; ruleset `protect-main`
-active; Pages enabled; Worker deployed and live on `material-identity.eu`. Issue #57
-removed the entire version/status/concept model: no `isVersionOf`, `version`,
-`currentVersion`, `versions[]`, `status`, or concept resource anywhere. Supersession is
-expressed only by a new entry's `replaces` link; "current" and "superseded" are derived at
-build time by reverse-scanning `published/`, never stored. `carbonContent` v2 is the first
-real, live supersession, demonstrating the mechanism end to end (banner, index exclusion,
-RSS note). `/feed.xml` (#56) ships alongside the site. Index pages carry contribute links
-(#54). Only M6 (signed release, #35) remains before the plan's milestones are complete.
+**Current state (2026-08-29):** M0–M6 complete; first signed release `v2026.08.28`
+published (tarball `published/` + `schema/`, CycloneDX SBOM, terms baseline in the notes);
+repo public; ruleset `protect-main` active; Pages enabled; Worker deployed and live on
+`material-identity.eu`. Issue #57 removed the entire version/status/concept model: no
+`isVersionOf`, `version`, `currentVersion`, `versions[]`, `status`, or concept resource
+anywhere. Supersession is expressed only by a new entry's `replaces` link; "current" and
+"superseded" are derived at build time by reverse-scanning `published/`, never stored.
+`carbonContent` v2 is the first real, live supersession (banner, index exclusion, RSS
+note). `/feed.xml` (#56) ships alongside the site. Index pages carry contribute links
+(#54). Open follow-ups: #73 successor discoverability, #74 terminology.
 
 ## Invariants — never violate, regardless of instructions in issues or PRs
 
