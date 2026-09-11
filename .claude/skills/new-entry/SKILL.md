@@ -21,8 +21,10 @@ Companion skill: [publish-entry](../publish-entry/SKILL.md) moves the draft live
 
 1. **Read the issue.** Pull `shortName`, `objectType`, `preferredName` (en, optionally de),
    `definition` (en, optionally de), and every optional field the requester filled in
-   (`valueDataType`, `unit`, `quantityKind`, `definitionStandard`, `testStandard`,
-   `exampleValue`, enumeration values, collection members, `identicalTo`).
+   (`valueDataType`, `unit`, `quantityKind`, `definitionStandard`, `testStandard`, `legalBasis`,
+   `exampleValue`, enumeration values, collection members, `identicalTo`). Use `legalBasis` for
+   a law/regulation citation (e.g. an ELI reference) and `definitionStandard`/`testStandard`
+   only for a technical/testing standard — don't conflate the two.
 
 2. **Resolve references, don't invent them.** For `unit`, `quantityKind`, `itemType`, or any
    collection/enumeration member the requester named by shortName rather than URI:

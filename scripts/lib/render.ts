@@ -138,6 +138,7 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
   }
   if (doc.definitionStandard !== undefined) rows.push(row('definitionStandard', standardRefHtml(doc.definitionStandard)));
   if (doc.testStandard !== undefined) rows.push(row('testStandard', standardRefHtml(doc.testStandard)));
+  if (doc.legalBasis !== undefined) rows.push(row('legalBasis', standardRefHtml(doc.legalBasis)));
   if (doc.resourceMediaType !== undefined) rows.push(row('resourceMediaType', `<code>${esc(doc.resourceMediaType)}</code>`));
   if (doc.itemType !== undefined) rows.push(row('itemType', refs.link(doc.itemType)));
   if (Array.isArray(doc.elements)) {
