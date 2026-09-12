@@ -1,5 +1,4 @@
-# Draft for dictionary request #86 — id is a placeholder until minted at publication.
-id: https://material-identity.eu/def/00000000-0000-4000-8000-000000000000
+id: https://material-identity.eu/def/d61c5050-d09c-4ea3-93a2-6d6be9362bea
 isDefinedBy: https://material-identity.eu/
 objectType: SingleValuedDataElement
 shortName: accessCategory
@@ -19,5 +18,7 @@ legalBasis:
   name: Regulation (EU) 2024/1781
   clause: Art. 9(2)(f)
   uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
-# enumeration: the three Value entries (public, legitimateInterest, authorityOnly) — added at
-# publication, once they are minted and their ids exist.
+enumeration:
+  - https://material-identity.eu/def/bc89aecd-2c98-498a-8131-dea84b3675a2
+  - https://material-identity.eu/def/79ceae88-53c2-4f35-a85c-5445c975d885
+  - https://material-identity.eu/def/24e95505-b10b-48de-949a-cae427b2f2b6
