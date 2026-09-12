@@ -1,0 +1,23 @@
+# Draft for dictionary request #86 — id is a placeholder until minted at publication.
+id: https://material-identity.eu/def/00000000-0000-4000-8000-000000000000
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: accessCategory
+preferredName:
+  en: Access category
+  de: Zugriffskategorie
+definition:
+  en: Disclosure tier that a content specification assigns to a data element — the group of
+    actors that may access the element's value in a digital product passport. Informative in
+    the dictionary; the applicable legal act is normative and the passport interface enforces it.
+  de: Offenlegungsstufe, die eine Inhaltsspezifikation einem Datenelement zuweist — die Gruppe
+    von Akteuren, die den Wert des Elements in einem digitalen Produktpass einsehen dürfen. Im
+    Dictionary informativ; normativ ist der anwendbare Rechtsakt, durchgesetzt wird sie von der
+    Passschnittstelle.
+valueDataType: xsd:string
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 9(2)(f)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
+# enumeration: the three Value entries (public, legitimateInterest, authorityOnly) — added at
+# publication, once they are minted and their ids exist.

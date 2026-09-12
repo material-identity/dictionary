@@ -1,0 +1,15 @@
+# Draft for dictionary request #87 — id is a placeholder until minted at publication.
+id: https://material-identity.eu/def/00000000-0000-4000-8000-000000000000
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: refurbisher
+preferredName:
+  en: Refurbisher
+  de: Aufarbeitungsbetrieb
+definition:
+  en: Natural or legal person that carries out refurbishment — actions to prepare, clean, test, service and, where necessary, repair a product or a discarded product in order to restore its performance or functionality within the intended use and range of performance originally conceived at the design stage.
+  de: Natürliche oder juristische Person, die Aufarbeitungen durchführt — Maßnahmen zur Vorbereitung, Reinigung, Prüfung, Wartung und erforderlichenfalls Reparatur eines Produkts oder eines weggeworfenen Produkts, um dessen Leistung oder Funktionalität im Rahmen der ursprünglich in der Entwurfsphase vorgesehenen Verwendung und Leistungsbandbreite wiederherzustellen.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(18); Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

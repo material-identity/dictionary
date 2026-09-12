@@ -1,0 +1,15 @@
+# Draft for dictionary request #87 — id is a placeholder until minted at publication.
+id: https://material-identity.eu/def/00000000-0000-4000-8000-000000000000
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: civilSocietyOrganisation
+preferredName:
+  en: Civil society organisation
+  de: Organisation der Zivilgesellschaft
+definition:
+  en: Non-governmental organisation representing public-interest concerns of civil society, named as an actor with access to the digital product passport based on its access rights.
+  de: Nichtstaatliche Organisation, die Gemeinwohlanliegen der Zivilgesellschaft vertritt und als Akteur mit Zugang zum digitalen Produktpass im Rahmen ihrer Zugriffsrechte benannt ist.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

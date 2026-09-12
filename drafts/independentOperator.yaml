@@ -1,0 +1,15 @@
+# Draft for dictionary request #87 — id is a placeholder until minted at publication.
+id: https://material-identity.eu/def/00000000-0000-4000-8000-000000000000
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: independentOperator
+preferredName:
+  en: Independent operator
+  de: Unabhängiger Wirtschaftsakteur
+definition:
+  en: Natural or legal person independent of the manufacturer and directly or indirectly involved in the refurbishment, repair, maintenance or repurposing of a product — including waste management operators, refurbishers, repairers, manufacturers or distributors of repair equipment, tools or spare parts, publishers of technical information, operators offering inspection and testing services, and operators offering training for installers, manufacturers and repairers of equipment.
+  de: Vom Hersteller unabhängige natürliche oder juristische Person, die unmittelbar oder mittelbar an der Aufarbeitung, Reparatur, Wartung oder Umnutzung eines Produkts beteiligt ist — einschließlich Abfallbewirtschaftern, Aufarbeitungsbetrieben, Reparaturbetrieben, Herstellern oder Vertreibern von Reparaturausrüstung, Werkzeugen oder Ersatzteilen, Herausgebern technischer Informationen, Anbietern von Prüf- und Kontrolldiensten sowie Anbietern von Schulungen für Installateure, Hersteller und Reparateure von Ausrüstung.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(47); Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

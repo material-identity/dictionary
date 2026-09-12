@@ -1,0 +1,20 @@
+# Draft for dictionary request #87 — id is a placeholder until minted at publication.
+id: https://material-identity.eu/def/00000000-0000-4000-8000-000000000000
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: actorGroup
+preferredName:
+  en: Actor group
+  de: Akteursgruppe
+definition:
+  en: Group of actors along a product's value chain, or in its supervision, that a legal act
+    names as having access to digital product passport data based on their access rights.
+  de: Gruppe von Akteuren entlang der Wertschöpfungskette eines Produkts oder in dessen
+    Überwachung, die ein Rechtsakt als zugriffsberechtigt auf Daten des digitalen Produktpasses
+    im Rahmen ihrer Zugriffsrechte benennt.
+valueDataType: xsd:string
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
+# enumeration: the sixteen Value entries — added at publication, once they are minted.

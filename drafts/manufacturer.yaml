@@ -1,0 +1,15 @@
+# Draft for dictionary request #87 — id is a placeholder until minted at publication.
+id: https://material-identity.eu/def/00000000-0000-4000-8000-000000000000
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: manufacturer
+preferredName:
+  en: Manufacturer
+  de: Hersteller
+definition:
+  en: Natural or legal person that manufactures a product, or has a product designed or manufactured, and markets it under their own name or trademark.
+  de: Natürliche oder juristische Person, die ein Produkt herstellt oder entwickeln oder herstellen lässt und dieses Produkt unter ihrem eigenen Namen oder ihrer eigenen Handelsmarke vermarktet.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(42); Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

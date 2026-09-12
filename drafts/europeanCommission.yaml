@@ -1,0 +1,15 @@
+# Draft for dictionary request #87 — id is a placeholder until minted at publication.
+id: https://material-identity.eu/def/00000000-0000-4000-8000-000000000000
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: europeanCommission
+preferredName:
+  en: European Commission
+  de: Europäische Kommission
+definition:
+  en: The European Commission, in its capacity as an actor with access to digital product passport data under the applicable legal acts.
+  de: Die Europäische Kommission in ihrer Eigenschaft als Akteur mit Zugang zu Daten des digitalen Produktpasses nach den anwendbaren Rechtsakten.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 9(2)(f)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
