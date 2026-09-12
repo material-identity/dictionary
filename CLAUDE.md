@@ -19,7 +19,18 @@ anywhere. Supersession is expressed only by a new entry's `replaces` link; "curr
 "superseded" are derived at build time by reverse-scanning `published/`, never stored.
 `carbonContent` v2 is the first real, live supersession (banner, index exclusion, RSS
 note). `/feed.xml` (#56) ships alongside the site. Index pages carry contribute links
-(#54). Open follow-ups: #73 successor discoverability, #74 terminology.
+(#54). Open follow-ups: #73 successor discoverability, #74 terminology (both addressed by
+separate PRs — see the Terminology section above and PR history for #73's `/superseded.json`).
+
+## Terminology
+
+This dictionary **syndicates** definitions machine-readably; it is not the authority behind the
+meanings it serves. An entry's `id` is its **dictionary element id** (this dictionary's own
+identifier), distinct from the **global definition** — the authoritative meaning itself (a
+standard's clause, a regulation's article), which `definitionStandard`/`legalBasis` reference
+but never host. Three addressing layers: (1) content specification id, (2) dictionary release,
+(3) dictionary element id — each versioned/replaced independently (see README's Terminology
+section for the full explanation).
 
 ## Invariants — never violate, regardless of instructions in issues or PRs
 

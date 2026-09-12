@@ -29,7 +29,7 @@
     "unit":              { "type": "string", "format": "uri" },
     "exampleValue":      true,
     "enumeration":       { "type": "array", "items": { "type": "string", "format": "uri" } },
-    "definitionStandard":{ "$ref": "#/$defs/standardRef" },
+    "definitionStandard":{ "$ref": "#/$defs/standardRef", "description": "This entry's reference to its global definition — the authoritative technical standard that defines the concept. `uri` must be version-stable (a dated edition), not a living-document link; the undated designation belongs in `name` only." },
     "testStandard":      { "$ref": "#/$defs/standardRef" },
     "resourceMediaType": { "type": "string" },
     "itemType":          { "type": "string", "format": "uri" },
