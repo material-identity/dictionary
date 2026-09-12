@@ -1,0 +1,9 @@
+id: https://material-identity.eu/def/7a1e2c3d-4b5f-4a6e-9c8d-1f2e3d4c5b6a
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: authorityOnly
+preferredName:
+  en: Authority only
+definition:
+  en: Access category for a data element accessible only to notified bodies, market
+    surveillance authorities, customs authorities and the Commission.

@@ -46,7 +46,10 @@ Companion skill: [publish-entry](../publish-entry/SKILL.md) moves the draft live
    `objectType`-conditional requirements (the schema's `allOf` block):
    - `SingleValuedDataElement` / `MultiLanguageDataElement` / `RelatedResource` → `valueDataType` required.
    - `MultiValuedDataElement` → `itemType` required.
-   - `DataElementCollection` → `elements` required (each `{ dictionaryReference, isMandatory }`).
+   - `DataElementCollection` → `elements` required (each `{ dictionaryReference, isMandatory }`,
+     plus optional `accessCategory` — a reference to a published `Value` of the access-category
+     vocabulary — only when the collection represents a content specification's membership;
+     a purely semantic collection carries no access assignment).
    - `MeasurementUnit` → `symbol` required.
    - `Quantity` → `dimension` required.
    - `Value` → `value` required.
