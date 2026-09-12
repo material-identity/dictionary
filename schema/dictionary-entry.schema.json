@@ -58,6 +58,8 @@
       "then": { "required": ["elements"] } },
     { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "MeasurementUnit" } } },
       "then": { "required": ["symbol"] } },
+    { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "MeasurementUnit" } } },
+      "then": { "required": ["crossReferences"], "properties": { "crossReferences": { "required": ["ucumCode"] } } } },
     { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "Quantity" } } },
       "then": { "required": ["dimension"] } },
     { "if": { "required": ["objectType"], "properties": { "objectType": { "const": "Value" } } },
@@ -105,7 +107,7 @@
       "additionalProperties": true,
       "properties": {
         "uneceCommonCode": { "type": "string" },
-        "ucumCode":        { "type": "string" },
+        "ucumCode":        { "type": "string", "format": "ucum-code" },
         "qudtUnit":        { "type": "string", "format": "uri" }
       }
     }
