@@ -28,9 +28,15 @@ function defUuid(uri: unknown): string | undefined {
 }
 
 /** Check 2 — every published/ file and every drafts/ file validates against the envelope schema. */
+// Syntax sanity check, not a full UCUM grammar validator (see e.g. @lhncbc/ucum-lhc for that) —
+// rejects whitespace/unicode, accepts UCUM's own punctuation (brackets for non-metric atoms
+// like "[psi]", braces for annotations, ./ for products/quotients).
+const UCUM_CODE_PATTERN = /^[A-Za-z0-9[\]{}_.^\-*/%'"]+$/;
+
 export function checkSchema(repo: RepoModel): ValidationIssue[] {
   const ajv = new Ajv2019({ allErrors: true, strict: false });
   addFormats(ajv);
+  ajv.addFormat('ucum-code', UCUM_CODE_PATTERN);
   const schema = JSON.parse(readFileSync(SCHEMA_PATH, 'utf8')) as object;
   const validate = ajv.compile(schema);
 

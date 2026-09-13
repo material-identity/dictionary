@@ -1,0 +1,8 @@
+id: https://material-identity.eu/def/a2f6e6f2-3f8a-4b1a-9b1a-6b6f6f6f6f6f
+isDefinedBy: https://material-identity.eu/
+objectType: MeasurementUnit
+shortName: missingUcum
+symbol:
+  en: X
+preferredName:
+  en: MeasurementUnit missing crossReferences/ucumCode entirely

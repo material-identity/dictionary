@@ -2,16 +2,20 @@
 // Build (plan §4 M3, redesigned per issue #57): repo model → site/ — canonical JSON +
 // human HTML per entry, one stylesheet. Deterministic transform, no network, content
 // never altered. Usage: npm run build [-- --root <dir>] [-- --out <dir>]
-import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadRepo } from './lib/repo.ts';
 import { canonicalJson } from './lib/emit.ts';
-import { RefIndex, renderEntryPage, renderIndexPages } from './lib/render.ts';
+import { RefIndex, renderEntryPage, renderIndexPages, renderSchemaPage } from './lib/render.ts';
 import { renderFeed } from './lib/feed.ts';
 import { getAddedDates } from './lib/git.ts';
 
 const LIB_DIR = dirname(fileURLToPath(import.meta.url));
+// The schema is one canonical file for the whole site, independent of which content tree
+// --root points at (a fixture tree has no schema/ of its own) — same fixed-path approach
+// checks.ts uses for validation.
+const SCHEMA_PATH = join(LIB_DIR, '..', 'schema', 'dictionary-entry.schema.json');
 
 export interface BuildResult {
   entries: number;
@@ -28,7 +32,10 @@ export function build(root: string, out: string): BuildResult {
 
   rmSync(out, { recursive: true, force: true });
   mkdirSync(join(out, 'def'), { recursive: true });
+  mkdirSync(join(out, 'schema'), { recursive: true });
   cpSync(join(LIB_DIR, 'lib', 'styles.css'), join(out, 'styles.css'));
+  cpSync(SCHEMA_PATH, join(out, 'schema', 'dictionary-entry.schema.json'));
+  writeFileSync(join(out, 'schema', 'index.html'), renderSchemaPage(JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'))));
 
   let entries = 0;
   for (const file of repo.published) {

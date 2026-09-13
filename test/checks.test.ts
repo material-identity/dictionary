@@ -44,6 +44,13 @@ test('check 2 — published entry violating the schema fails; draft with bad lan
   assert.ok(files.includes('drafts/badDraft.yaml'), 'draft with invalid langMap key flagged');
 });
 
+test('check 2 — MeasurementUnit requires crossReferences.ucumCode, and it must be valid UCUM syntax', () => {
+  const issues = assertOnlyFails(load('red-schema'), '2 schema');
+  const text = issues.map((i) => `${i.file} ${i.message}`).join('\n');
+  assert.match(text, /a2f6e6f2[^\n]*must have required property 'crossReferences'/);
+  assert.match(text, /b3f6e6f2[^\n]*must match format "ucum-code"/);
+});
+
 test('check 3 — filename/id mismatch, wrong domain, invalid UUID, duplicate id', () => {
   const issues = assertOnlyFails(load('red-identity'), '3 identity');
   const text = issues.map((i) => `${i.file} ${i.message}`).join('\n');

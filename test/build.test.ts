@@ -121,6 +121,20 @@ test('superseded.json maps old id -> successor id, derived from replaces, sorted
   }
 });
 
+test('legalBasis renders distinctly from definitionStandard/testStandard, both schema-valid and on the page', () => {
+  const out = buildGreen();
+  try {
+    const v2 = readFileSync(join(out, 'def', `${MP2}.html`), 'utf8');
+    assert.match(v2, /<th scope="row">legalBasis<\/th><td>Regulation \(EU\) 2024\/1781, clause Art\. 4 — <a href="https:\/\/eur-lex\.europa\.eu\/eli\/reg\/2024\/1781\/oj" rel="external">/);
+
+    const entry = JSON.parse(readFileSync(join(out, 'def', `${MP2}.json`), 'utf8'));
+    assert.deepEqual(Object.keys(entry.legalBasis), ['name', 'clause', 'uri']);
+    assert.notDeepEqual(entry.legalBasis, entry.definitionStandard);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
 test('internal references render as links with resolved labels', () => {
   const out = buildGreen();
   try {
@@ -155,6 +169,40 @@ test('index lists only current entries — superseded maxPressure v1 is omitted'
     assert.equal((html.match(/<tr>\n<td>/g) ?? []).length, 6); // 7 published, 1 superseded
     assert.match(html, new RegExp(`<a href="/def/${MP2}">Maximum allowable pressure</a>`));
     assert.ok(!html.includes(`/def/${MP1}"`), 'superseded v1 must not appear in the index');
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('build publishes the raw JSON Schema byte-identical to source, plus a human-readable page', () => {
+  const out = buildGreen();
+  try {
+    const source = readFileSync(join(here, '..', 'schema', 'dictionary-entry.schema.json'));
+    const copied = readFileSync(join(out, 'schema', 'dictionary-entry.schema.json'));
+    assert.deepEqual(copied, source);
+
+    const html = readFileSync(join(out, 'schema', 'index.html'), 'utf8');
+    assert.ok(html.includes('<link rel="canonical" href="https://material-identity.eu/schema">'));
+    assert.ok(html.includes('<link rel="stylesheet" href="/styles.css">'));
+    assert.ok(!/<script/i.test(html), 'schema page must not contain scripts');
+    assert.match(html, /<a href="\/schema\/dictionary-entry\.schema\.json">Raw JSON Schema<\/a>/);
+    assert.match(html, /not<\/strong> immutable/); // must not be mistaken for a published-entry guarantee
+
+    // an envelope field, a $ref'd $def, and a conditional requirement all round-trip into the page
+    assert.match(html, /<code>isDefinedBy<\/code> — required/);
+    assert.match(html, /<a href="#def-standardRef"><code>standardRef<\/code><\/a>/);
+    assert.match(html, /<h3 id="def-standardRef">/);
+    assert.match(html, /when <code>objectType<\/code> is <code>MeasurementUnit<\/code>, also required: <code>symbol<\/code>/);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('index footer links to the schema reference page', () => {
+  const out = buildGreen();
+  try {
+    const html = readFileSync(join(out, 'index.html'), 'utf8');
+    assert.match(html, /<a href="\/schema">JSON Schema reference<\/a>/);
   } finally {
     rmSync(out, { recursive: true, force: true });
   }

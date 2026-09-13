@@ -117,6 +117,17 @@ body:
       placeholder: EN 13445-5 · 10 · https://cen.eu/standards/EN13445-5
     validations:
       required: false
+  - type: input
+    id: legal-basis
+    attributes:
+      label: legalBasis
+      description: >-
+        The law/regulation that defines or mandates this concept (distinct from a technical
+        standard) — "name · clause · URI". `uri` should be a specific expression (e.g. an
+        Official Journal text), not a page that can change over time.
+      placeholder: Regulation (EU) 2024/1781 · Art. 4 · https://eur-lex.europa.eu/eli/reg/2024/1781/oj
+    validations:
+      required: false
   - type: textarea
     id: example-value
     attributes:
