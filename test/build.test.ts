@@ -47,7 +47,7 @@ test('build emits JSON + HTML for every entry, plus the stylesheet', () => {
   const out = buildGreen();
   try {
     const defs = readdirSync(join(out, 'def')).sort();
-    assert.equal(defs.length, 14); // 7 entries × (json + html)
+    assert.equal(defs.length, 21); // 7 entries × (json + html + csl.json)
     assert.ok(defs.includes(`${MP2}.json`) && defs.includes(`${MP2}.html`));
     assert.ok(readFileSync(join(out, 'styles.css'), 'utf8').length > 0);
   } finally {
@@ -78,7 +78,7 @@ test('emitted JSON is canonical: identity block first, nested keys ordered, sche
     const ajv = new Ajv2019({ allErrors: true, strict: false });
     addFormats(ajv);
     const validateSchema = ajv.compile(JSON.parse(readFileSync(join(here, '..', 'schema', 'dictionary-entry.schema.json'), 'utf8')));
-    for (const name of readdirSync(join(out, 'def')).filter((n) => n.endsWith('.json'))) {
+    for (const name of readdirSync(join(out, 'def')).filter((n) => n.endsWith('.json') && !n.endsWith('.csl.json'))) {
       const doc = JSON.parse(readFileSync(join(out, 'def', name), 'utf8'));
       assert.ok(validateSchema(doc), `def/${name} violates the schema: ${JSON.stringify(validateSchema.errors)}`);
     }
@@ -213,6 +213,31 @@ test('design pass: masthead on every page, breadcrumb and grouped facts on entry
     const unit = readFileSync(join(out, 'def', `${UNIT}.html`), 'utf8');
     assert.match(unit, /<p class="symbol-block"><span class="symbol-cap">symbol<\/span><span class="symbol upright">MPa<\/span><\/p>/);
     assert.match(readFileSync(join(out, 'def', `${MP1}.html`), 'utf8'), /class="banner superseded"/);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('cite: ISO 690 + BibLaTeX block on the page, CSL-JSON artifact, superseded entries say what replaced them', () => {
+  const out = buildGreen();
+  try {
+    const v2 = readFileSync(join(out, 'def', `${MP2}.html`), 'utf8');
+    assert.match(v2, /<details class="cite"><summary>Cite this entry<\/summary>/);
+    // fixture tree is not a git work-tree top: no invented date
+    assert.match(v2, new RegExp(`<p class="iso690">material-identity dictionary\\. Maximum allowable pressure \\(maxPressure\\) \\[dictionary element\\]\\. n\\.d\\. Available from: https://material-identity\\.eu/def/${MP2}</p>`));
+    assert.match(v2, /<pre><code>@online\{material-identity-maxPressure,\n  title {8}= \{Maximum allowable pressure\},\n  organization = \{material-identity dictionary\},\n  url {10}= \{https:\/\/material-identity\.eu\/def\//);
+    assert.ok(!v2.includes('urldate'), 'no access date by design');
+    assert.ok(v2.includes(`<link rel="alternate" type="application/vnd.citationstyles.csl+json" href="/def/${MP2}.csl.json">`));
+
+    const csl = JSON.parse(readFileSync(join(out, 'def', `${MP2}.csl.json`), 'utf8'));
+    assert.equal(csl.type, 'entry-dictionary');
+    assert.equal(csl.title, 'Maximum allowable pressure');
+    assert.equal(csl.URL, `https://material-identity.eu/def/${MP2}`);
+    assert.equal(csl.issued, undefined);
+
+    const v1 = readFileSync(join(out, 'def', `${MP1}.html`), 'utf8');
+    assert.match(v1, new RegExp(`\\[dictionary element, superseded by https://material-identity\\.eu/def/${MP2}\\]\\. n\\.d\\. Available from: https://material-identity\\.eu/def/${MP1}</p>`));
+    assert.match(v1, new RegExp(`note {9}= \\{Immutable dictionary element; superseded entries stay resolvable\\. Superseded by https://material-identity\\.eu/def/${MP2}\\.\\},`));
   } finally {
     rmSync(out, { recursive: true, force: true });
   }

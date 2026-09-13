@@ -9,6 +9,7 @@ import { loadRepo } from './lib/repo.ts';
 import { canonicalJson } from './lib/emit.ts';
 import { RefIndex, renderEntryPage, renderIndexPages, renderTreePage } from './lib/render.ts';
 import { renderFeed } from './lib/feed.ts';
+import { citation } from './lib/cite.ts';
 import { getAddedDates } from './lib/git.ts';
 
 const LIB_DIR = dirname(fileURLToPath(import.meta.url));
@@ -30,17 +31,21 @@ export function build(root: string, out: string): BuildResult {
   mkdirSync(join(out, 'def'), { recursive: true });
   cpSync(join(LIB_DIR, 'lib', 'styles.css'), join(out, 'styles.css'));
 
+  const addedDates = getAddedDates(root);
   let entries = 0;
   for (const file of repo.published) {
     if (!file.doc) continue;
+    const addedDate = addedDates.get(file.relPath);
     writeFileSync(join(out, 'def', `${file.stem}.json`), canonicalJson(file.doc));
-    writeFileSync(join(out, 'def', `${file.stem}.html`), renderEntryPage(file, repo, refs));
+    writeFileSync(join(out, 'def', `${file.stem}.html`), renderEntryPage(file, repo, refs, addedDate));
+    writeFileSync(join(out, 'def', `${file.stem}.csl.json`), `${JSON.stringify(
+      citation(file.doc, file.stem, { date: addedDate, supersededBy: refs.supersededByEntry(file.doc)?.id as string | undefined }).csl, null, 2)}\n`);
     entries += 1;
   }
   for (const page of renderIndexPages(repo, refs)) {
     writeFileSync(join(out, page.name), page.html);
   }
-  writeFileSync(join(out, 'feed.xml'), renderFeed(repo, getAddedDates(root)));
+  writeFileSync(join(out, 'feed.xml'), renderFeed(repo, addedDates));
   mkdirSync(join(out, 'tree'), { recursive: true });
   writeFileSync(join(out, 'tree', 'index.html'), renderTreePage(repo, refs));
   return { entries, out };

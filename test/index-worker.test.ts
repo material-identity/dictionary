@@ -81,7 +81,7 @@ test('decide: JSON is the default; HTML only when Accept names text/html', () =>
   assert.equal(json.originPath, `/def/${uuid}.json`);
   assert.equal(json.headers['content-type'], 'application/json; charset=utf-8');
   assert.equal(json.headers['cache-control'], 'public, max-age=31536000, immutable');
-  assert.equal(json.headers.link, undefined);
+  assert.equal(json.headers.link, `<https://material-identity.eu/def/${uuid}>; rel="cite-as"`);
 
   const star = decide(`/def/${uuid}`, '*/*'); // curl default → JSON
   assert.equal(star.originPath, `/def/${uuid}.json`);
@@ -93,7 +93,7 @@ test('decide: JSON is the default; HTML only when Accept names text/html', () =>
   assert.equal(browser.originPath, `/def/${uuid}.html`);
   assert.equal(browser.headers['content-type'], 'text/html; charset=utf-8');
   assert.equal(browser.headers['cache-control'], 'public, max-age=31536000, immutable');
-  assert.equal(browser.headers.link, `</def/${uuid}>; rel="canonical"`);
+  assert.equal(browser.headers.link, `</def/${uuid}>; rel="canonical", <https://material-identity.eu/def/${uuid}>; rel="cite-as"`);
 });
 
 test('decide: everything else passes through with a short cache; no /concept route', () => {
