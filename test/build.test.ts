@@ -113,7 +113,7 @@ test('internal references render as links with resolved labels', () => {
   try {
     const v2 = readFileSync(join(out, 'def', `${MP2}.html`), 'utf8');
     assert.match(v2, new RegExp(`<a href="/def/${UNIT}">megapascal</a>`)); // unit link shows the unit's preferredName
-    assert.match(v2, new RegExp(`<a href="/def/${MP2}.json">Raw JSON</a>`));
+    assert.match(v2, new RegExp(`<a href="/def/${MP2}.json"[^>]*>Raw JSON</a>`));
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
@@ -168,17 +168,51 @@ test('tree view: containment-only nesting, superseded omitted, badges from the m
     assert.ok(html.lastIndexOf(`<summary>megapascal`) > units && html.lastIndexOf(`<summary>pressure`) > units, 'units and quantities listed in the second section');
 
     // maxPressure v2 nests under mechanicalProperties with the membership badge; v1 (superseded) appears nowhere
-    const collection = html.slice(html.indexOf(`<a href="/def/${COLLECTION}">`), html.indexOf(`<a href="/def/${MP2}">`));
-    assert.match(collection, /<summary>Maximum allowable pressure <code>maxPressure<\/code> · <span class="type">SingleValuedDataElement<\/span> <span class="badge">mandatory<\/span><\/summary>/);
+    const collectionAt = html.indexOf('<summary>Mechanical properties');
+    const memberAt = html.indexOf('<summary>Maximum allowable pressure');
+    assert.ok(collectionAt !== -1 && collectionAt < memberAt, 'member summary renders inside its collection');
+    assert.match(html, /<summary>Maximum allowable pressure <code>maxPressure<\/code> <span class="chip element">SingleValuedDataElement<\/span> <span class="badge">mandatory<\/span><\/summary>/);
+    assert.match(html, new RegExp(`<a href="/def/${MP2}" aria-label="Entry page: Maximum allowable pressure">entry page</a>`));
     assert.ok(!html.includes(MP1), 'superseded entry must not appear in the tree');
 
     // the enumeration Value nests under its element (badge "value") and is not a root
-    assert.match(html, /<summary>Electric arc furnace · <span class="type">Value<\/span> <span class="badge">value<\/span><\/summary>/);
-    assert.equal((html.match(new RegExp(`<a href="/def/${EAF}">`, 'g')) ?? []).length, 1);
+    assert.match(html, /<summary>Electric arc furnace <span class="chip value">Value<\/span> <span class="badge">value<\/span><\/summary>/);
+    assert.equal((html.match(new RegExp(`<a href="/def/${EAF}"`, 'g')) ?? []).length, 1);
     assert.ok(html.indexOf(`/def/${ROUTE}"`) < html.indexOf(`/def/${EAF}"`), 'value renders inside its element');
 
     // reference edges stay links, never children: the unit shows in maxPressure's facts, and megapascal is its own root
     assert.match(html, new RegExp(`unit <a href="/def/${UNIT}">megapascal</a>`));
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('design pass: masthead on every page, breadcrumb and grouped facts on entry pages, kind chips in the index', () => {
+  const COLLECTION = '2f3de2bb-0588-4513-bfc3-41d021815a81'; // mechanicalProperties, contains maxPressure v2
+  const out = buildGreen();
+  try {
+    const index = readFileSync(join(out, 'index.html'), 'utf8');
+    assert.match(index, /<nav class="nav" aria-label="Site"><a href="\/" aria-current="page">Index<\/a><a href="\/tree">Tree<\/a>/);
+    assert.match(index, /<td><span class="chip element">SingleValuedDataElement<\/span><\/td>/);
+    assert.match(index, /<td><span class="chip unit">MeasurementUnit<\/span><\/td>/);
+
+    const v2 = readFileSync(join(out, 'def', `${MP2}.html`), 'utf8');
+    assert.match(v2, /<header class="mast">/);
+    assert.match(v2, new RegExp(`<nav aria-label="Breadcrumb"><ol class="crumbs"><li><a href="/">Dictionary</a></li><li><a href="/def/${COLLECTION}">Mechanical properties</a></li><li>Maximum allowable pressure</li></ol></nav>`));
+    assert.match(v2, /<div class="chips"><span class="chip element">SingleValuedDataElement<\/span> <span class="chip neutral"><code>maxPressure<\/code><\/span><\/div>/);
+    assert.match(v2, /<p class="alt-name"><span class="lang">de<\/span><span lang="de">Maximal zulässiger Druck<\/span><\/p>/);
+    assert.match(v2, /<div class="definition"><span class="lang">en<\/span><p lang="en">Highest internal gauge pressure/);
+    assert.match(v2, /<p class="missing">No German definition yet/);
+    assert.match(v2, new RegExp(`<dt>Unit</dt><dd><span class="ref"><a href="/def/${UNIT}">megapascal</a> <code>MPa</code> <span class="chip unit">MeasurementUnit</span></span></dd>`));
+    assert.match(v2, new RegExp(`<h2>Contained by</h2><div class="member"><span class="ref"><a href="/def/${COLLECTION}">Mechanical properties</a> <span class="chip collection">DataElementCollection</span></span> <span class="badge">mandatory</span></div>`));
+    assert.match(v2, /<meta name="description" content="Highest internal gauge pressure/);
+    assert.match(v2, /<span class="eyebrow">Dictionary element id · immutable<\/span>/);
+    assert.match(v2, new RegExp(`<dt>Replaces</dt><dd><span class="ref"><a href="/def/${MP1}">Maximum allowable pressure</a>`));
+
+    // a unit page shows its symbol upright; a superseded page keeps the banner
+    const unit = readFileSync(join(out, 'def', `${UNIT}.html`), 'utf8');
+    assert.match(unit, /<p class="symbol-block"><span class="symbol-cap">symbol<\/span><span class="symbol upright">MPa<\/span><\/p>/);
+    assert.match(readFileSync(join(out, 'def', `${MP1}.html`), 'utf8'), /class="banner superseded"/);
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
