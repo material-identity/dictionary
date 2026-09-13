@@ -116,7 +116,10 @@ section for the full explanation).
   code): `pgp-security.asc` (public key only — never a private one) and `security.txt`
   (RFC 9116). The worker types them and caps their cache at a day. An unnumbered validate check
   fails the build when `Expires` is missing, past, or over a year out — renew it in place, it is
-  not under `published/`
+  not under `published/`. **Nothing emitted into `site/` may start with a dot**:
+  `upload-pages-artifact` tars with `--exclude=.[^/]*`, so the build writes `site/well-known/`
+  and the Worker rewrites `/.well-known/<x>` onto it (#110). A build test asserts the site is
+  dot-free, and `deploy.yml` smoke-tests the live URLs — a green deploy alone proved nothing
 - `REVIEW.md` — what reviewers check beyond CI; read it before reviewing any publish PR
 - `standards/` — local-only licensed docs; only its README is committed
 

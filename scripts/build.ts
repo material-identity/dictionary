@@ -21,6 +21,10 @@ const SCHEMA_PATH = join(LIB_DIR, '..', 'schema', 'dictionary-entry.schema.json'
 const CONTEXT_PATH = join(LIB_DIR, '..', 'rdf', 'context.jsonld');
 // RFC 8615 well-known URIs, copied wholesale so adding e.g. a security.txt needs no code (#107).
 const WELL_KNOWN_PATH = join(LIB_DIR, '..', '.well-known');
+// ...but emitted WITHOUT the dot (#110): actions/upload-pages-artifact tars with
+// `--exclude=.[^/]*`, so a site/.well-known/ is silently dropped and the URL 404s in production.
+// The Worker maps the canonical /.well-known/<x> onto this path; the origin is never advertised.
+const WELL_KNOWN_OUT = 'well-known';
 
 export interface BuildResult {
   entries: number;
@@ -74,7 +78,7 @@ export function build(root: string, out: string): BuildResult {
   // RDF track steps 1–2 (issue #98): the context is the semantic commitment, the Turtle is a
   // derived second serialization. The canonical /def/<uuid>.json is untouched by both.
   cpSync(CONTEXT_PATH, join(out, 'context.jsonld'));
-  if (existsSync(WELL_KNOWN_PATH)) cpSync(WELL_KNOWN_PATH, join(out, '.well-known'), { recursive: true });
+  if (existsSync(WELL_KNOWN_PATH)) cpSync(WELL_KNOWN_PATH, join(out, WELL_KNOWN_OUT), { recursive: true });
   const issued = new Map([...releases].map(([path, release]) => [path, release.date]));
   writeFileSync(join(out, 'dictionary.ttl'), renderTurtle(repo, refs, issued));
   return { entries, out };

@@ -332,20 +332,25 @@ test('build publishes the JSON-LD context and the Turtle graph, and the entry JS
   }
 });
 
-test('the tracked .well-known directory is copied into the site byte-for-byte (#107, #109)', () => {
+test('the tracked .well-known directory is copied into the site byte-for-byte (#107, #109, #110)', () => {
   const out = buildGreen();
   try {
     const source = readFileSync(join(here, '..', '.well-known', 'pgp-security.asc'));
-    assert.deepEqual(readFileSync(join(out, '.well-known', 'pgp-security.asc')), source);
+    assert.deepEqual(readFileSync(join(out, 'well-known', 'pgp-security.asc')), source);
     // a public key block, never a private one
     const text = source.toString('utf8');
     assert.match(text, /^-----BEGIN PGP PUBLIC KEY BLOCK-----/);
     assert.ok(!text.includes('PRIVATE KEY'), 'a private key must never be published');
 
     // security.txt rides along on the same wholesale copy, no builder code of its own
-    const sec = readFileSync(join(out, '.well-known', 'security.txt'), 'utf8');
+    const sec = readFileSync(join(out, 'well-known', 'security.txt'), 'utf8');
     assert.deepEqual(sec, readFileSync(join(here, '..', '.well-known', 'security.txt'), 'utf8'));
     assert.match(sec, /^Canonical: https:\/\/material-identity\.eu\/\.well-known\/security\.txt$/m);
+
+    // Nothing in the emitted site may start with a dot: actions/upload-pages-artifact tars with
+    // `--exclude=.[^/]*`, so a dot-entry deploys as a 404 while every other test stays green (#110).
+    const dotted = readdirSync(out, { recursive: true, encoding: 'utf8' }).filter((p) => /(^|\/)\./.test(p));
+    assert.deepEqual(dotted, [], `these would be stripped from the Pages artifact: ${dotted.join(', ')}`);
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
