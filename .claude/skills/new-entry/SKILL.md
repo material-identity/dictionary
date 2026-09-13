@@ -47,7 +47,8 @@ Companion skill: [publish-entry](../publish-entry/SKILL.md) moves the draft live
    - `SingleValuedDataElement` / `MultiLanguageDataElement` / `RelatedResource` → `valueDataType` required.
    - `MultiValuedDataElement` → `itemType` required.
    - `DataElementCollection` → `elements` required (each `{ dictionaryReference, isMandatory }`).
-   - `MeasurementUnit` → `symbol` required.
+   - `MeasurementUnit` → `symbol` required, and `crossReferences.ucumCode` required
+     (must be a valid UCUM unit code — check 2 validates its syntax).
    - `Quantity` → `dimension` required.
    - `Value` → `value` required.
    - `preferredName` / `definition` / `symbol` are language maps (`{ en: "...", de: "..." }`),
