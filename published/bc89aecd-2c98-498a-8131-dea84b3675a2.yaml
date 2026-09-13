@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/bc89aecd-2c98-498a-8131-dea84b3675a2
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: public
+preferredName:
+  en: Public
+  de: Öffentlich
+definition:
+  en: Access category for a data element that is accessible to the general public, without authentication or proof of access rights.
+  de: Zugriffskategorie für ein Datenelement, das der Allgemeinheit ohne Authentifizierung und ohne Nachweis von Zugriffsrechten zugänglich ist.
+legalBasis:
+  name: Regulation (EU) 2023/1542
+  clause: Art. 77(2)(a)
+  uri: https://eur-lex.europa.eu/eli/reg/2023/1542/oj

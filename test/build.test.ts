@@ -47,7 +47,7 @@ test('build emits JSON + HTML for every entry, plus the stylesheet', () => {
   const out = buildGreen();
   try {
     const defs = readdirSync(join(out, 'def')).sort();
-    assert.equal(defs.length, 14); // 7 entries × (json + html)
+    assert.equal(defs.length, 16); // 8 entries × (json + html)
     assert.ok(defs.includes(`${MP2}.json`) && defs.includes(`${MP2}.html`));
     assert.ok(readFileSync(join(out, 'styles.css'), 'utf8').length > 0);
   } finally {
@@ -108,6 +108,49 @@ test('superseded entry page shows the banner, derived from replaces, never store
   }
 });
 
+test('superseded.json maps old id -> successor id, derived from replaces, sorted and deterministic', () => {
+  const out = buildGreen();
+  try {
+    const map = JSON.parse(readFileSync(join(out, 'superseded.json'), 'utf8'));
+    assert.deepEqual(map, {
+      [`https://material-identity.eu/def/${MP1}`]: `https://material-identity.eu/def/${MP2}`,
+    });
+    assert.deepEqual(Object.keys(map), Object.keys(map).sort());
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('legalBasis renders distinctly from definitionStandard/testStandard, both schema-valid and on the page', () => {
+  const out = buildGreen();
+  try {
+    const v2 = readFileSync(join(out, 'def', `${MP2}.html`), 'utf8');
+    assert.match(v2, /<th scope="row">legalBasis<\/th><td>Regulation \(EU\) 2024\/1781, clause Art\. 4 — <a href="https:\/\/eur-lex\.europa\.eu\/eli\/reg\/2024\/1781\/oj" rel="external">/);
+
+    const entry = JSON.parse(readFileSync(join(out, 'def', `${MP2}.json`), 'utf8'));
+    assert.deepEqual(Object.keys(entry.legalBasis), ['name', 'clause', 'uri']);
+    assert.notDeepEqual(entry.legalBasis, entry.definitionStandard);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('accessCategory on a collection member: canonical key order, pinned link in the elements table', () => {
+  const COLLECTION = '2f3de2bb-0588-4513-bfc3-41d021815a81'; // mechanicalProperties
+  const ACCESS = '7a1e2c3d-4b5f-4a6e-9c8d-1f2e3d4c5b6a'; // authorityOnly (Value)
+  const out = buildGreen();
+  try {
+    const entry = JSON.parse(readFileSync(join(out, 'def', `${COLLECTION}.json`), 'utf8'));
+    assert.deepEqual(Object.keys(entry.elements[0]), ['dictionaryReference', 'isMandatory', 'accessCategory']);
+
+    const html = readFileSync(join(out, 'def', `${COLLECTION}.html`), 'utf8');
+    assert.match(html, /<th>member<\/th><th>membership<\/th><th>access<\/th>/);
+    assert.match(html, new RegExp(`<td>mandatory</td><td><a href="/def/${ACCESS}">Authority only</a></td>`));
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
 test('internal references render as links with resolved labels', () => {
   const out = buildGreen();
   try {
@@ -139,7 +182,7 @@ test('index lists only current entries — superseded maxPressure v1 is omitted'
   const out = buildGreen();
   try {
     const html = readFileSync(join(out, 'index.html'), 'utf8');
-    assert.equal((html.match(/<tr>\n<td>/g) ?? []).length, 6); // 7 published, 1 superseded
+    assert.equal((html.match(/<tr>\n<td>/g) ?? []).length, 7); // 8 published, 1 superseded
     assert.match(html, new RegExp(`<a href="/def/${MP2}">Maximum allowable pressure</a>`));
     assert.ok(!html.includes(`/def/${MP1}"`), 'superseded v1 must not appear in the index');
   } finally {
@@ -157,9 +200,11 @@ test('tree view: containment-only nesting, superseded omitted, badges from the m
     assert.ok(html.includes('<link rel="canonical" href="https://material-identity.eu/tree">'));
     assert.ok(!/<script/i.test(html), 'tree page must not contain scripts');
 
-    // roots = current entries nothing contains: pressure, mechanicalProperties, steelmakingRoute, megapascal
-    assert.equal((html.match(/<details open>/g) ?? []).length, 4);
-    assert.match(html, /2 element roots · 2 units and quantities/);
+    // roots = current entries nothing *contains*: mechanicalProperties, steelmakingRoute, the
+    // access-category Value (reachable only through a membership's accessCategory, which is a
+    // reference edge), plus megapascal and pressure as reference-only kinds
+    assert.equal((html.match(/<details open>/g) ?? []).length, 5);
+    assert.match(html, /3 element roots · 2 units and quantities/);
 
     // two sections: elements/collections first, reference-only kinds (units, quantities) after
     const units = html.indexOf('<h2>Units and quantities</h2>');
@@ -168,8 +213,11 @@ test('tree view: containment-only nesting, superseded omitted, badges from the m
     assert.ok(html.lastIndexOf(`<summary>megapascal`) > units && html.lastIndexOf(`<summary>pressure`) > units, 'units and quantities listed in the second section');
 
     // maxPressure v2 nests under mechanicalProperties with the membership badge; v1 (superseded) appears nowhere
-    const collection = html.slice(html.indexOf(`<a href="/def/${COLLECTION}">`), html.indexOf(`<a href="/def/${MP2}">`));
-    assert.match(collection, /<summary>Maximum allowable pressure <code>maxPressure<\/code> · <span class="type">SingleValuedDataElement<\/span> <span class="badge">mandatory<\/span><\/summary>/);
+    const collectionAt = html.indexOf('<summary>Mechanical properties');
+    const memberAt = html.indexOf('<summary>Maximum allowable pressure');
+    assert.ok(collectionAt !== -1 && collectionAt < memberAt, 'member nests inside its collection');
+    // the membership's badges, including the access tier the collection assigns (#88)
+    assert.match(html, /<summary>Maximum allowable pressure <code>maxPressure<\/code> · <span class="type">SingleValuedDataElement<\/span> <span class="badge">mandatory<\/span> <span class="badge">access: <a href="\/def\/7a1e2c3d-4b5f-4a6e-9c8d-1f2e3d4c5b6a">Authority only<\/a><\/span><\/summary>/);
     assert.ok(!html.includes(MP1), 'superseded entry must not appear in the tree');
 
     // the enumeration Value nests under its element (badge "value") and is not a root
@@ -184,10 +232,36 @@ test('tree view: containment-only nesting, superseded omitted, badges from the m
   }
 });
 
-test('index footer links to the tree view', () => {
+test('build publishes the raw JSON Schema byte-identical to source, plus a human-readable page', () => {
   const out = buildGreen();
   try {
-    assert.match(readFileSync(join(out, 'index.html'), 'utf8'), /<a href="\/tree">Tree view<\/a>/);
+    const source = readFileSync(join(here, '..', 'schema', 'dictionary-entry.schema.json'));
+    const copied = readFileSync(join(out, 'schema', 'dictionary-entry.schema.json'));
+    assert.deepEqual(copied, source);
+
+    const html = readFileSync(join(out, 'schema', 'index.html'), 'utf8');
+    assert.ok(html.includes('<link rel="canonical" href="https://material-identity.eu/schema">'));
+    assert.ok(html.includes('<link rel="stylesheet" href="/styles.css">'));
+    assert.ok(!/<script/i.test(html), 'schema page must not contain scripts');
+    assert.match(html, /<a href="\/schema\/dictionary-entry\.schema\.json">Raw JSON Schema<\/a>/);
+    assert.match(html, /not<\/strong> immutable/); // must not be mistaken for a published-entry guarantee
+
+    // an envelope field, a $ref'd $def, and a conditional requirement all round-trip into the page
+    assert.match(html, /<code>isDefinedBy<\/code> — required/);
+    assert.match(html, /<a href="#def-standardRef"><code>standardRef<\/code><\/a>/);
+    assert.match(html, /<h3 id="def-standardRef">/);
+    assert.match(html, /when <code>objectType<\/code> is <code>MeasurementUnit<\/code>, also required: <code>symbol<\/code>/);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('index footer links to the tree view and the schema reference page', () => {
+  const out = buildGreen();
+  try {
+    const html = readFileSync(join(out, 'index.html'), 'utf8');
+    assert.match(html, /<a href="\/tree">Tree view<\/a>/);
+    assert.match(html, /<a href="\/schema">JSON Schema reference<\/a>/);
   } finally {
     rmSync(out, { recursive: true, force: true });
   }

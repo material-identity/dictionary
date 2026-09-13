@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/10ed3f1d-7648-4081-9fd5-a88df6640b21
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: marketSurveillanceAuthority
+preferredName:
+  en: Market surveillance authority
+  de: Marktüberwachungsbehörde
+definition:
+  en: Authority designated by a Member State as responsible for carrying out market surveillance in its territory.
+  de: Von einem Mitgliedstaat benannte Behörde, die für die Durchführung der Marktüberwachung in seinem Hoheitsgebiet zuständig ist.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 11(b); defined in Regulation (EU) 2019/1020 Art. 3(4), imported by Art. 2
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

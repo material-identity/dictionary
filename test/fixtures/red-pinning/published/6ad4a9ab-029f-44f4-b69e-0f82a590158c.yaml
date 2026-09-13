@@ -7,3 +7,4 @@ preferredName:
 elements:
   - dictionaryReference: https://material-identity.eu/def/5a2cff8d-0c78-4426-a8c5-347d7f7ca00d
     isMandatory: true
+    accessCategory: https://material-identity.eu/def/9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b

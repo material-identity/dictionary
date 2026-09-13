@@ -1,0 +1,10 @@
+id: https://material-identity.eu/def/b3f6e6f2-3f8a-4b1a-9b1a-6b6f6f6f6f6f
+isDefinedBy: https://material-identity.eu/
+objectType: MeasurementUnit
+shortName: badUcumSyntax
+symbol:
+  en: X
+preferredName:
+  en: MeasurementUnit with a syntactically invalid ucumCode
+crossReferences:
+  ucumCode: "not a ucum code!!"
