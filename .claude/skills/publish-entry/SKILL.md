@@ -26,7 +26,11 @@ changes about the flow.
 
 ## Steps
 
-1. **Create a branch.**
+1. **Create a branch from `main`, and open the PR against `main` — never against another
+   branch.** GitHub resolves `Closes #<n>` only for PRs targeting the default branch; a publish
+   PR stacked on a feature branch has no closing references, so the two-yes gate (check 7) sees
+   no accepted request and fails, and `issue-state.yml` never advances the issue. If the entries
+   need an unmerged schema change, merge that first.
 
 2. **Mint.** For each draft: `npx tsx scripts/mint.ts drafts/<shortName>.yaml` — this rewrites
    only the `id` line to `https://material-identity.eu/def/<new-uuid>` and writes

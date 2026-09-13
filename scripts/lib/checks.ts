@@ -170,7 +170,10 @@ export function checkPinning(repo: RepoModel): ValidationIssue[] {
     const elements = file.doc.elements;
     if (Array.isArray(elements)) {
       elements.forEach((el, i) => {
-        if (el && typeof el === 'object') requirePinned(file, `elements[${i}].dictionaryReference`, (el as Record<string, unknown>).dictionaryReference);
+        if (!el || typeof el !== 'object') return;
+        const member = el as Record<string, unknown>;
+        requirePinned(file, `elements[${i}].dictionaryReference`, member.dictionaryReference);
+        if (member.accessCategory !== undefined) requirePinned(file, `elements[${i}].accessCategory`, member.accessCategory);
       });
     }
   }

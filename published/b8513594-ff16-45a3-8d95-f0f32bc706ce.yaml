@@ -1,0 +1,35 @@
+id: https://material-identity.eu/def/b8513594-ff16-45a3-8d95-f0f32bc706ce
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: actorGroup
+preferredName:
+  en: Actor group
+  de: Akteursgruppe
+definition:
+  en: Group of actors along a product's value chain, or in its supervision, that a legal act
+    names as having access to digital product passport data based on their access rights.
+  de: Gruppe von Akteuren entlang der Wertschöpfungskette eines Produkts oder in dessen
+    Überwachung, die ein Rechtsakt als zugriffsberechtigt auf Daten des digitalen Produktpasses
+    im Rahmen ihrer Zugriffsrechte benennt.
+valueDataType: xsd:string
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
+enumeration:
+  - https://material-identity.eu/def/2f540073-4fe6-42f6-a541-0779099d39c1
+  - https://material-identity.eu/def/bd49089f-87da-4c0b-9d40-b6fa817a0dbc
+  - https://material-identity.eu/def/c6c19166-57a7-47f8-99be-3c32b23da0d2
+  - https://material-identity.eu/def/e08a478f-319b-425e-b675-7b767087e6c4
+  - https://material-identity.eu/def/b0a7199d-c69b-4020-b108-be3980b31026
+  - https://material-identity.eu/def/ebf722ed-cf7d-4c6f-afce-c81eb9b7b947
+  - https://material-identity.eu/def/dc253e71-443c-4624-90ab-02c4485ac74b
+  - https://material-identity.eu/def/ec65fd94-bae4-4411-a14c-e1fa3b42b168
+  - https://material-identity.eu/def/ae737245-7cbd-4707-a6bd-1cae785632e6
+  - https://material-identity.eu/def/7970bd8c-3a53-4135-b4b6-942692dca107
+  - https://material-identity.eu/def/10ed3f1d-7648-4081-9fd5-a88df6640b21
+  - https://material-identity.eu/def/f92b1603-6e27-4933-be7a-8c46128f553b
+  - https://material-identity.eu/def/156d394a-8621-4fc5-b6f4-b084aa669a8a
+  - https://material-identity.eu/def/71ad87c2-9b21-4a13-ab4c-58b8f12cfc6e
+  - https://material-identity.eu/def/c38e9fd6-7c12-48af-869f-128408e564fd
+  - https://material-identity.eu/def/2501e668-e153-4ed8-8e6c-57f07d1177a1

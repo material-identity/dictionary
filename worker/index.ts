@@ -21,7 +21,9 @@ export function decide(pathname: string, accept: string | null): RouteDecision {
       'content-type': wantsHtml ? 'text/html; charset=utf-8' : 'application/json; charset=utf-8',
       'cache-control': 'public, max-age=31536000, immutable', // entries never change (R6)
     };
-    if (wantsHtml) headers.link = `</def/${uuid}>; rel="canonical"`;
+    // RFC 8574: cite the canonical id whatever URL was fetched; HTML also names itself canonical.
+    const citeAs = `<https://material-identity.eu/def/${uuid}>; rel="cite-as"`;
+    headers.link = wantsHtml ? `</def/${uuid}>; rel="canonical", ${citeAs}` : citeAs;
     return { originPath: `/def/${uuid}.${wantsHtml ? 'html' : 'json'}`, headers };
   }
   // index, pagination, styles, raw origin files: pass through with a short cache
