@@ -1,0 +1,70 @@
+{
+  "@comment": [
+    "The one file where this dictionary's semantic commitments live (issue #98; handover §12 step 1,",
+    "refreshed post-#57). Applying it to an entry's canonical JSON yields the same graph the build",
+    "emits as /dictionary.ttl.",
+    "",
+    "This context is NOT part of the canonical entry representation: /def/<uuid>.json carries no",
+    "@context key and never will — those bytes are immutable by contract (R6). RDF here is a second",
+    "serialization of the same facts, never a mutation of the first.",
+    "",
+    "Two deliberate calls: identicalTo maps to skos:exactMatch and not owl:sameAs, because asserting",
+    "that two dictionaries describe the same concept is a curatorial claim, not logical identity; and",
+    "replaces maps to dcterms:replaces only — the forward dcterms:isReplacedBy exists in the emitted",
+    "graph, which is derived, but never in an entry, which is immutable."
+  ],
+  "@context": {
+    "mi": "https://material-identity.eu/ns#",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "qudt": "http://qudt.org/schema/qudt/",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "id": "@id",
+    "objectType": { "@id": "@type", "@context": { "@base": "https://material-identity.eu/ns#" } },
+
+    "preferredName": { "@id": "skos:prefLabel", "@container": "@language" },
+    "definition": { "@id": "skos:definition", "@container": "@language" },
+    "symbol": { "@id": "mi:symbol", "@container": "@language" },
+    "shortName": "skos:notation",
+
+    "isDefinedBy": { "@id": "rdfs:isDefinedBy", "@type": "@id" },
+    "replaces": { "@id": "dcterms:replaces", "@type": "@id" },
+    "identicalTo": { "@id": "skos:exactMatch", "@type": "@id", "@container": "@set" },
+    "inheritsFrom": { "@id": "skos:broader", "@type": "@id", "@container": "@set" },
+
+    "valueDataType": { "@id": "mi:valueDataType", "@type": "@vocab" },
+    "value": "mi:value",
+    "exampleValue": "mi:exampleValue",
+    "unit": { "@id": "qudt:hasUnit", "@type": "@id" },
+    "quantityKind": { "@id": "qudt:hasQuantityKind", "@type": "@id" },
+    "dimension": "mi:dimension",
+    "coherentSiUnit": { "@id": "mi:coherentSiUnit", "@type": "@id" },
+    "itemType": { "@id": "mi:itemType", "@type": "@id" },
+    "resourceMediaType": "dcterms:format",
+    "enumeration": { "@id": "mi:permittedValue", "@type": "@id", "@container": "@set" },
+
+    "elements": { "@id": "mi:membership", "@container": "@set" },
+    "dictionaryReference": { "@id": "mi:element", "@type": "@id" },
+    "isMandatory": { "@id": "mi:isMandatory", "@type": "xsd:boolean" },
+    "accessCategory": { "@id": "mi:accessCategory", "@type": "@id" },
+
+    "definitionStandard": "mi:definitionStandard",
+    "testStandard": "mi:testStandard",
+    "legalBasis": "mi:legalBasis",
+    "name": "dcterms:title",
+    "clause": "mi:clause",
+    "uri": { "@id": "dcterms:source", "@type": "@id" },
+
+    "conversions": { "@id": "mi:conversion", "@container": "@set" },
+    "toUnit": { "@id": "mi:toUnit", "@type": "@id" },
+    "factor": { "@id": "mi:factor", "@type": "xsd:decimal" },
+    "offset": { "@id": "mi:offset", "@type": "xsd:decimal" },
+
+    "crossReferences": "@nest",
+    "ucumCode": "qudt:ucumCode",
+    "uneceCommonCode": "qudt:uneceCommonCode",
+    "qudtUnit": { "@id": "skos:exactMatch", "@type": "@id" }
+  }
+}

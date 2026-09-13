@@ -313,6 +313,25 @@ test('build publishes the raw JSON Schema byte-identical to source, plus a human
   }
 });
 
+test('build publishes the JSON-LD context and the Turtle graph, and the entry JSON stays context-free', () => {
+  const out = buildGreen();
+  try {
+    const context = readFileSync(join(out, 'context.jsonld'), 'utf8');
+    assert.deepEqual(JSON.parse(context), JSON.parse(readFileSync(join(here, '..', 'rdf', 'context.jsonld'), 'utf8')));
+
+    const ttl = readFileSync(join(out, 'dictionary.ttl'), 'utf8');
+    assert.match(ttl, /@prefix mi: <https:\/\/material-identity\.eu\/ns#> \./);
+    assert.match(ttl, new RegExp(`<https://material-identity\\.eu/def/${MP2}>\\n  a skos:Concept, mi:SingleValuedDataElement ;`));
+
+    // the canonical representation is untouched — no @context key, ever (R6)
+    const entry = JSON.parse(readFileSync(join(out, 'def', `${MP2}.json`), 'utf8'));
+    assert.equal(entry['@context'], undefined);
+    assert.deepEqual(Object.keys(entry).slice(0, 3), ['id', 'replaces', 'isDefinedBy']);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
 test('index footer links to the tree view and the schema reference page', () => {
   const out = buildGreen();
   try {

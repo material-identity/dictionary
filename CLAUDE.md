@@ -56,6 +56,10 @@ section for the full explanation).
   stays the norm — bypass is the exception, never a workflow
 - The automation ratchet: a manual correction that happens twice becomes a `validate.ts` check,
   a `REVIEW.md` line, a skill step, or a rule here
+- RDF is a **second serialization, never a mutation of the first**: `/def/<uuid>.json` carries no
+  `@context` and never will. Semantics live in `rdf/context.jsonld`; `/dictionary.ttl` is derived
+  (#98). Track steps 1–2 are in scope; steps 3–4 (oxigraph semantic lint, DCAT-AP records) stay
+  on the plan's §7 list
 
 ## Commands
 
@@ -74,6 +78,9 @@ section for the full explanation).
   companion examples doc, re-minted under the canonical domain) — no `concepts/` directory
 - `schema/dictionary-entry.schema.json` — envelope schema (draft 2019-09); `id`, optional
   `replaces`, `isDefinedBy`, plus semantics fields only
+- `rdf/context.jsonld` — the JSON-LD context: the one place the semantic commitments live
+  (`identicalTo` → `skos:exactMatch`, not `owl:sameAs`); `scripts/lib/rdf.ts` emits
+  `/dictionary.ttl` from it, verified by parsing with oxigraph in the tests
 - `scripts/validate.ts` — CLI; `scripts/lib/repo.ts` — YAML→JSON repo model;
   `scripts/lib/checks.ts` — pure check functions (cheap to extend — see ratchet)
 - `scripts/build.ts` — site builder; `lib/emit.ts` canonical JSON, `lib/render.ts` HTML

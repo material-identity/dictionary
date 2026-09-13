@@ -10,6 +10,7 @@ import { canonicalJson } from './lib/emit.ts';
 import { RefIndex, renderEntryPage, renderIndexPages, renderSchemaPage, renderTreePage } from './lib/render.ts';
 import { renderFeed } from './lib/feed.ts';
 import { citation } from './lib/cite.ts';
+import { renderTurtle } from './lib/rdf.ts';
 import { getAddedDates, getReleases } from './lib/git.ts';
 
 const LIB_DIR = dirname(fileURLToPath(import.meta.url));
@@ -17,6 +18,7 @@ const LIB_DIR = dirname(fileURLToPath(import.meta.url));
 // --root points at (a fixture tree has no schema/ of its own) — same fixed-path approach
 // checks.ts uses for validation.
 const SCHEMA_PATH = join(LIB_DIR, '..', 'schema', 'dictionary-entry.schema.json');
+const CONTEXT_PATH = join(LIB_DIR, '..', 'rdf', 'context.jsonld');
 
 export interface BuildResult {
   entries: number;
@@ -60,6 +62,12 @@ export function build(root: string, out: string): BuildResult {
   writeFileSync(join(out, 'superseded.json'), `${JSON.stringify(refs.supersededMap(), null, 2)}\n`);
   mkdirSync(join(out, 'tree'), { recursive: true });
   writeFileSync(join(out, 'tree', 'index.html'), renderTreePage(repo, refs));
+
+  // RDF track steps 1–2 (issue #98): the context is the semantic commitment, the Turtle is a
+  // derived second serialization. The canonical /def/<uuid>.json is untouched by both.
+  cpSync(CONTEXT_PATH, join(out, 'context.jsonld'));
+  const issued = new Map([...releases].map(([path, release]) => [path, release.date]));
+  writeFileSync(join(out, 'dictionary.ttl'), renderTurtle(repo, refs, issued));
   return { entries, out };
 }
 
