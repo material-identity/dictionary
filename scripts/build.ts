@@ -2,7 +2,7 @@
 // Build (plan §4 M3, redesigned per issue #57): repo model → site/ — canonical JSON +
 // human HTML per entry, one stylesheet. Deterministic transform, no network, content
 // never altered. Usage: npm run build [-- --root <dir>] [-- --out <dir>]
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadRepo } from './lib/repo.ts';
@@ -19,6 +19,8 @@ const LIB_DIR = dirname(fileURLToPath(import.meta.url));
 // checks.ts uses for validation.
 const SCHEMA_PATH = join(LIB_DIR, '..', 'schema', 'dictionary-entry.schema.json');
 const CONTEXT_PATH = join(LIB_DIR, '..', 'rdf', 'context.jsonld');
+// RFC 8615 well-known URIs, copied wholesale so adding e.g. a security.txt needs no code (#107).
+const WELL_KNOWN_PATH = join(LIB_DIR, '..', '.well-known');
 
 export interface BuildResult {
   entries: number;
@@ -72,6 +74,7 @@ export function build(root: string, out: string): BuildResult {
   // RDF track steps 1–2 (issue #98): the context is the semantic commitment, the Turtle is a
   // derived second serialization. The canonical /def/<uuid>.json is untouched by both.
   cpSync(CONTEXT_PATH, join(out, 'context.jsonld'));
+  if (existsSync(WELL_KNOWN_PATH)) cpSync(WELL_KNOWN_PATH, join(out, '.well-known'), { recursive: true });
   const issued = new Map([...releases].map(([path, release]) => [path, release.date]));
   writeFileSync(join(out, 'dictionary.ttl'), renderTurtle(repo, refs, issued));
   return { entries, out };

@@ -96,6 +96,23 @@ test('decide: JSON is the default; HTML only when Accept names text/html', () =>
   assert.equal(browser.headers.link, `</def/${uuid}>; rel="canonical", <https://material-identity.eu/def/${uuid}>; rel="cite-as"`);
 });
 
+test('decide: well-known URIs are typed and cached for a day, never immutable (#107)', () => {
+  const key = decide('/.well-known/pgp-security.asc', '*/*');
+  assert.equal(key.originPath, '/.well-known/pgp-security.asc');
+  assert.equal(key.headers['content-type'], 'application/pgp-keys');
+  // a key can be rotated or revoked, so it must never inherit an entry's immutable caching
+  assert.equal(key.headers['cache-control'], 'public, max-age=86400');
+  assert.ok(!key.headers['cache-control'].includes('immutable'));
+
+  // other well-known resources get the same ceiling, and the origin's own type
+  const other = decide('/.well-known/security.txt', '*/*');
+  assert.equal(other.headers['cache-control'], 'public, max-age=86400');
+  assert.equal(other.headers['content-type'], undefined);
+
+  // .asc anywhere else is not special-cased
+  assert.equal(decide('/def/whatever.asc', '*/*').headers['content-type'], undefined);
+});
+
 test('decide: everything else passes through with a short cache; no /concept route', () => {
   const uuid = 'c38a85eb-1a37-416d-ab21-7ddcc599754d';
 
