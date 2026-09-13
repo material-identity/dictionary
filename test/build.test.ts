@@ -108,6 +108,20 @@ test('superseded entry page shows the banner, derived from replaces, never store
   }
 });
 
+test('legalBasis renders distinctly from definitionStandard/testStandard, both schema-valid and on the page', () => {
+  const out = buildGreen();
+  try {
+    const v2 = readFileSync(join(out, 'def', `${MP2}.html`), 'utf8');
+    assert.match(v2, /<th scope="row">legalBasis<\/th><td>Regulation \(EU\) 2024\/1781, clause Art\. 4 — <a href="https:\/\/eur-lex\.europa\.eu\/eli\/reg\/2024\/1781\/oj" rel="external">/);
+
+    const entry = JSON.parse(readFileSync(join(out, 'def', `${MP2}.json`), 'utf8'));
+    assert.deepEqual(Object.keys(entry.legalBasis), ['name', 'clause', 'uri']);
+    assert.notDeepEqual(entry.legalBasis, entry.definitionStandard);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
 test('internal references render as links with resolved labels', () => {
   const out = buildGreen();
   try {

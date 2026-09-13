@@ -32,6 +32,10 @@ pinning, immutability, move purity, the two-yes gate, coverage.
       unless the concept is version-bound.
 - [ ] `isDefinedBy` is the dictionary root, not a standard — provenance of the entry,
       not of the concept.
+- [ ] `legalBasis` is used for the law/regulation that defines or mandates the concept —
+      never for a technical/testing standard (that's `definitionStandard`/`testStandard`).
+      Its `uri` pins to a specific expression (e.g. an Official Journal text), never a live
+      consolidated alias that can change under an immutable entry.
 
 ## 4 Envelope idioms
 
