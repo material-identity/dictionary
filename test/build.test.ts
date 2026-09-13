@@ -190,6 +190,48 @@ test('index lists only current entries — superseded maxPressure v1 is omitted'
   }
 });
 
+test('tree view: containment-only nesting, superseded omitted, badges from the membership, no scripts', () => {
+  const ROUTE = '4eae703a-fa15-4118-8bc4-7926a22a12fb'; // steelmakingRoute
+  const EAF = '5ed29113-a426-4b6d-a790-e6c8268b9e52'; // its Value
+  const COLLECTION = '2f3de2bb-0588-4513-bfc3-41d021815a81'; // mechanicalProperties
+  const out = buildGreen();
+  try {
+    const html = readFileSync(join(out, 'tree', 'index.html'), 'utf8');
+    assert.ok(html.includes('<link rel="canonical" href="https://material-identity.eu/tree">'));
+    assert.ok(!/<script/i.test(html), 'tree page must not contain scripts');
+
+    // roots = current entries nothing *contains*: mechanicalProperties, steelmakingRoute, the
+    // access-category Value (reachable only through a membership's accessCategory, which is a
+    // reference edge), plus megapascal and pressure as reference-only kinds
+    assert.equal((html.match(/<details open>/g) ?? []).length, 5);
+    assert.match(html, /3 element roots · 2 units and quantities/);
+
+    // two sections: elements/collections first, reference-only kinds (units, quantities) after
+    const units = html.indexOf('<h2>Units and quantities</h2>');
+    assert.ok(html.indexOf('<h2>Elements and collections</h2>') < units, 'elements section precedes units');
+    assert.ok(html.indexOf(`/def/${COLLECTION}"`) < units && html.indexOf(`/def/${ROUTE}"`) < units, 'elements listed in the first section');
+    assert.ok(html.lastIndexOf(`<summary>megapascal`) > units && html.lastIndexOf(`<summary>pressure`) > units, 'units and quantities listed in the second section');
+
+    // maxPressure v2 nests under mechanicalProperties with the membership badge; v1 (superseded) appears nowhere
+    const collectionAt = html.indexOf('<summary>Mechanical properties');
+    const memberAt = html.indexOf('<summary>Maximum allowable pressure');
+    assert.ok(collectionAt !== -1 && collectionAt < memberAt, 'member nests inside its collection');
+    // the membership's badges, including the access tier the collection assigns (#88)
+    assert.match(html, /<summary>Maximum allowable pressure <code>maxPressure<\/code> · <span class="type">SingleValuedDataElement<\/span> <span class="badge">mandatory<\/span> <span class="badge">access: <a href="\/def\/7a1e2c3d-4b5f-4a6e-9c8d-1f2e3d4c5b6a">Authority only<\/a><\/span><\/summary>/);
+    assert.ok(!html.includes(MP1), 'superseded entry must not appear in the tree');
+
+    // the enumeration Value nests under its element (badge "value") and is not a root
+    assert.match(html, /<summary>Electric arc furnace · <span class="type">Value<\/span> <span class="badge">value<\/span><\/summary>/);
+    assert.equal((html.match(new RegExp(`<a href="/def/${EAF}">`, 'g')) ?? []).length, 1);
+    assert.ok(html.indexOf(`/def/${ROUTE}"`) < html.indexOf(`/def/${EAF}"`), 'value renders inside its element');
+
+    // reference edges stay links, never children: the unit shows in maxPressure's facts, and megapascal is its own root
+    assert.match(html, new RegExp(`unit <a href="/def/${UNIT}">megapascal</a>`));
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
 test('build publishes the raw JSON Schema byte-identical to source, plus a human-readable page', () => {
   const out = buildGreen();
   try {
@@ -214,10 +256,11 @@ test('build publishes the raw JSON Schema byte-identical to source, plus a human
   }
 });
 
-test('index footer links to the schema reference page', () => {
+test('index footer links to the tree view and the schema reference page', () => {
   const out = buildGreen();
   try {
     const html = readFileSync(join(out, 'index.html'), 'utf8');
+    assert.match(html, /<a href="\/tree">Tree view<\/a>/);
     assert.match(html, /<a href="\/schema">JSON Schema reference<\/a>/);
   } finally {
     rmSync(out, { recursive: true, force: true });

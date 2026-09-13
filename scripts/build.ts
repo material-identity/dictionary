@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadRepo } from './lib/repo.ts';
 import { canonicalJson } from './lib/emit.ts';
-import { RefIndex, renderEntryPage, renderIndexPages, renderSchemaPage } from './lib/render.ts';
+import { RefIndex, renderEntryPage, renderIndexPages, renderSchemaPage, renderTreePage } from './lib/render.ts';
 import { renderFeed } from './lib/feed.ts';
 import { getAddedDates } from './lib/git.ts';
 
@@ -49,6 +49,8 @@ export function build(root: string, out: string): BuildResult {
   }
   writeFileSync(join(out, 'feed.xml'), renderFeed(repo, getAddedDates(root)));
   writeFileSync(join(out, 'superseded.json'), `${JSON.stringify(refs.supersededMap(), null, 2)}\n`);
+  mkdirSync(join(out, 'tree'), { recursive: true });
+  writeFileSync(join(out, 'tree', 'index.html'), renderTreePage(repo, refs));
   return { entries, out };
 }
 

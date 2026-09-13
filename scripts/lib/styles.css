@@ -30,6 +30,14 @@ table.inner th, table.inner td { padding: 0.25rem 0.5rem; }
 dl.langmap { margin: 0; display: grid; grid-template-columns: 3rem 1fr; gap: 0.1rem 0.5rem; }
 dl.langmap dt { color: var(--muted); font-weight: 600; }
 dl.langmap dd { margin: 0; }
+.tree details { margin: 0.25rem 0 0.25rem 1rem; padding-left: 0.6rem; border-left: 1px solid var(--line); }
+.tree > details { margin-left: 0; padding-left: 0; border-left: 0; }
+.tree summary { cursor: pointer; }
+.tree .node-body { margin: 0.25rem 0 0.5rem 1.2rem; }
+.tree .type, .tree .facts, .tree .ref { color: var(--muted); }
+.tree .facts { margin: 0.25rem 0; font-size: 0.9em; }
+.tree .badge { font-size: 0.85em; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 0.35em; margin-left: 0.25em; }
+.tree .ref { margin: 0.25rem 0 0.25rem 1rem; }
 .banner { padding: 0.75rem 1rem; border-left: 4px solid; border-radius: 3px; margin-bottom: 1rem; }
 .banner.superseded { background: var(--dead-bg); border-color: var(--dead-edge); }
 footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--muted); max-width: 56rem; margin-left: auto; margin-right: auto; padding-left: 1rem; padding-right: 1rem; }

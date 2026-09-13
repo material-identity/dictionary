@@ -184,6 +184,109 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
   return pageShell(title, `/def/${file.stem}`, body, { alternateJson: `/def/${file.stem}.json` });
 }
 
+/** A containment edge: the only kind of edge the tree nests. Reference edges (unit, quantityKind, …) stay links. */
+interface ContainmentEdge {
+  uuid: string;
+  kind: 'member' | 'item' | 'value';
+  isMandatory?: boolean;
+  accessCategory?: string;
+}
+
+function defUuidOf(v: unknown): string | undefined {
+  return typeof v === 'string' && v.startsWith(DEF_PREFIX) ? v.slice(DEF_PREFIX.length) : undefined;
+}
+
+function containmentEdges(doc: Doc): ContainmentEdge[] {
+  const edges: ContainmentEdge[] = [];
+  if (Array.isArray(doc.elements)) {
+    for (const el of doc.elements as Doc[]) {
+      const uuid = defUuidOf(el?.dictionaryReference);
+      if (uuid) edges.push({ uuid, kind: 'member', isMandatory: el.isMandatory === true, accessCategory: typeof el.accessCategory === 'string' ? el.accessCategory : undefined });
+    }
+  }
+  const item = defUuidOf(doc.itemType);
+  if (item) edges.push({ uuid: item, kind: 'item' });
+  if (Array.isArray(doc.enumeration)) {
+    for (const v of doc.enumeration) {
+      const uuid = defUuidOf(v);
+      if (uuid) edges.push({ uuid, kind: 'value' });
+    }
+  }
+  return edges;
+}
+
+/**
+ * Fold/unfold tree of the current dictionary (plan §7 out-of-scope test: derived artifact,
+ * nothing stored). Nests containment edges only — elements, itemType, enumeration — so a shared
+ * unit never becomes a "child" of every property that uses it. The dictionary is a DAG: a node
+ * contained twice renders its body once and a link afterwards; a per-path guard stops a cycle.
+ * Native <details>/<summary>, no JS.
+ */
+export function renderTreePage(repo: RepoModel, refs: RefIndex): string {
+  const all = new Map<string, Doc>();
+  for (const f of repo.published) if (f.doc) all.set(f.stem, f.doc);
+  const current = new Map([...all].filter(([, doc]) => !refs.isSuperseded(doc)));
+  const contained = new Set<string>();
+  for (const doc of current.values()) for (const e of containmentEdges(doc)) contained.add(e.uuid);
+
+  const labelOf = (uuid: string, doc: Doc): string => en(doc.preferredName) ?? String(doc.shortName ?? uuid);
+  const roots = [...current]
+    .filter(([uuid]) => !contained.has(uuid))
+    .sort(([ua, a], [ub, b]) => labelOf(ua, a).localeCompare(labelOf(ub, b), 'en') || ua.localeCompare(ub, 'en'));
+
+  const badges = (edge: ContainmentEdge | undefined, doc: Doc | undefined): string => {
+    const out: string[] = [];
+    if (edge?.kind === 'member') out.push(edge.isMandatory ? 'mandatory' : 'optional');
+    if (edge?.kind === 'item') out.push('item type');
+    if (edge?.kind === 'value') out.push('value');
+    if (edge?.accessCategory !== undefined) out.push(`access: ${refs.link(edge.accessCategory)}`);
+    if (doc && refs.isSuperseded(doc)) out.push('superseded');
+    return out.map((b) => `<span class="badge">${b}</span>`).join(' ');
+  };
+
+  const rendered = new Set<string>();
+  const node = (uuid: string, edge: ContainmentEdge | undefined, path: Set<string>, depth: number): string => {
+    const doc = all.get(uuid);
+    if (!doc) return `<p class="ref">${badges(edge, undefined)} <code>${esc(uuid)}</code> — not published</p>`;
+    if (path.has(uuid)) return `<p class="ref">${badges(edge, doc)} ${refs.link(doc.id)} — contains itself (cycle)</p>`;
+    if (rendered.has(uuid)) return `<p class="ref">${badges(edge, doc)} ${refs.link(doc.id)} — shown above</p>`;
+    rendered.add(uuid);
+
+    const facts: string[] = [];
+    if (doc.value !== undefined) facts.push(`value <code>${esc(JSON.stringify(doc.value))}</code>`);
+    if (doc.valueDataType !== undefined) facts.push(`<code>${esc(doc.valueDataType)}</code>`);
+    if (doc.unit !== undefined) facts.push(`unit ${refs.link(doc.unit)}`);
+    facts.push(`<a href="/def/${esc(uuid)}">entry page</a>`);
+
+    const nextPath = new Set(path).add(uuid);
+    const children = containmentEdges(doc).map((e) => node(e.uuid, e, nextPath, depth + 1)).join('\n');
+    const shortName = doc.shortName !== undefined ? ` <code>${esc(doc.shortName)}</code>` : '';
+    return `<details${depth === 0 ? ' open' : ''}>
+<summary>${esc(labelOf(uuid, doc))}${shortName} · <span class="type">${esc(doc.objectType)}</span> ${badges(edge, doc)}</summary>
+<div class="node-body">${doc.definition !== undefined ? langMapHtml(doc.definition) : ''}<p class="facts">${facts.join(' · ')}</p>
+${children}</div>
+</details>`;
+  };
+
+  // Units and quantities are only ever referenced (unit, quantityKind, coherentSiUnit), never
+  // contained, so they are always roots — listed apart so they don't interleave with content.
+  const isReferenceKind = (doc: Doc): boolean => doc.objectType === 'MeasurementUnit' || doc.objectType === 'Quantity';
+  const elementRoots = roots.filter(([, doc]) => !isReferenceKind(doc));
+  const referenceRoots = roots.filter(([, doc]) => isReferenceKind(doc));
+  const section = (heading: string, note: string, items: typeof roots): string =>
+    items.length === 0 ? '' : `<h2>${heading}</h2>
+<p class="meta">${note}</p>
+<div class="tree">
+${items.map(([uuid]) => node(uuid, undefined, new Set(), 0)).join('\n')}
+</div>`;
+
+  const body = `<h1>Dictionary tree</h1>
+<p class="meta">${elementRoots.length} element ${elementRoots.length === 1 ? 'root' : 'roots'} · ${referenceRoots.length} units and quantities · nests containment only (<code>elements</code>, <code>itemType</code>, <code>enumeration</code>); references such as <code>unit</code> or <code>quantityKind</code> are links inside a node. Badges come from the parent's membership, so the same entry may carry different badges under different parents. Superseded entries are omitted, as in the index.</p>
+${section('Elements and collections', 'Current entries nothing contains, with everything they contain nested below.', elementRoots)}
+${section('Units and quantities', 'Referenced by the entries above via <code>unit</code>, <code>quantityKind</code> or <code>coherentSiUnit</code> — never contained, so always top-level.', referenceRoots)}`;
+  return pageShell('Dictionary tree', '/tree', body);
+}
+
 function schemaTypeLabel(prop: unknown): string {
   if (prop === true || prop === undefined || prop === null) return 'any';
   const p = prop as Doc;
@@ -306,7 +409,7 @@ export function renderIndexPages(repo: RepoModel, refs: RefIndex): Array<{ name:
 ${rows}
 </tbody>
 </table>${nav}
-<p class="contribute"><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/schema">JSON Schema reference</a></p>`;
+<p class="contribute"><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/tree">Tree view</a> · <a href="/schema">JSON Schema reference</a></p>`;
 
     const canonicalPath = page === 1 ? '/' : `/${pageName(page)}`;
     return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, body, { rssFeed: true }) };
