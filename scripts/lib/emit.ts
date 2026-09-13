@@ -11,13 +11,13 @@ const KEY_ORDER = [
   'objectType', 'shortName', 'symbol', 'preferredName', 'definition',
   'inheritsFrom', 'identicalTo',
   'valueDataType', 'unit', 'exampleValue', 'enumeration',
-  'definitionStandard', 'testStandard', 'resourceMediaType', 'itemType', 'elements',
+  'definitionStandard', 'testStandard', 'legalBasis', 'resourceMediaType', 'itemType', 'elements',
   'quantityKind', 'dimension', 'coherentSiUnit', 'crossReferences', 'conversions',
   'value',
   // nested record keys
   'name', 'clause', 'uri',
   'toUnit', 'factor', 'offset',
-  'dictionaryReference', 'isMandatory',
+  'dictionaryReference', 'isMandatory', 'accessCategory',
 ];
 
 const RANK = new Map(KEY_ORDER.map((k, i) => [k, i]));

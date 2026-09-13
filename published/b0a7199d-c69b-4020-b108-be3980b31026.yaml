@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/b0a7199d-c69b-4020-b108-be3980b31026
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: dealer
+preferredName:
+  en: Dealer
+  de: Händler
+definition:
+  en: Distributor or other natural or legal person that offers products for sale, hire or hire purchase, or displays products, to end users in the course of a commercial activity, including through distance selling, or that puts a product into service in the course of a commercial activity.
+  de: Vertreiber oder sonstige natürliche oder juristische Person, die Produkte im Rahmen einer Geschäftstätigkeit Endnutzern zum Verkauf, zur Vermietung oder zum Mietkauf anbietet oder ausstellt, auch im Fernabsatz, oder die ein Produkt im Rahmen einer Geschäftstätigkeit in Betrieb nimmt.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(55); Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

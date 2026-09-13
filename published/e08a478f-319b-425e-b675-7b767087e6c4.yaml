@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/e08a478f-319b-425e-b675-7b767087e6c4
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: distributor
+preferredName:
+  en: Distributor
+  de: Vertreiber
+definition:
+  en: Natural or legal person in the supply chain, other than the manufacturer or the importer, that makes a product available on the market.
+  de: Natürliche oder juristische Person in der Lieferkette, die ein Produkt auf dem Markt bereitstellt, mit Ausnahme des Herstellers oder des Einführers.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(45); Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

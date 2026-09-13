@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/ebf722ed-cf7d-4c6f-afce-c81eb9b7b947
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: professionalRepairer
+preferredName:
+  en: Professional repairer
+  de: Gewerblicher Reparaturbetrieb
+definition:
+  en: Natural or legal person that provides professional repair or maintenance services for a product, whether within the manufacturer's distribution system or independently.
+  de: Natürliche oder juristische Person, die gewerbliche Reparatur- oder Wartungsdienstleistungen für ein Produkt erbringt, unabhängig davon, ob innerhalb des Vertriebssystems des Herstellers oder unabhängig davon.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(48); Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

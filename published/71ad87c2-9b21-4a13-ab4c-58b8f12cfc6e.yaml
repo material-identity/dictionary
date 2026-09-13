@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/71ad87c2-9b21-4a13-ab4c-58b8f12cfc6e
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: tradeUnion
+preferredName:
+  en: Trade union
+  de: Gewerkschaft
+definition:
+  en: Organisation of workers formed to represent their collective interests, named as an actor with access to the digital product passport based on its access rights.
+  de: Zusammenschluss von Arbeitnehmern zur Vertretung ihrer kollektiven Interessen, als Akteur mit Zugang zum digitalen Produktpass im Rahmen seiner Zugriffsrechte benannt.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

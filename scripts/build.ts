@@ -2,17 +2,21 @@
 // Build (plan §4 M3, redesigned per issue #57): repo model → site/ — canonical JSON +
 // human HTML per entry, one stylesheet. Deterministic transform, no network, content
 // never altered. Usage: npm run build [-- --root <dir>] [-- --out <dir>]
-import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadRepo } from './lib/repo.ts';
 import { canonicalJson } from './lib/emit.ts';
-import { RefIndex, renderEntryPage, renderIndexPages, renderTreePage } from './lib/render.ts';
+import { RefIndex, renderEntryPage, renderIndexPages, renderSchemaPage, renderTreePage } from './lib/render.ts';
 import { renderFeed } from './lib/feed.ts';
 import { citation } from './lib/cite.ts';
-import { getAddedDates } from './lib/git.ts';
+import { getAddedDates, getReleases } from './lib/git.ts';
 
 const LIB_DIR = dirname(fileURLToPath(import.meta.url));
+// The schema is one canonical file for the whole site, independent of which content tree
+// --root points at (a fixture tree has no schema/ of its own) — same fixed-path approach
+// checks.ts uses for validation.
+const SCHEMA_PATH = join(LIB_DIR, '..', 'schema', 'dictionary-entry.schema.json');
 
 export interface BuildResult {
   entries: number;
@@ -29,23 +33,31 @@ export function build(root: string, out: string): BuildResult {
 
   rmSync(out, { recursive: true, force: true });
   mkdirSync(join(out, 'def'), { recursive: true });
+  mkdirSync(join(out, 'schema'), { recursive: true });
   cpSync(join(LIB_DIR, 'lib', 'styles.css'), join(out, 'styles.css'));
+  cpSync(SCHEMA_PATH, join(out, 'schema', 'dictionary-entry.schema.json'));
+  writeFileSync(join(out, 'schema', 'index.html'), renderSchemaPage(JSON.parse(readFileSync(SCHEMA_PATH, 'utf8'))));
 
   const addedDates = getAddedDates(root);
+  // Entries are cited by the release they shipped in; one merged since the last tag has no
+  // release yet and falls back to its add-date (see cite.ts).
+  const releases = getReleases(root);
   let entries = 0;
   for (const file of repo.published) {
     if (!file.doc) continue;
-    const addedDate = addedDates.get(file.relPath);
+    const release = releases.get(file.relPath);
+    const addedDate = release?.date ?? addedDates.get(file.relPath);
     writeFileSync(join(out, 'def', `${file.stem}.json`), canonicalJson(file.doc));
-    writeFileSync(join(out, 'def', `${file.stem}.html`), renderEntryPage(file, repo, refs, addedDate));
+    writeFileSync(join(out, 'def', `${file.stem}.html`), renderEntryPage(file, repo, refs, addedDate, release?.tag));
     writeFileSync(join(out, 'def', `${file.stem}.csl.json`), `${JSON.stringify(
-      citation(file.doc, file.stem, { date: addedDate, supersededBy: refs.supersededByEntry(file.doc)?.id as string | undefined }).csl, null, 2)}\n`);
+      citation(file.doc, file.stem, { date: addedDate, release: release?.tag, supersededBy: refs.supersededByEntry(file.doc)?.id as string | undefined }).csl, null, 2)}\n`);
     entries += 1;
   }
   for (const page of renderIndexPages(repo, refs)) {
     writeFileSync(join(out, page.name), page.html);
   }
   writeFileSync(join(out, 'feed.xml'), renderFeed(repo, addedDates));
+  writeFileSync(join(out, 'superseded.json'), `${JSON.stringify(refs.supersededMap(), null, 2)}\n`);
   mkdirSync(join(out, 'tree'), { recursive: true });
   writeFileSync(join(out, 'tree', 'index.html'), renderTreePage(repo, refs));
   return { entries, out };

@@ -9,3 +9,4 @@ definition:
 elements:
   - dictionaryReference: https://material-identity.eu/def/c38a85eb-1a37-416d-ab21-7ddcc599754d
     isMandatory: true
+    accessCategory: https://material-identity.eu/def/7a1e2c3d-4b5f-4a6e-9c8d-1f2e3d4c5b6a
