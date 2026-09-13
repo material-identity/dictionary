@@ -156,6 +156,25 @@ dl.langmap { margin: 0; display: grid; grid-template-columns: 3rem 1fr; gap: 0.1
 dl.langmap dt { color: var(--muted); font-weight: 600; }
 dl.langmap dd { margin: 0; }
 
+/* graph — colours come from the same tokens as the chips, so the figure follows the theme */
+figure.graph { margin: 1.5rem 0 0.5rem; }
+.graph-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 0.5rem; }
+figure.graph figcaption { color: var(--muted); font-size: 0.88rem; margin-top: 0.6rem; max-width: 46rem; }
+.graph svg { display: block; }
+.g-col { font: 600 0.72rem -apple-system, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--muted); }
+.g-label { font: 0.75rem -apple-system, system-ui, sans-serif; fill: var(--ink); }
+.g-node { stroke-width: 1; }
+.g-node.g-collection { fill: var(--chip-collection-bg); stroke: var(--chip-collection-fg); }
+.g-node.g-element { fill: var(--chip-element-bg); stroke: var(--chip-element-fg); }
+.g-node.g-value { fill: var(--chip-value-bg); stroke: var(--chip-value-fg); }
+.g-node.g-unit { fill: var(--chip-unit-bg); stroke: var(--chip-unit-fg); }
+.g-node.g-dead { fill: var(--dead-bg); stroke: var(--dead-edge); stroke-dasharray: 3 2; }
+.graph a:hover .g-node { stroke-width: 2; }
+.graph a:focus-visible .g-node { stroke: var(--accent); stroke-width: 2.5; }
+ul.graph-key { list-style: none; margin: 1rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.35rem 1.5rem; font-size: 0.85rem; color: var(--muted); }
+ul.graph-key li { display: flex; align-items: center; gap: 0.45rem; }
+.g-key { flex: none; }
+
 /* tree */
 .tree details { margin: 0.25rem 0 0.25rem 1rem; padding-left: 0.6rem; border-left: 1px solid var(--line); }
 .tree > details { margin-left: 0; padding-left: 0; border-left: 0; }
