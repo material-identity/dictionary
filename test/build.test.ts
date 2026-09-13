@@ -147,6 +147,46 @@ test('index lists only current entries — superseded maxPressure v1 is omitted'
   }
 });
 
+test('tree view: containment-only nesting, superseded omitted, badges from the membership, no scripts', () => {
+  const ROUTE = '4eae703a-fa15-4118-8bc4-7926a22a12fb'; // steelmakingRoute
+  const EAF = '5ed29113-a426-4b6d-a790-e6c8268b9e52'; // its Value
+  const COLLECTION = '2f3de2bb-0588-4513-bfc3-41d021815a81'; // mechanicalProperties
+  const out = buildGreen();
+  try {
+    const html = readFileSync(join(out, 'tree', 'index.html'), 'utf8');
+    assert.ok(html.includes('<link rel="canonical" href="https://material-identity.eu/tree">'));
+    assert.ok(!/<script/i.test(html), 'tree page must not contain scripts');
+
+    // roots = current entries nothing contains: pressure, mechanicalProperties, steelmakingRoute, megapascal
+    assert.equal((html.match(/<details open>/g) ?? []).length, 4);
+    assert.match(html, /4 roots/);
+
+    // maxPressure v2 nests under mechanicalProperties with the membership badge; v1 (superseded) appears nowhere
+    const collection = html.slice(html.indexOf(`<a href="/def/${COLLECTION}">`), html.indexOf(`<a href="/def/${MP2}">`));
+    assert.match(collection, /<summary>Maximum allowable pressure <code>maxPressure<\/code> · <span class="type">SingleValuedDataElement<\/span> <span class="badge">mandatory<\/span><\/summary>/);
+    assert.ok(!html.includes(MP1), 'superseded entry must not appear in the tree');
+
+    // the enumeration Value nests under its element (badge "value") and is not a root
+    assert.match(html, /<summary>Electric arc furnace · <span class="type">Value<\/span> <span class="badge">value<\/span><\/summary>/);
+    assert.equal((html.match(new RegExp(`<a href="/def/${EAF}">`, 'g')) ?? []).length, 1);
+    assert.ok(html.indexOf(`/def/${ROUTE}"`) < html.indexOf(`/def/${EAF}"`), 'value renders inside its element');
+
+    // reference edges stay links, never children: the unit shows in maxPressure's facts, and megapascal is its own root
+    assert.match(html, new RegExp(`unit <a href="/def/${UNIT}">megapascal</a>`));
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('index footer links to the tree view', () => {
+  const out = buildGreen();
+  try {
+    assert.match(readFileSync(join(out, 'index.html'), 'utf8'), /<a href="\/tree">Tree view<\/a>/);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
 test('build refuses an unloadable repo; empty tree builds an empty site', () => {
   assert.throws(() => build(join(fixtures, 'red-yaml'), mkdtempSync(join(tmpdir(), 'dict-site-'))), /unloadable repo/);
 
