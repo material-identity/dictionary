@@ -49,6 +49,11 @@ section for the full explanation).
 - Every PR references its issue (`Closes #n`); publish PRs require a linked
   `type:dictionary-request` issue with `state:accepted`
 - Commits are GPG-signed (repo config handles it); never rewrite history on `main`
+- Two rulesets guard `main`: `protect-main` (signed commits, green `pr-checks`, no force-push or
+  deletion — **no bypass for anyone**) and `require-review` (Yes #2: one approval from a code
+  owner who is not the author). Repository admins may bypass `require-review` via a PR when no
+  second reviewer is available; every bypass is labelled on the PR and logged. The second yes
+  stays the norm — bypass is the exception, never a workflow
 - The automation ratchet: a manual correction that happens twice becomes a `validate.ts` check,
   a `REVIEW.md` line, a skill step, or a rule here
 

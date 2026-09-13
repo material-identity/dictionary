@@ -59,6 +59,10 @@ pinning, immutability, move purity, the two-yes gate, coverage.
 
 Reviewing a publish PR is Yes #2 of the two-yes principle (plan §5.3): confirm the linked
 dictionary-request issue really covers what the entry says — the request is what was accepted.
+The review rule lives in its own ruleset (`require-review`); a repository admin may bypass it via
+the PR when no second reviewer is available. Signed commits and a green `pr-checks` cannot be
+bypassed by anyone. A bypassed merge is labelled as such on the PR — treat it as a debt to
+review after the fact, not as a review.
 
 **Ratchet rule (plan §2.7):** the second time you make the same correction, stop reviewing it —
 turn it into a `validate.ts` check (if mechanical), a line here (if judgment), or a skill step.
