@@ -110,7 +110,7 @@ footer a { color: var(--muted); }
 .symbol { font: italic 500 2.6rem/1 "Times New Roman", "Nimbus Roman", serif; color: var(--accent); padding-top: 0.35rem; }
 .symbol.upright { font-style: normal; font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-weight: 600; }
 .symbol-cap { font: 0.7rem/1.4 -apple-system, system-ui, sans-serif; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-.definition { margin: 2rem 0 0; display: grid; grid-template-columns: 3.5rem 1fr; gap: 0.6rem 1rem; max-width: 46rem; }
+.definition { margin: 2rem 0 0; display: grid; grid-template-columns: 3.5rem 1fr; gap: 0.6rem 1rem; }
 .definition .lang { padding-top: 0.45rem; }
 .definition p { margin: 0; font-size: 1.12rem; line-height: 1.6; }
 .definition p.missing { color: var(--muted); font-style: italic; font-size: 1rem; }
@@ -133,7 +133,6 @@ details.cite > summary::-webkit-details-marker { display: none; }
 details.cite > summary::before { content: "+ "; }
 details.cite[open] > summary::before { content: "− "; }
 details.cite > summary:hover { border-color: var(--accent); }
-details.cite .iso690 { max-width: 46rem; }
 details.cite pre { background: var(--code-bg); padding: 0.75rem 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; line-height: 1.45; }
 details.cite pre code { background: transparent; padding: 0; font-size: inherit; }
 .btn { display: inline-block; white-space: nowrap; font-size: 0.88rem; font-weight: 600; text-decoration: none; color: var(--accent); border: 1px solid var(--line-strong); padding: 0.45rem 0.85rem; border-radius: 4px; }
@@ -157,8 +156,7 @@ dl.langmap dt { color: var(--muted); font-weight: 600; }
 dl.langmap dd { margin: 0; }
 
 /* about — a prose page, so a reading measure and room to breathe */
-.lede { font-size: 1.2rem; line-height: 1.6; color: var(--ink); max-width: 42rem; margin: 1rem 0 0; }
-.prose { max-width: 42rem; }
+.lede { font-size: 1.2rem; line-height: 1.6; color: var(--ink); margin: 1rem 0 0; }
 .prose h2 { font-size: 0.78rem; }
 .prose p { margin: 0 0 0.9rem; }
 .prose ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.6rem; }
@@ -171,7 +169,7 @@ dl.langmap dd { margin: 0; }
 /* graph — colours come from the same tokens as the chips, so the figure follows the theme */
 figure.graph { margin: 1.5rem 0 0.5rem; }
 .graph-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 0.5rem; }
-figure.graph figcaption { color: var(--muted); font-size: 0.88rem; margin-top: 0.6rem; max-width: 46rem; }
+figure.graph figcaption { color: var(--muted); font-size: 0.88rem; margin-top: 0.6rem; }
 .graph svg { display: block; }
 .g-col { font: 600 0.72rem -apple-system, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--muted); }
 .g-label { font: 0.75rem -apple-system, system-ui, sans-serif; fill: var(--ink); }
