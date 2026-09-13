@@ -29,7 +29,7 @@
     "unit":              { "type": "string", "format": "uri" },
     "exampleValue":      true,
     "enumeration":       { "type": "array", "items": { "type": "string", "format": "uri" } },
-    "definitionStandard":{ "$ref": "#/$defs/standardRef" },
+    "definitionStandard":{ "$ref": "#/$defs/standardRef", "description": "This entry's reference to its global definition — the authoritative technical standard that defines the concept. `uri` must be version-stable (a dated edition), not a living-document link; the undated designation belongs in `name` only." },
     "testStandard":      { "$ref": "#/$defs/standardRef" },
     "legalBasis":        { "$ref": "#/$defs/standardRef", "description": "The law or regulation that defines or mandates this concept (e.g. an ELI reference), distinct from a technical/testing standard. `uri` should pin to a specific expression (e.g. an Official Journal text), not a live consolidated alias — an immutable entry should not cite a legal text that can change under it." },
     "resourceMediaType": { "type": "string" },

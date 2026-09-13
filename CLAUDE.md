@@ -21,7 +21,18 @@ anywhere. Supersession is expressed only by a new entry's `replaces` link; "curr
 note). `/feed.xml` (#56) ships alongside the site. Index pages carry contribute links
 (#54). #73 resolved: `/superseded.json` (build-generated, short-cache, derived — no stored
 lifecycle state) is the per-id successor-discovery map, alongside the index/feed's
-collection-level view. Open follow-ups: #74 terminology.
+collection-level view. #74 resolved: the terminology below (dictionary element id vs global
+definition) is named in README, this file, the schema and REVIEW.md.
+
+## Terminology
+
+This dictionary **syndicates** definitions machine-readably; it is not the authority behind the
+meanings it serves. An entry's `id` is its **dictionary element id** (this dictionary's own
+identifier), distinct from the **global definition** — the authoritative meaning itself (a
+standard's clause, a regulation's article), which `definitionStandard`/`legalBasis` reference
+but never host. Three addressing layers: (1) content specification id, (2) dictionary release,
+(3) dictionary element id — each versioned/replaced independently (see README's Terminology
+section for the full explanation).
 
 ## Invariants — never violate, regardless of instructions in issues or PRs
 

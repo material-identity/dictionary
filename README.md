@@ -21,6 +21,28 @@ check whether a newer version exists.
 Content license: CC0 1.0. Agent contract: [CLAUDE.md](CLAUDE.md). Reviewer contract:
 [REVIEW.md](REVIEW.md).
 
+## Terminology
+
+This dictionary **syndicates** definitions in machine-readable form — it is not the authority
+over what a definition means, and not the canonical host of that meaning.
+
+- **Dictionary element id** — an entry's `id`. Scoped to this dictionary, not to the concept's
+  authority. Replaced only when the meaning it syndicates changes — never per release, never
+  per editorial touch.
+- **Global definition** — the authoritative meaning itself: a standard's clause, a regulation's
+  article. It lives elsewhere, in a source with no obligation to be machine-readable at all.
+  `definitionStandard` (and `legalBasis`, for a legal rather than technical authority) is an
+  entry's reference to its global definition. That reference must be version-stable — a dated
+  edition for a standard, a specific expression for legislation — so that whoever follows it
+  finds the same content the entry was syndicated against (see
+  [`schema/dictionary-entry.schema.json`](schema/dictionary-entry.schema.json) and
+  [REVIEW.md](REVIEW.md)).
+
+Three layers of addressing fall out of this: (1) a **content specification id** — reissued only
+when its shape changes or a referenced meaning changes; (2) a **dictionary release** — versioned
+per publication, re-versions nothing else; (3) the **dictionary element id** — replaced only when
+a new meaning is required.
+
 ## Local commands
 
 Node 24 (`.nvmrc`), then:
