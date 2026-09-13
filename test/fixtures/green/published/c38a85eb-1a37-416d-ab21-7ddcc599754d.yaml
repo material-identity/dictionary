@@ -19,3 +19,7 @@ testStandard:
   name: EN 13445-5
   clause: "10"
   uri: https://cen.eu/standards/EN13445-5
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 4
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

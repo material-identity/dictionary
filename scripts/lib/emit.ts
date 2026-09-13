@@ -11,7 +11,7 @@ const KEY_ORDER = [
   'objectType', 'shortName', 'symbol', 'preferredName', 'definition',
   'inheritsFrom', 'identicalTo',
   'valueDataType', 'unit', 'exampleValue', 'enumeration',
-  'definitionStandard', 'testStandard', 'resourceMediaType', 'itemType', 'elements',
+  'definitionStandard', 'testStandard', 'legalBasis', 'resourceMediaType', 'itemType', 'elements',
   'quantityKind', 'dimension', 'coherentSiUnit', 'crossReferences', 'conversions',
   'value',
   // nested record keys

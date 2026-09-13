@@ -11,6 +11,13 @@ lifecycle model. "Current" and "superseded" are never stored; they're derived at
 by scanning for whichever entry (if any) replaces a given one, and shown only as presentation
 (a banner, an index filter) — never written back into any file.
 
+Because `/def/<uuid>` is served `Cache-Control: immutable`, a superseded entry never gains a
+supersession signal of its own — discovery lives at mutable surfaces instead: the index (lists
+only current entries), `/feed.xml` (announces new supersessions), and
+[`/superseded.json`](https://material-identity.eu/superseded.json) — a build-generated
+`{ old id → successor id }` map for any consumer holding an id, however old, that wants to
+check whether a newer version exists.
+
 Content license: CC0 1.0. Agent contract: [CLAUDE.md](CLAUDE.md). Reviewer contract:
 [REVIEW.md](REVIEW.md).
 

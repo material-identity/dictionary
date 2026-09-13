@@ -19,8 +19,10 @@ anywhere. Supersession is expressed only by a new entry's `replaces` link; "curr
 "superseded" are derived at build time by reverse-scanning `published/`, never stored.
 `carbonContent` v2 is the first real, live supersession (banner, index exclusion, RSS
 note). `/feed.xml` (#56) ships alongside the site. Index pages carry contribute links
-(#54). Open follow-ups: #73 successor discoverability, #74 terminology (both addressed by
-separate PRs — see the Terminology section above and PR history for #73's `/superseded.json`).
+(#54). #73 resolved: `/superseded.json` (build-generated, short-cache, derived — no stored
+lifecycle state) is the per-id successor-discovery map, alongside the index/feed's
+collection-level view. #74 resolved: the terminology below (dictionary element id vs global
+definition) is named in README, this file, the schema and REVIEW.md.
 
 ## Terminology
 

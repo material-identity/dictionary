@@ -34,6 +34,10 @@ pinning, immutability, move purity, the two-yes gate, coverage.
       designation (e.g. "EN 13445-3") belongs in the human-readable `name` field only.
 - [ ] `isDefinedBy` is the dictionary root, not a standard — provenance of the entry,
       not of the concept.
+- [ ] `legalBasis` is used for the law/regulation that defines or mandates the concept —
+      never for a technical/testing standard (that's `definitionStandard`/`testStandard`).
+      Its `uri` pins to a specific expression (e.g. an Official Journal text), never a live
+      consolidated alias that can change under an immutable entry.
 
 ## 4 Envelope idioms
 
