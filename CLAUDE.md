@@ -10,19 +10,24 @@ Public data dictionary for EN 18xxx digital product passports. Immutable entries
   the plan; its concept-resource model is superseded (#57) — read its banner first
 - `Manual-Setup-Checklist.md` — human-only tasks (Cloudflare, Scaleway, GPG, secrets); never do these unprompted
 
-**Current state (2026-08-29):** M0–M6 complete; first signed release `v2026.08.28`
-published (tarball `published/` + `schema/`, CycloneDX SBOM, terms baseline in the notes);
-repo public; ruleset `protect-main` active; Pages enabled; Worker deployed and live on
-`material-identity.eu`. Issue #57 removed the entire version/status/concept model: no
-`isVersionOf`, `version`, `currentVersion`, `versions[]`, `status`, or concept resource
-anywhere. Supersession is expressed only by a new entry's `replaces` link; "current" and
-"superseded" are derived at build time by reverse-scanning `published/`, never stored.
-`carbonContent` v2 is the first real, live supersession (banner, index exclusion, RSS
-note). `/feed.xml` (#56) ships alongside the site. Index pages carry contribute links
-(#54). #73 resolved: `/superseded.json` (build-generated, short-cache, derived — no stored
-lifecycle state) is the per-id successor-discovery map, alongside the index/feed's
-collection-level view. #74 resolved: the terminology below (dictionary element id vs global
-definition) is named in README, this file, the schema and REVIEW.md.
+**Current state (2026-09-13):** M0–M6 complete; release `v2026.08.28` published (tarball
+`published/` + `schema/`, CycloneDX SBOM); repo public; Pages enabled; Worker live on
+`material-identity.eu`. **45 published entries** — the 23 seed entries plus the
+access-category and actor-group vocabularies (#89). Issue #57 removed the entire
+version/status/concept model: no `isVersionOf`, `version`, `currentVersion`, `versions[]`,
+`status`, or concept resource anywhere. Supersession is expressed only by a new entry's
+`replaces` link; "current" and "superseded" are derived at build time by reverse-scanning
+`published/`, never stored. `carbonContent` v2 is the first real, live supersession.
+
+Everything the site serves beyond the entries themselves is **derived at build time**:
+paginated index (#54), `/tree` containment view (#91), `/graph` cross-links as static SVG
+(#101), `/schema` field reference (#80), `/about` (#104), `/feed.xml` (#56),
+`/superseded.json` per-id successor map (#83), `/dictionary.ttl` + `/context.jsonld` (#100),
+and a `.csl.json` citation per entry (#95). Entries are cited by the release they shipped in;
+24 do, 21 are newer than the tag and say so.
+
+**Open:** #102 — how a translation reaches an already-published entry (the versioning test
+says don't mint, R6 says don't edit). It blocks #76. Nothing else is open.
 
 ## Terminology
 
@@ -67,17 +72,22 @@ section for the full explanation).
   pinning, move purity); `-- --root <dir>` for fixture trees, `-- --base <ref>` for the diff
   checks (default `main`; CI passes the PR base SHA)
 - `npm test` — `node:test` suite; the run itself fails below 85% line coverage
-- `npm run build` — YAML → `site/` (canonical byte-stable JSON + HTML per entry, paginated
-  index); `-- --root <dir>`, `-- --out <dir>`; preview with `npx serve site/`
+- `npm run build` — YAML → `site/`: canonical byte-stable JSON + HTML + `.csl.json` per entry,
+  paginated index, `/tree`, `/graph`, `/schema`, `/about`, `/feed.xml`, `/superseded.json`,
+  `/dictionary.ttl`, `/context.jsonld`; `-- --root <dir>`, `-- --out <dir>`; preview with
+  `npx serve site/`. Deterministic: two builds are byte-identical (asserted)
 - Node 24 LTS (`.nvmrc`), install with `npm ci`; `prepare` wires `.githooks/` (pre-push =
   validate + test)
 
 ## Repo map
 
-- `drafts/` mutable WIP · `published/` immutable, add-only (23 seed entries from the
-  companion examples doc, re-minted under the canonical domain) — no `concepts/` directory
+- `drafts/` mutable WIP · `published/` immutable, add-only (45 entries: 23 seed + the two
+  access vocabularies) — no `concepts/` directory
 - `schema/dictionary-entry.schema.json` — envelope schema (draft 2019-09); `id`, optional
-  `replaces`, `isDefinedBy`, plus semantics fields only
+  `replaces`, `isDefinedBy`, plus semantics fields only. `definitionStandard`/`testStandard`
+  cite a technical standard, `legalBasis` a law (#78); `collectionMember.accessCategory` is the
+  membership-level access assignment (#88); `MeasurementUnit` requires a syntax-checked
+  `crossReferences.ucumCode` (#82)
 - `rdf/context.jsonld` — the JSON-LD context: the one place the semantic commitments live
   (`identicalTo` → `skos:exactMatch`, not `owl:sameAs`); `scripts/lib/rdf.ts` emits
   `/dictionary.ttl` from it, verified by parsing with oxigraph in the tests
@@ -85,8 +95,10 @@ section for the full explanation).
   `scripts/lib/checks.ts` — pure check functions (cheap to extend — see ratchet)
 - `scripts/build.ts` — site builder; `lib/emit.ts` canonical JSON, `lib/render.ts` HTML
   templates (template literals, no JS shipped) — "superseded by" banner and the current-only
-  index are both derived here from `replaces`, never read from stored state
-  `lib/styles.css` the one stylesheet
+  index are both derived here from `replaces`, never read from stored state;
+  `lib/graph.ts` the `/graph` SVG (deterministic layered layout), `lib/cite.ts` ISO 690 +
+  BibLaTeX + CSL-JSON, `lib/rdf.ts` the Turtle emitter, `lib/styles.css` the one stylesheet
+  (one 64rem page measure, kind-chip tokens, light + dark)
 - `scripts/mint.ts` — rewrites only a draft's `id:` line when publishing (check 6 depends on
   everything else staying byte-identical)
 - `.claude/skills/` — `new-entry`, `publish-entry`: the publishing workflow as executable
@@ -96,7 +108,8 @@ section for the full explanation).
 - `.github/` — `pr-checks.yml` (required check: validate + tests + SBOM/scan + two-yes gate),
   `issue-state.yml` (state machine §5.2), `deploy.yml`/`deploy-worker.yml` (CI-only, §2.5),
   issue forms, CODEOWNERS, dependabot
-- `worker/index.ts` — the canonical interface (content negotiation + cache headers) — only
+- `worker/index.ts` — the canonical interface (content negotiation + cache headers, plus
+  `Link: …; rel="cite-as"` on both representations) — only
   `/def/<uuid>`, no `/concept/` route; `worker/wrangler.toml` — route
   `material-identity.eu/*`; never `wrangler deploy` locally
 - `.well-known/` — RFC 8615 URIs copied wholesale into `site/` by the builder (add a file, no

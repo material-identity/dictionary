@@ -43,6 +43,26 @@ when its shape changes or a referenced meaning changes; (2) a **dictionary relea
 per publication, re-versions nothing else; (3) the **dictionary element id** — replaced only when
 a new meaning is required.
 
+## What the site serves
+
+An entry is the product; everything else is derived from `published/` at build time and
+served with a short cache, so no derived view can ever contradict an entry.
+
+| | |
+|---|---|
+| `/def/<uuid>` | the entry — JSON for machines, HTML for people, same URI; immutable, cached for a year. Also `/def/<uuid>.csl.json` for reference managers, and a `Link: …; rel="cite-as"` header |
+| [`/`](https://material-identity.eu/) | paginated index of current entries |
+| [`/tree`](https://material-identity.eu/tree) | the containment hierarchy — collections, their members, enumerations — fold/unfold, no JavaScript |
+| [`/graph`](https://material-identity.eu/graph) | the cross-links the tree omits (`unit`, `quantityKind`, `accessCategory`, `replaces`) as a static SVG, plus the same edges as a table |
+| [`/schema`](https://material-identity.eu/schema) | generated field reference, and the raw JSON Schema next to it |
+| [`/superseded.json`](https://material-identity.eu/superseded.json) | old id → successor id, for a consumer holding any id however old |
+| [`/dictionary.ttl`](https://material-identity.eu/dictionary.ttl) | the whole dictionary as RDF; semantics declared in [`/context.jsonld`](https://material-identity.eu/context.jsonld) |
+| [`/feed.xml`](https://material-identity.eu/feed.xml) | new and superseded entries |
+| [`/about`](https://material-identity.eu/about) | what this is, what it promises, what it is not |
+
+RDF is a *second* serialization, never a mutation of the first: `/def/<uuid>.json` carries no
+`@context` and never will.
+
 ## Local commands
 
 Node 24 (`.nvmrc`), then:
@@ -52,7 +72,7 @@ npm ci              # install (exact-pinned; wires the pre-push hook)
 npm run validate    # checks 1–6: immutability, schema, identity, replaces integrity,
                     #             pinning, move purity
 npm test            # node:test suite; the run fails below 85% line coverage
-npm run build       # YAML → site/ (canonical JSON + HTML per entry, paginated index)
+npm run build       # YAML → site/ (entries + every derived view above; deterministic)
 ```
 
 `validate` and `build` accept `-- --root <dir>` to run against a fixture tree;
