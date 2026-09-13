@@ -17,7 +17,7 @@ const KEY_ORDER = [
   // nested record keys
   'name', 'clause', 'uri',
   'toUnit', 'factor', 'offset',
-  'dictionaryReference', 'isMandatory',
+  'dictionaryReference', 'isMandatory', 'accessCategory',
 ];
 
 const RANK = new Map(KEY_ORDER.map((k, i) => [k, i]));

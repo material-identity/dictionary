@@ -100,7 +100,8 @@
       "additionalProperties": false,
       "properties": {
         "dictionaryReference": { "type": "string", "format": "uri" },
-        "isMandatory":         { "type": "boolean" }
+        "isMandatory":         { "type": "boolean" },
+        "accessCategory":      { "type": "string", "format": "uri", "description": "Informative marker of the access category a content specification assigns to this member — a reference to a Value entry of the access-category vocabulary. Membership-level like isMandatory, never a property of the concept entry: the applicable legal act is normative, and enforcement is the passport interface's, not the dictionary's. Purely semantic collections leave it absent." }
       }
     },
     "crossReferences": {

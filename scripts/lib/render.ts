@@ -157,8 +157,8 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
   if (doc.itemType !== undefined) rows.push(row('itemType', refs.link(doc.itemType)));
   if (Array.isArray(doc.elements)) {
     const body = (doc.elements as Doc[]).map((el) =>
-      `<tr><td>${refs.link(el.dictionaryReference)}</td><td>${el.isMandatory ? 'mandatory' : 'optional'}</td></tr>`).join('');
-    rows.push(row('elements', `<table class="inner"><thead><tr><th>member</th><th>membership</th></tr></thead><tbody>${body}</tbody></table>`));
+      `<tr><td>${refs.link(el.dictionaryReference)}</td><td>${el.isMandatory ? 'mandatory' : 'optional'}</td><td>${el.accessCategory !== undefined ? refs.link(el.accessCategory) : '—'}</td></tr>`).join('');
+    rows.push(row('elements', `<table class="inner"><thead><tr><th>member</th><th>membership</th><th>access</th></tr></thead><tbody>${body}</tbody></table>`));
   }
   if (doc.quantityKind !== undefined) rows.push(row('quantityKind', refs.link(doc.quantityKind)));
   if (doc.dimension !== undefined) rows.push(row('dimension', `<code>${esc(doc.dimension)}</code>`));

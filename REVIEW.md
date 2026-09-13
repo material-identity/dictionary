@@ -47,6 +47,11 @@ pinning, immutability, move purity, the two-yes gate, coverage.
 - [ ] Multilingual *values* (not metadata) use `rdf:langString` + `MultiLanguageDataElement`.
 - [ ] `isMandatory` sits on collection **membership**; specification-independent collections
       omit the flags (mandatoriness belongs to the spec context, not the concept).
+- [ ] `accessCategory` likewise sits on **membership**, never on the entry, and only on a
+      collection that represents a content specification's membership — purely semantic
+      collections leave it absent. It references a `Value` of the access-category vocabulary
+      (never an ad-hoc entry) and is informative: the applicable legal act is normative, the
+      passport interface enforces. The dictionary never claims to grant or deny access.
 - [ ] Entries carry no status/lifecycle fields at all — supersession is only ever expressed
       via `replaces`; "current" and "superseded" are derived at build time, never stored.
 

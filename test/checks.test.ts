@@ -75,6 +75,7 @@ test('check 5 — unit, enumeration member, collection member, conversion target
   assert.match(text, /a10d88e9[^\n]*unit "/);
   assert.match(text, /c8e6da66[^\n]*enumeration\[0\]/);
   assert.match(text, /6ad4a9ab[^\n]*elements\[0\]\.dictionaryReference/);
+  assert.match(text, /6ad4a9ab[^\n]*elements\[0\]\.accessCategory/);
   assert.match(text, /153842cc[^\n]*conversions\[0\]\.toUnit/);
 });
 
