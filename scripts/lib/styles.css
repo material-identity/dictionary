@@ -127,6 +127,15 @@ dl.facts dt:last-of-type, dl.facts dd:last-of-type { border-bottom: 0; }
 .identity .mono { font-size: 0.9rem; word-break: break-all; }
 .identity .eyebrow { display: block; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem; }
 .identity + dl.facts { margin-top: 0.75rem; }
+details.cite { margin-top: 1rem; }
+details.cite > summary { display: inline-block; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: var(--accent); border: 1px solid var(--line-strong); padding: 0.45rem 0.85rem; border-radius: 4px; list-style: none; }
+details.cite > summary::-webkit-details-marker { display: none; }
+details.cite > summary::before { content: "+ "; }
+details.cite[open] > summary::before { content: "− "; }
+details.cite > summary:hover { border-color: var(--accent); }
+details.cite .iso690 { max-width: 46rem; }
+details.cite pre { background: var(--code-bg); padding: 0.75rem 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; line-height: 1.45; }
+details.cite pre code { background: transparent; padding: 0; font-size: inherit; }
 .btn { display: inline-block; white-space: nowrap; font-size: 0.88rem; font-weight: 600; text-decoration: none; color: var(--accent); border: 1px solid var(--line-strong); padding: 0.45rem 0.85rem; border-radius: 4px; }
 .btn:hover { border-color: var(--accent); }
 .banner { padding: 0.75rem 1rem; border-left: 4px solid; border-radius: 3px; margin: 1.5rem 0 0; }

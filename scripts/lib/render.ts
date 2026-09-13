@@ -5,6 +5,7 @@
  * published/ and shown purely as presentation (a banner), never written back to any file.
  */
 import { CANONICAL_BASE, DEF_PREFIX, type RepoFile, type RepoModel } from './repo.ts';
+import { citation } from './cite.ts';
 
 export function esc(s: unknown): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -148,12 +149,14 @@ function pageShell(
   title: string,
   canonicalPath: string,
   body: string,
-  options: { alternateJson?: string; rssFeed?: boolean; nav?: string; description?: string } = {},
+  options: { alternateJson?: string; alternateCsl?: string; rssFeed?: boolean; nav?: string; description?: string } = {},
 ): string {
   const canonicalUrl = `${CANONICAL_BASE}${canonicalPath}`;
-  const alternate = options.alternateJson === undefined
+  const alternate = (options.alternateJson === undefined
     ? ''
-    : `\n<link rel="alternate" type="application/json" href="${esc(options.alternateJson)}">`;
+    : `\n<link rel="alternate" type="application/json" href="${esc(options.alternateJson)}">`) + (options.alternateCsl === undefined
+    ? ''
+    : `\n<link rel="alternate" type="application/vnd.citationstyles.csl+json" href="${esc(options.alternateCsl)}">`);
   const rss = options.rssFeed
     ? `\n<link rel="alternate" type="application/rss+xml" title="material-identity dictionary" href="/feed.xml">`
     : '';
@@ -228,7 +231,7 @@ function externalLink(uri: unknown): string {
  * prose, then facts grouped by meaning. The JSON representation is untouched — this is
  * presentation only; nothing here is read back from stored state.
  */
-export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex): string {
+export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex, publishedDate?: string, release?: string): string {
   const doc = file.doc as Doc;
   const title = en(doc.preferredName) ?? String(doc.shortName ?? file.stem);
   const fact = (label: string, html: string): string => `<dt>${esc(label)}</dt><dd>${html}</dd>`;
@@ -302,12 +305,21 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
   }
   sources.push(fact('Defined by', `${externalLink(doc.isDefinedBy)} <span class="aside">— the dictionary that syndicates this entry, not the authority behind its meaning</span>`));
 
-  // identity
+  // identity + citation (no access date by design — the representation never changes)
+  const cite = citation(doc, file.stem, { date: publishedDate, release, supersededBy: refs.supersededByEntry(doc)?.id as string | undefined });
   const identity = `<section><h2>Identity</h2>
-<div class="identity"><div><span class="eyebrow">Dictionary element id · immutable</span><span class="mono">${esc(doc.id)}</span></div>
+<div class="identity"><div><span class="eyebrow">Dictionary element id · immutable${
+    release !== undefined ? ` · release ${esc(release)}` : publishedDate !== undefined ? ` · published ${esc(publishedDate.slice(0, 10))}` : ''
+  }</span><span class="mono">${esc(doc.id)}</span></div>
 <div class="actions"><a href="/def/${esc(file.stem)}.json" class="btn">Raw JSON</a></div></div>${
     doc.replaces !== undefined ? `<dl class="facts">${fact('Replaces', refHtml(doc.replaces, refs))}</dl>` : ''
-  }</section>`;
+  }
+<details class="cite"><summary>Cite this entry</summary>
+<p class="meta">The identifier is immutable, so no access date is needed; a superseded entry stays resolvable and says what replaced it.</p>
+<p class="iso690">${esc(cite.iso690)}</p>
+<pre><code>${esc(cite.biblatex)}</code></pre>
+<p class="meta"><a href="/def/${esc(file.stem)}.csl.json">CSL-JSON</a> for Zotero, Mendeley or pandoc.</p>
+</details></section>`;
 
   const body = `${statusBanner(doc, refs)}
 <nav aria-label="Breadcrumb"><ol class="crumbs">${crumbs.join('')}</ol></nav>
@@ -321,7 +333,7 @@ ${containedBy}
 ${section('Sources', sources)}
 ${identity}`;
 
-  return pageShell(title, `/def/${file.stem}`, body, { alternateJson: `/def/${file.stem}.json`, description: en(doc.definition) });
+  return pageShell(title, `/def/${file.stem}`, body, { alternateJson: `/def/${file.stem}.json`, alternateCsl: `/def/${file.stem}.csl.json`, description: en(doc.definition) });
 }
 
 /** A containment edge: the only kind of edge the tree nests. Reference edges (unit, quantityKind, …) stay links. */

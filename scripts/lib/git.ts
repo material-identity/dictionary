@@ -90,27 +90,80 @@ export function isGitContext(ctx: GitContext | { unavailable: string }): ctx is 
  */
 export function getAddedDates(root: string): Map<string, string> {
   const dates = new Map<string, string>();
-  if (typeof requireToplevel(root) !== 'string') return dates;
+  for (const [path, { date }] of getAddedCommits(root)) dates.set(path, date);
+  return dates;
+}
+
+export interface AddedCommit {
+  /** Author date of the commit that first added the file, ISO 8601. */
+  date: string;
+  sha: string;
+}
+
+/** The commit that first added each currently-published file. Backs getAddedDates and getReleases. */
+export function getAddedCommits(root: string): Map<string, AddedCommit> {
+  const added = new Map<string, AddedCommit>();
+  if (typeof requireToplevel(root) !== 'string') return added;
 
   let output: string;
   try {
     // --no-renames: without it, a drafts/ -> published/ publish move (see checkMovePurity)
     // is reported as a rename, not an add, and --diff-filter=A would never match it.
-    output = git(root, ['log', '--no-renames', '--name-status', '--diff-filter=A', '--format=\x01%aI']);
+    output = git(root, ['log', '--no-renames', '--name-status', '--diff-filter=A', '--format=\x01%aI %H']);
   } catch {
-    return dates;
+    return added;
   }
 
-  let currentDate: string | undefined;
+  let current: AddedCommit | undefined;
   for (const line of output.split('\n')) {
     if (line.startsWith('\x01')) {
-      currentDate = line.slice(1);
-    } else if (currentDate && line.startsWith('A\t')) {
+      const [date, sha] = line.slice(1).split(' ');
+      current = { date, sha };
+    } else if (current && line.startsWith('A\t')) {
       // git log defaults to newest-first; keep overwriting so the final value (from the
-      // oldest matching commit) is the true "first added" date, even in the — currently
+      // oldest matching commit) is the true "first added" commit, even in the — currently
       // impossible per check 1 — case of a path being re-added after deletion.
-      dates.set(line.slice(2), currentDate);
+      added.set(line.slice(2), current);
     }
   }
-  return dates;
+  return added;
+}
+
+export interface Release {
+  /** Tag name, e.g. "v2026.08.28". */
+  tag: string;
+  /** Tag date (YYYY-MM-DD) — what a citation names as the publication date. */
+  date: string;
+}
+
+/**
+ * The first tagged release containing each published file (issue #94): an entry is cited by the
+ * release it shipped in, not by the day its commit happened to land. Entries merged since the
+ * last tag are absent from the map — the caller falls back to the add-date and marks them as
+ * not yet released. Silently empty outside a git work-tree top level, like getAddedCommits.
+ */
+export function getReleases(root: string): Map<string, Release> {
+  const releases = new Map<string, Release>();
+  const added = getAddedCommits(root);
+  if (added.size === 0) return releases;
+
+  const firstReleaseOf = new Map<string, Release | undefined>(); // memoised: one lookup per add-commit
+  for (const [path, { sha }] of added) {
+    if (!firstReleaseOf.has(sha)) {
+      let release: Release | undefined;
+      try {
+        // Earliest tag whose history contains the add-commit = the release that first shipped it.
+        const line = git(root, ['tag', '--contains', sha, '--sort=creatordate', '--format=%(refname:short) %(creatordate:short)'])
+          .split('\n')[0].trim();
+        if (line !== '') {
+          const [tag, date] = line.split(' ');
+          release = { tag, date };
+        }
+      } catch { /* no tags, or unreachable history — treated as not yet released */ }
+      firstReleaseOf.set(sha, release);
+    }
+    const release = firstReleaseOf.get(sha);
+    if (release !== undefined) releases.set(path, release);
+  }
+  return releases;
 }
