@@ -1,0 +1,9 @@
+# Security contact for material-identity.eu and the dictionary it serves (RFC 9116).
+# Please report anything that would let someone alter, forge, or make unavailable a
+# published entry — those identifiers are cited by passports and cannot be recalled.
+
+Contact: mailto:security@s1seven.com
+Expires: 2027-09-01T00:00:00.000Z
+Encryption: https://material-identity.eu/.well-known/pgp-security.asc
+Preferred-Languages: en, de
+Canonical: https://material-identity.eu/.well-known/security.txt

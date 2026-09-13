@@ -332,7 +332,7 @@ test('build publishes the JSON-LD context and the Turtle graph, and the entry JS
   }
 });
 
-test('the tracked .well-known directory is copied into the site byte-for-byte (#107)', () => {
+test('the tracked .well-known directory is copied into the site byte-for-byte (#107, #109)', () => {
   const out = buildGreen();
   try {
     const source = readFileSync(join(here, '..', '.well-known', 'pgp-security.asc'));
@@ -341,6 +341,11 @@ test('the tracked .well-known directory is copied into the site byte-for-byte (#
     const text = source.toString('utf8');
     assert.match(text, /^-----BEGIN PGP PUBLIC KEY BLOCK-----/);
     assert.ok(!text.includes('PRIVATE KEY'), 'a private key must never be published');
+
+    // security.txt rides along on the same wholesale copy, no builder code of its own
+    const sec = readFileSync(join(out, '.well-known', 'security.txt'), 'utf8');
+    assert.deepEqual(sec, readFileSync(join(here, '..', '.well-known', 'security.txt'), 'utf8'));
+    assert.match(sec, /^Canonical: https:\/\/material-identity\.eu\/\.well-known\/security\.txt$/m);
   } finally {
     rmSync(out, { recursive: true, force: true });
   }

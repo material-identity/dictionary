@@ -13,6 +13,8 @@ const Ajv2019 = (Ajv2019Module as unknown as { default?: typeof Ajv2019Module })
 const addFormats = (addFormatsModule as unknown as { default?: typeof addFormatsModule }).default ?? addFormatsModule;
 
 const SCHEMA_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'schema', 'dictionary-entry.schema.json');
+/** RFC 9116 recommends an expiry under a year; past it, tooling treats the contact as stale. */
+const SECURITY_TXT_MAX_MONTHS = 12;
 
 /**
  * Internal references that must be version-pinned to a published file (R5, plan §2.3).
@@ -180,6 +182,56 @@ export function checkPinning(repo: RepoModel): ValidationIssue[] {
   return issues;
 }
 
+/**
+ * security.txt freshness (#109). An *expired* security.txt is worse than none — tooling reads
+ * it as an unmonitored contact — and a static file rots silently, so the ratchet (plan §2.7)
+ * turns "remember to renew it" into a check that refuses the next PR instead.
+ */
+export function checkSecurityTxt(root: string, now: Date = new Date()): ValidationIssue[] {
+  const check = 'security.txt';
+  const file = '.well-known/security.txt';
+  const path = join(root, file);
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return []; // a repo without one is fine (fixture trees have none); a stale one is not
+  }
+
+  const issues: ValidationIssue[] = [];
+  const field = (name: string): string | undefined =>
+    new RegExp(`^${name}:\\s*(.+)$`, 'mi').exec(text)?.[1].trim();
+
+  for (const required of ['Contact', 'Expires']) {
+    if (field(required) === undefined) issues.push({ check, file, message: `missing required field "${required}" (RFC 9116)` });
+  }
+
+  const expires = field('Expires');
+  if (expires !== undefined) {
+    const at = new Date(expires);
+    if (Number.isNaN(at.getTime())) {
+      issues.push({ check, file, message: `Expires "${expires}" is not a valid timestamp` });
+    } else if (at <= now) {
+      issues.push({ check, file, message: `Expires ${at.toISOString()} has passed — renew it; an expired security.txt reads as an unmonitored contact` });
+    } else {
+      const ceiling = new Date(now);
+      ceiling.setMonth(ceiling.getMonth() + SECURITY_TXT_MAX_MONTHS);
+      if (at > ceiling) issues.push({ check, file, message: `Expires ${at.toISOString()} is more than ${SECURITY_TXT_MAX_MONTHS} months out (RFC 9116 recommends less)` });
+    }
+  }
+
+  const encryption = field('Encryption');
+  if (encryption !== undefined && encryption.startsWith('https://material-identity.eu/')) {
+    const local = join(dirname(path), encryption.replace('https://material-identity.eu/.well-known/', ''));
+    try {
+      readFileSync(local);
+    } catch {
+      issues.push({ check, file, message: `Encryption points at ${encryption}, which is not present in .well-known/` });
+    }
+  }
+  return issues;
+}
+
 /** Check 1 — immutability (R6): only additions are allowed under published/. */
 export function checkImmutability(diff: DiffEntry[]): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -256,7 +308,10 @@ export interface CheckResult {
   skipped?: string;
 }
 
-/** Run all validate.ts checks (1–6). Checks 1 and 6 need a git context. Check 7 (two-yes gate) lives in CI only. */
+/**
+ * Run all validate.ts checks (1–6, plus the unnumbered security.txt guard). Checks 1 and 6 need
+ * a git context. Check 7 (two-yes gate) lives in CI only.
+ */
 export function runChecks(repo: RepoModel, git?: GitContext): CheckResult[] {
   const noGit = 'no git context (base unresolvable or root is not a work-tree top level)';
   return [
@@ -271,5 +326,8 @@ export function runChecks(repo: RepoModel, git?: GitContext): CheckResult[] {
     git
       ? { name: 'check 6 — move purity', issues: checkMovePurity(repo, git) }
       : { name: 'check 6 — move purity', issues: [], skipped: noGit },
+    // Deliberately unnumbered: 1–6 are the entry rules and 7 is the CI two-yes gate. This one
+    // guards the repo's own security contact, not the dictionary (#109).
+    { name: 'security.txt — RFC 9116 freshness', issues: checkSecurityTxt(repo.root) },
   ];
 }

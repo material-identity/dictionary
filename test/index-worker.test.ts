@@ -96,7 +96,7 @@ test('decide: JSON is the default; HTML only when Accept names text/html', () =>
   assert.equal(browser.headers.link, `</def/${uuid}>; rel="canonical", <https://material-identity.eu/def/${uuid}>; rel="cite-as"`);
 });
 
-test('decide: well-known URIs are typed and cached for a day, never immutable (#107)', () => {
+test('decide: well-known URIs are typed and cached for a day, never immutable (#107, #109)', () => {
   const key = decide('/.well-known/pgp-security.asc', '*/*');
   assert.equal(key.originPath, '/.well-known/pgp-security.asc');
   assert.equal(key.headers['content-type'], 'application/pgp-keys');
@@ -104,13 +104,20 @@ test('decide: well-known URIs are typed and cached for a day, never immutable (#
   assert.equal(key.headers['cache-control'], 'public, max-age=86400');
   assert.ok(!key.headers['cache-control'].includes('immutable'));
 
-  // other well-known resources get the same ceiling, and the origin's own type
-  const other = decide('/.well-known/security.txt', '*/*');
+  // RFC 9116 §3 requires security.txt to be served as text/plain with a charset
+  const sec = decide('/.well-known/security.txt', '*/*');
+  assert.equal(sec.originPath, '/.well-known/security.txt');
+  assert.equal(sec.headers['content-type'], 'text/plain; charset=utf-8');
+  assert.equal(sec.headers['cache-control'], 'public, max-age=86400');
+
+  // anything else well-known gets the ceiling and the origin's own type
+  const other = decide('/.well-known/openpgpkey/hu/abc', '*/*');
   assert.equal(other.headers['cache-control'], 'public, max-age=86400');
   assert.equal(other.headers['content-type'], undefined);
 
-  // .asc anywhere else is not special-cased
+  // .asc / .txt anywhere else are not special-cased
   assert.equal(decide('/def/whatever.asc', '*/*').headers['content-type'], undefined);
+  assert.equal(decide('/robots.txt', '*/*').headers['content-type'], undefined);
 });
 
 test('decide: everything else passes through with a short cache; no /concept route', () => {
