@@ -119,7 +119,10 @@ section for the full explanation).
   not under `published/`. **Nothing emitted into `site/` may start with a dot**:
   `upload-pages-artifact` tars with `--exclude=.[^/]*`, so the build writes `site/well-known/`
   and the Worker rewrites `/.well-known/<x>` onto it (#110). A build test asserts the site is
-  dot-free, and `deploy.yml` smoke-tests the live URLs — a green deploy alone proved nothing
+  dot-free, and `deploy.yml` smoke-tests after deploying — a green deploy alone proved nothing.
+  Two probes, because Cloudflare 403s the runner on ordinary paths but exempts `/.well-known/`
+  (#112): the origin for artifact completeness, the canonical host for the Worker's rewrite and
+  content types. Probe the origin, not `material-identity.eu`, for anything outside `.well-known`
 - `REVIEW.md` — what reviewers check beyond CI; read it before reviewing any publish PR
 - `standards/` — local-only licensed docs; only its README is committed
 

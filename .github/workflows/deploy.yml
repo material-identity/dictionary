@@ -46,16 +46,37 @@ jobs:
       # A green deploy is not proof the site serves what we built: #110 shipped a "successful"
       # deploy whose artifact silently omitted .well-known/, and only a manual curl caught it.
       # Fail the run instead, on the canonical host the Worker actually fronts.
-      - name: smoke — the canonical URLs answer
+      # Split by what each half can prove (#112). Cloudflare bot protection 403s the runner's
+      # datacenter IP on ordinary paths but exempts /.well-known/ by design (so ACME and
+      # security.txt keep working), so the canonical host is only probeable there.
+      - name: smoke — the deployed artifact is complete (origin)
         run: |
           set -uo pipefail
           fail=0
-          for path in / /feed.xml /.well-known/security.txt /.well-known/pgp-security.asc; do
-            # -f makes a 4xx an error so --retry-all-errors keeps trying: the Worker caches its
-            # own 404 for 60s, so the first probe after a deploy can legitimately still miss.
-            code=$(curl -fsS -L -o /dev/null -w '%{http_code}' \
-              --retry 10 --retry-delay 10 --retry-all-errors \
-              "https://material-identity.eu${path}") || { code="${code:-000} FAILED"; fail=1; }
-            printf '%-34s %s\n' "$path" "$code"
+          # No bot protection here, so this half covers every path — it is the #110 class
+          # (a directory silently missing from the artifact), generalized beyond two files.
+          for path in / /feed.xml /well-known/security.txt /well-known/pgp-security.asc; do
+            code=$(curl -fsS -L -o /dev/null -w '%{http_code}' --retry 5 --retry-delay 10 \
+              --retry-all-errors "https://material-identity.github.io/dictionary${path}") \
+              || { code="${code:-000} FAILED"; fail=1; }
+            printf '%-32s %s\n' "$path" "$code"
           done
+          exit $fail
+
+      - name: smoke — the canonical URLs answer with the right types (worker)
+        run: |
+          set -uo pipefail
+          fail=0
+          # A 200 with the wrong type is still a regression: the content types ARE the
+          # requirement from #107/#109. -f makes a 4xx an error so --retry-all-errors keeps
+          # trying; the Worker caches its own 404 for 60s, so the first probe can legitimately miss.
+          check() {
+            local path=$1 want=$2 got
+            got=$(curl -fsS -L -o /dev/null -w '%{content_type}' --retry 10 --retry-delay 10 \
+              --retry-all-errors "https://material-identity.eu${path}") || got="unreachable"
+            printf '%-32s %s\n' "$path" "$got"
+            [ "$got" = "$want" ] || { echo "  expected: $want"; fail=1; }
+          }
+          check /.well-known/security.txt     'text/plain; charset=utf-8'
+          check /.well-known/pgp-security.asc 'application/pgp-keys'
           exit $fail
