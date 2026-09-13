@@ -50,7 +50,8 @@ Companion skill: [publish-entry](../publish-entry/SKILL.md) moves the draft live
      plus optional `accessCategory` — a reference to a published `Value` of the access-category
      vocabulary — only when the collection represents a content specification's membership;
      a purely semantic collection carries no access assignment).
-   - `MeasurementUnit` → `symbol` required.
+   - `MeasurementUnit` → `symbol` required, and `crossReferences.ucumCode` required
+     (must be a valid UCUM unit code — check 2 validates its syntax).
    - `Quantity` → `dimension` required.
    - `Value` → `value` required.
    - `preferredName` / `definition` / `symbol` are language maps (`{ en: "...", de: "..." }`),

@@ -28,8 +28,10 @@ pinning, immutability, move purity, the two-yes gate, coverage.
 - [ ] `definitionStandard`/`testStandard` name the **correct document and clause** — open the
       cited standard (local `standards/` library) and verify the clause actually defines/tests
       this concept; a wrong clause is worse than none.
-- [ ] The reference names the version-independent designation (EN 13445-3), not a dated copy,
-      unless the concept is version-bound.
+- [ ] `definitionStandard`/`testStandard`/`legalBasis`'s `uri` is **version-stable**: a dated
+      edition for a standard, a specific expression for legislation — never a living-document
+      link that can change under an immutable entry. The undated, version-independent
+      designation (e.g. "EN 13445-3") belongs in the human-readable `name` field only.
 - [ ] `isDefinedBy` is the dictionary root, not a standard — provenance of the entry,
       not of the concept.
 - [ ] `legalBasis` is used for the law/regulation that defines or mandates the concept —
