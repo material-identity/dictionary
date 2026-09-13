@@ -156,6 +156,18 @@ dl.langmap { margin: 0; display: grid; grid-template-columns: 3rem 1fr; gap: 0.1
 dl.langmap dt { color: var(--muted); font-weight: 600; }
 dl.langmap dd { margin: 0; }
 
+/* about — a prose page, so a reading measure and room to breathe */
+.lede { font-size: 1.2rem; line-height: 1.6; color: var(--ink); max-width: 42rem; margin: 1rem 0 0; }
+.prose { max-width: 42rem; }
+.prose h2 { font-size: 0.78rem; }
+.prose p { margin: 0 0 0.9rem; }
+.prose ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.6rem; }
+.prose li { padding-left: 0.2rem; }
+.facts-strip { display: flex; flex-wrap: wrap; gap: 0.75rem 2.5rem; margin: 1.75rem 0 0; padding: 1rem 1.25rem; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; }
+.facts-strip div { display: flex; flex-direction: column; }
+.facts-strip strong { font-size: 1.5rem; font-weight: 650; line-height: 1.1; }
+.facts-strip span { color: var(--muted); font-size: 0.85rem; }
+
 /* graph — colours come from the same tokens as the chips, so the figure follows the theme */
 figure.graph { margin: 1.5rem 0 0.5rem; }
 .graph-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 0.5rem; }

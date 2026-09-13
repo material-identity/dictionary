@@ -129,7 +129,7 @@ function edgeBadges(edge: ContainmentEdge | undefined, refs: RefIndex): string {
 }
 
 const NAV: Array<[key: string, href: string, label: string]> = [
-  ['index', '/', 'Index'], ['tree', '/tree', 'Tree'], ['graph', '/graph', 'Graph'], ['schema', '/schema', 'Schema'], ['feed', '/feed.xml', 'Feed'],
+  ['index', '/', 'Index'], ['tree', '/tree', 'Tree'], ['graph', '/graph', 'Graph'], ['schema', '/schema', 'Schema'], ['feed', '/feed.xml', 'Feed'], ['about', '/about', 'About'],
 ];
 const FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231f7a4d'/%3E%3C/svg%3E";
 
@@ -375,6 +375,75 @@ function containmentEdges(doc: Doc): ContainmentEdge[] {
  * contained twice renders its body once and a link afterwards; a per-path guard stops a cycle.
  * Native <details>/<summary>, no JS.
  */
+/**
+ * The About page (issue #103): what this is, for someone who arrived at a /def/<uuid> link and
+ * has no other context. Counts are rendered from the repo so the prose cannot drift from what
+ * the dictionary actually holds.
+ */
+export function renderAboutPage(repo: RepoModel, refs: RefIndex, release?: string): string {
+  const entries = repo.published.filter((f) => f.doc);
+  const current = entries.filter((f) => !refs.isSuperseded(f.doc as Doc)).length;
+  const languages = new Set<string>();
+  for (const f of entries) {
+    for (const code of Object.keys(lang((f.doc as Doc).preferredName))) languages.add(code);
+    for (const code of Object.keys(lang((f.doc as Doc).definition))) languages.add(code);
+  }
+
+  const facts = [
+    [String(entries.length), 'published entries'],
+    [String(current), 'current, the rest superseded'],
+    [String(languages.size), `languages (${[...languages].sort((a, b) => (a === 'en' ? -1 : b === 'en' ? 1 : a.localeCompare(b, 'en'))).join(', ')})`],
+    [release ?? '—', release === undefined ? 'no release yet' : 'latest release'],
+  ].map(([value, note]) => `<div><strong>${esc(value)}</strong><span>${esc(note)}</span></div>`).join('');
+
+  const body = `<h1>About this dictionary</h1>
+<p class="lede">A digital product passport carries facts about a product — a carbon content, a tensile strength, a substance name. On their own those are numbers and words. This dictionary is where they are given a fixed meaning that anyone, and any program, can look up.</p>
+
+<div class="facts-strip">${facts}</div>
+
+<section class="prose"><h2>The problem it solves</h2>
+<p>Someone reading a passport — a customer, a repairer, a recycler, an authority, or a piece of software — needs to know what was measured, in which unit, under which method, and what the term means in their language. That knowledge has to outlive the software that wrote the passport, the website it was published on, and often the company that shipped the product.</p>
+<p>So each data element gets one web address that returns its definition, and keeps returning it. A passport does not copy the definition; it points at it. Under the EU Ecodesign for Sustainable Products Regulation a passport may have to be readable for as long as the product exists, which is the timescale this design answers to.</p>
+</section>
+
+<section class="prose"><h2>What an entry promises</h2>
+<ul>
+<li><strong>One address, one meaning.</strong> An entry lives at <code>https://material-identity.eu/def/&lt;uuid&gt;</code>. The address says nothing by itself — you resolve it, you never parse it — so a definition can be reworded without breaking anyone's reference.</li>
+<li><strong>It never changes.</strong> A published entry is served with a year-long immutable cache and is never edited or deleted. A reference written today returns the same bytes in twenty years.</li>
+<li><strong>Meanings that move on say so.</strong> When a concept genuinely changes, a new entry is published pointing back at the one it replaces. Nothing is overwritten, and the old address keeps resolving — so an old passport stays readable while new ones move forward.</li>
+<li><strong>People and machines, same address.</strong> Ask for JSON and you get the entry; open it in a browser and you get this site's page for it. Also available as <a href="/dictionary.ttl">RDF</a> for semantic tooling.</li>
+<li><strong>Free, in both senses.</strong> The content is CC0: no fee, no attribution obligation, nothing to clear with a lawyer before you depend on it.</li>
+</ul>
+</section>
+
+<section class="prose"><h2>What it is not</h2>
+<ul>
+<li><strong>Not the authority behind the meanings.</strong> The dictionary <em>syndicates</em> definitions in machine-readable form. The authority is the standard's clause or the law's article, which an entry cites and never copies — see the <a href="/schema">field reference</a> for how that citation is carried.</li>
+<li><strong>Not an access-control system.</strong> Whether a value may be shown to a given reader is decided by the applicable legal act and enforced by the passport interface. The dictionary can name the categories; it cannot grant or deny anything.</li>
+<li><strong>Not a database service.</strong> There is no query endpoint and no login. It is a set of files you can fetch, cache, or download whole.</li>
+</ul>
+</section>
+
+<section class="prose"><h2>How it is built</h2>
+<p>Deliberately small. Entries are YAML files in a public repository that is add-only; a build turns them into static JSON and HTML; one small edge worker decides whether you get JSON or a page. No database, no server-side application, and no JavaScript anywhere on this site.</p>
+<p>Every change arrives as a reviewed, signed pull request. Continuous integration refuses any change that edits or deletes a published entry, any internal reference that does not point at a published file, and any publication that has not been accepted first — so the guarantees above are enforced by machinery rather than by good intentions. The full history is public.</p>
+</section>
+
+<section class="prose"><h2>Status</h2>
+<p>This is a working reference instance. It claims mechanics, not authority: which dictionary a passport must use is not settled, and everything here is built to stay convertible if that answer arrives elsewhere. The design commitments — permanent addresses, immutability, free reuse — are meant to hold regardless.</p>
+</section>
+
+<section class="prose"><h2>Who builds it</h2>
+<p>Maintained by the Material Identity maintainer team, with the full list of contributors on <a href="https://github.com/material-identity/dictionary/graphs/contributors" rel="external">GitHub</a>. Supported by <a href="https://s1seven.com" rel="external">S1Seven GmbH</a>.</p>
+<p>Contributions are welcome: <a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">request an entry</a>, or read the <a href="https://github.com/material-identity/dictionary">source</a>. Every published entry needs two people to say yes — one to accept the request, a different one to approve the publication.</p>
+</section>`;
+
+  return pageShell('About', '/about', body, {
+    nav: 'about',
+    description: 'What the material-identity dictionary is: permanent, immutable, free-to-use definitions for the data elements a digital product passport carries.',
+  });
+}
+
 /**
  * The graph page (issue #99): the cross-links the tree deliberately omits, as a build-time SVG.
  * The figure is repeated as an edge table below it — an SVG-only graph is unreadable to a

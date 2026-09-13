@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadRepo } from './lib/repo.ts';
 import { canonicalJson } from './lib/emit.ts';
-import { RefIndex, renderEntryPage, renderGraphPage, renderIndexPages, renderSchemaPage, renderTreePage } from './lib/render.ts';
+import { RefIndex, renderAboutPage, renderEntryPage, renderGraphPage, renderIndexPages, renderSchemaPage, renderTreePage } from './lib/render.ts';
 import { renderFeed } from './lib/feed.ts';
 import { citation } from './lib/cite.ts';
 import { renderTurtle } from './lib/rdf.ts';
@@ -64,6 +64,10 @@ export function build(root: string, out: string): BuildResult {
   writeFileSync(join(out, 'tree', 'index.html'), renderTreePage(repo, refs));
   mkdirSync(join(out, 'graph'), { recursive: true });
   writeFileSync(join(out, 'graph', 'index.html'), renderGraphPage(repo, refs));
+  // newest release tag, for the About page's live counts
+  const latestRelease = [...releases.values()].sort((a, b) => a.date.localeCompare(b.date)).at(-1)?.tag;
+  mkdirSync(join(out, 'about'), { recursive: true });
+  writeFileSync(join(out, 'about', 'index.html'), renderAboutPage(repo, refs, latestRelease));
 
   // RDF track steps 1–2 (issue #98): the context is the semantic commitment, the Turtle is a
   // derived second serialization. The canonical /def/<uuid>.json is untouched by both.
