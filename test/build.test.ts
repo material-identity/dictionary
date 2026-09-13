@@ -161,6 +161,40 @@ test('index lists only current entries — superseded maxPressure v1 is omitted'
   }
 });
 
+test('build publishes the raw JSON Schema byte-identical to source, plus a human-readable page', () => {
+  const out = buildGreen();
+  try {
+    const source = readFileSync(join(here, '..', 'schema', 'dictionary-entry.schema.json'));
+    const copied = readFileSync(join(out, 'schema', 'dictionary-entry.schema.json'));
+    assert.deepEqual(copied, source);
+
+    const html = readFileSync(join(out, 'schema', 'index.html'), 'utf8');
+    assert.ok(html.includes('<link rel="canonical" href="https://material-identity.eu/schema">'));
+    assert.ok(html.includes('<link rel="stylesheet" href="/styles.css">'));
+    assert.ok(!/<script/i.test(html), 'schema page must not contain scripts');
+    assert.match(html, /<a href="\/schema\/dictionary-entry\.schema\.json">Raw JSON Schema<\/a>/);
+    assert.match(html, /not<\/strong> immutable/); // must not be mistaken for a published-entry guarantee
+
+    // an envelope field, a $ref'd $def, and a conditional requirement all round-trip into the page
+    assert.match(html, /<code>isDefinedBy<\/code> — required/);
+    assert.match(html, /<a href="#def-standardRef"><code>standardRef<\/code><\/a>/);
+    assert.match(html, /<h3 id="def-standardRef">/);
+    assert.match(html, /when <code>objectType<\/code> is <code>MeasurementUnit<\/code>, also required: <code>symbol<\/code>/);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('index footer links to the schema reference page', () => {
+  const out = buildGreen();
+  try {
+    const html = readFileSync(join(out, 'index.html'), 'utf8');
+    assert.match(html, /<a href="\/schema">JSON Schema reference<\/a>/);
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
 test('build refuses an unloadable repo; empty tree builds an empty site', () => {
   assert.throws(() => build(join(fixtures, 'red-yaml'), mkdtempSync(join(tmpdir(), 'dict-site-'))), /unloadable repo/);
 
