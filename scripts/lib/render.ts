@@ -253,11 +253,22 @@ ${children}</div>
 </details>`;
   };
 
-  const body = `<h1>Dictionary tree</h1>
-<p class="meta">${roots.length} ${roots.length === 1 ? 'root' : 'roots'} · nests containment only (<code>elements</code>, <code>itemType</code>, <code>enumeration</code>); references such as <code>unit</code> or <code>quantityKind</code> are links inside a node. Badges come from the parent's membership, so the same entry may carry different badges under different parents. Superseded entries are omitted, as in the index.</p>
+  // Units and quantities are only ever referenced (unit, quantityKind, coherentSiUnit), never
+  // contained, so they are always roots — listed apart so they don't interleave with content.
+  const isReferenceKind = (doc: Doc): boolean => doc.objectType === 'MeasurementUnit' || doc.objectType === 'Quantity';
+  const elementRoots = roots.filter(([, doc]) => !isReferenceKind(doc));
+  const referenceRoots = roots.filter(([, doc]) => isReferenceKind(doc));
+  const section = (heading: string, note: string, items: typeof roots): string =>
+    items.length === 0 ? '' : `<h2>${heading}</h2>
+<p class="meta">${note}</p>
 <div class="tree">
-${roots.map(([uuid]) => node(uuid, undefined, new Set(), 0)).join('\n')}
+${items.map(([uuid]) => node(uuid, undefined, new Set(), 0)).join('\n')}
 </div>`;
+
+  const body = `<h1>Dictionary tree</h1>
+<p class="meta">${elementRoots.length} element ${elementRoots.length === 1 ? 'root' : 'roots'} · ${referenceRoots.length} units and quantities · nests containment only (<code>elements</code>, <code>itemType</code>, <code>enumeration</code>); references such as <code>unit</code> or <code>quantityKind</code> are links inside a node. Badges come from the parent's membership, so the same entry may carry different badges under different parents. Superseded entries are omitted, as in the index.</p>
+${section('Elements and collections', 'Current entries nothing contains, with everything they contain nested below.', elementRoots)}
+${section('Units and quantities', 'Referenced by the entries above via <code>unit</code>, <code>quantityKind</code> or <code>coherentSiUnit</code> — never contained, so always top-level.', referenceRoots)}`;
   return pageShell('Dictionary tree', '/tree', body);
 }
 

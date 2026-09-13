@@ -159,7 +159,13 @@ test('tree view: containment-only nesting, superseded omitted, badges from the m
 
     // roots = current entries nothing contains: pressure, mechanicalProperties, steelmakingRoute, megapascal
     assert.equal((html.match(/<details open>/g) ?? []).length, 4);
-    assert.match(html, /4 roots/);
+    assert.match(html, /2 element roots · 2 units and quantities/);
+
+    // two sections: elements/collections first, reference-only kinds (units, quantities) after
+    const units = html.indexOf('<h2>Units and quantities</h2>');
+    assert.ok(html.indexOf('<h2>Elements and collections</h2>') < units, 'elements section precedes units');
+    assert.ok(html.indexOf(`/def/${COLLECTION}"`) < units && html.indexOf(`/def/${ROUTE}"`) < units, 'elements listed in the first section');
+    assert.ok(html.lastIndexOf(`<summary>megapascal`) > units && html.lastIndexOf(`<summary>pressure`) > units, 'units and quantities listed in the second section');
 
     // maxPressure v2 nests under mechanicalProperties with the membership badge; v1 (superseded) appears nowhere
     const collection = html.slice(html.indexOf(`<a href="/def/${COLLECTION}">`), html.indexOf(`<a href="/def/${MP2}">`));
