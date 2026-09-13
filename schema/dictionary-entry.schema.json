@@ -31,6 +31,7 @@
     "enumeration":       { "type": "array", "items": { "type": "string", "format": "uri" } },
     "definitionStandard":{ "$ref": "#/$defs/standardRef" },
     "testStandard":      { "$ref": "#/$defs/standardRef" },
+    "legalBasis":        { "$ref": "#/$defs/standardRef", "description": "The law or regulation that defines or mandates this concept (e.g. an ELI reference), distinct from a technical/testing standard. `uri` should pin to a specific expression (e.g. an Official Journal text), not a live consolidated alias — an immutable entry should not cite a legal text that can change under it." },
     "resourceMediaType": { "type": "string" },
     "itemType":          { "type": "string", "format": "uri" },
     "elements":          { "type": "array", "items": { "$ref": "#/$defs/collectionMember" } },
