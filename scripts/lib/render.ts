@@ -6,6 +6,7 @@
  */
 import { CANONICAL_BASE, DEF_PREFIX, type RepoFile, type RepoModel } from './repo.ts';
 import { citation } from './cite.ts';
+import { graphFigure } from './graph.ts';
 
 export function esc(s: unknown): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -128,7 +129,7 @@ function edgeBadges(edge: ContainmentEdge | undefined, refs: RefIndex): string {
 }
 
 const NAV: Array<[key: string, href: string, label: string]> = [
-  ['index', '/', 'Index'], ['tree', '/tree', 'Tree'], ['schema', '/schema', 'Schema'], ['feed', '/feed.xml', 'Feed'],
+  ['index', '/', 'Index'], ['tree', '/tree', 'Tree'], ['graph', '/graph', 'Graph'], ['schema', '/schema', 'Schema'], ['feed', '/feed.xml', 'Feed'],
 ];
 const FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231f7a4d'/%3E%3C/svg%3E";
 
@@ -374,6 +375,21 @@ function containmentEdges(doc: Doc): ContainmentEdge[] {
  * contained twice renders its body once and a link afterwards; a per-path guard stops a cycle.
  * Native <details>/<summary>, no JS.
  */
+/**
+ * The graph page (issue #99): the cross-links the tree deliberately omits, as a build-time SVG.
+ * The figure is repeated as an edge table below it — an SVG-only graph is unreadable to a
+ * screen reader and to anyone the picture fails for.
+ */
+export function renderGraphPage(repo: RepoModel, refs: RefIndex): string {
+  const { svg, edgeList, nodeCount, edgeCount } = graphFigure(repo, refs);
+  const body = `<h1>Dictionary graph</h1>
+<p class="meta">${nodeCount} ${nodeCount === 1 ? 'entry' : 'entries'} · ${edgeCount} links · every reference between entries, including the ones <a href="/tree">the tree</a> omits: a shared unit is one node here, not a child of every property that uses it. Superseded entries are included — <code>replaces</code> is a link worth seeing. Static image, no scripts.</p>
+${svg}
+<section><h2>Every link, as text</h2>
+${edgeList}</section>`;
+  return pageShell('Dictionary graph', '/graph', body, { nav: 'graph' });
+}
+
 export function renderTreePage(repo: RepoModel, refs: RefIndex): string {
   const all = new Map<string, Doc>();
   for (const f of repo.published) if (f.doc) all.set(f.stem, f.doc);
