@@ -112,6 +112,11 @@ section for the full explanation).
   `Link: …; rel="cite-as"` on both representations) — only
   `/def/<uuid>`, no `/concept/` route; `worker/wrangler.toml` — route
   `material-identity.eu/*`; never `wrangler deploy` locally
+- `.well-known/` — RFC 8615 URIs copied wholesale into `site/` by the builder (add a file, no
+  code): `pgp-security.asc` (public key only — never a private one) and `security.txt`
+  (RFC 9116). The worker types them and caps their cache at a day. An unnumbered validate check
+  fails the build when `Expires` is missing, past, or over a year out — renew it in place, it is
+  not under `published/`
 - `REVIEW.md` — what reviewers check beyond CI; read it before reviewing any publish PR
 - `standards/` — local-only licensed docs; only its README is committed
 

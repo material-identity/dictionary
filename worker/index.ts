@@ -26,6 +26,16 @@ export function decide(pathname: string, accept: string | null): RouteDecision {
     headers.link = wantsHtml ? `</def/${uuid}>; rel="canonical", ${citeAs}` : citeAs;
     return { originPath: `/def/${uuid}.${wantsHtml ? 'html' : 'json'}`, headers };
   }
+  // RFC 8615 well-known URIs (#107, #109). Cacheable but never immutable like an entry: a key can
+  // be rotated or revoked and security.txt expires, so a day is the ceiling. Pages would serve
+  // .asc as a generic byte stream and .txt without a charset, hence the explicit types.
+  if (pathname.startsWith('/.well-known/')) {
+    const headers: Record<string, string> = { 'cache-control': 'public, max-age=86400' };
+    if (pathname.endsWith('.asc')) headers['content-type'] = 'application/pgp-keys';
+    if (pathname.endsWith('.txt')) headers['content-type'] = 'text/plain; charset=utf-8'; // RFC 9116 §3
+    return { originPath: pathname, headers };
+  }
+
   // index, pagination, styles, raw origin files: pass through with a short cache
   return { originPath: pathname === '/' ? '/index.html' : pathname, headers: { 'cache-control': 'public, max-age=300' } };
 }

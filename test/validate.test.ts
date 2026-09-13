@@ -10,8 +10,9 @@ test('runValidation reports OK for the green tree', () => {
   const { ok, lines } = runValidation(join(fixtures, 'green'));
   assert.equal(ok, true);
   assert.equal(lines.filter((l) => l.startsWith('FAIL')).length, 0);
-  // load + checks 2–5 pass; checks 1 and 6 are skipped (fixture trees have no git context)
-  assert.equal(lines.filter((l) => l.startsWith('ok')).length, 5);
+  // load + checks 2–5 + the security.txt guard pass (a fixture tree carries none, which is
+  // green); checks 1 and 6 are skipped (fixture trees have no git context)
+  assert.equal(lines.filter((l) => l.startsWith('ok')).length, 6);
   assert.equal(lines.filter((l) => l.startsWith('skip')).length, 2);
 });
 
