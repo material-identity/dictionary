@@ -108,6 +108,19 @@ test('superseded entry page shows the banner, derived from replaces, never store
   }
 });
 
+test('superseded.json maps old id -> successor id, derived from replaces, sorted and deterministic', () => {
+  const out = buildGreen();
+  try {
+    const map = JSON.parse(readFileSync(join(out, 'superseded.json'), 'utf8'));
+    assert.deepEqual(map, {
+      [`https://material-identity.eu/def/${MP1}`]: `https://material-identity.eu/def/${MP2}`,
+    });
+    assert.deepEqual(Object.keys(map), Object.keys(map).sort());
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
 test('legalBasis renders distinctly from definitionStandard/testStandard, both schema-valid and on the page', () => {
   const out = buildGreen();
   try {

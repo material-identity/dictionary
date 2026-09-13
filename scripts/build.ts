@@ -48,6 +48,7 @@ export function build(root: string, out: string): BuildResult {
     writeFileSync(join(out, page.name), page.html);
   }
   writeFileSync(join(out, 'feed.xml'), renderFeed(repo, getAddedDates(root)));
+  writeFileSync(join(out, 'superseded.json'), `${JSON.stringify(refs.supersededMap(), null, 2)}\n`);
   return { entries, out };
 }
 

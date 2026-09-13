@@ -49,6 +49,20 @@ export class RefIndex {
   isSuperseded(entry: Doc): boolean {
     return this.supersededBy.has(String(entry.id));
   }
+
+  /**
+   * old id -> immediate successor id, for every entry that has one. One hop, same as
+   * `replaces` itself (at most one entry may replace a given entry, so this is a chain, never
+   * a DAG) — a consumer chasing an old id to the current one follows the chain by repeated
+   * lookup. Sorted by key so the emitted JSON is deterministic across builds.
+   */
+  supersededMap(): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const oldId of [...this.supersededBy.keys()].sort()) {
+      out[oldId] = String(this.supersededBy.get(oldId)!.id);
+    }
+    return out;
+  }
 }
 
 /**
