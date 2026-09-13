@@ -184,7 +184,7 @@ ${body}
 </main>
 <footer><div class="wrap">
 <span>Content CC0 1.0 · <a href="https://material-identity.eu/">material-identity.eu</a></span>
-<span><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/tree">Tree view</a> · <a href="/schema">JSON Schema reference</a></span>
+<span><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/tree">Tree view</a> · <a href="/schema">JSON Schema reference</a> · <a href="/dictionary.ttl">RDF (Turtle)</a></span>
 </div></footer>
 </body>
 </html>
@@ -337,7 +337,7 @@ ${identity}`;
 }
 
 /** A containment edge: the only kind of edge the tree nests. Reference edges (unit, quantityKind, …) stay links. */
-interface ContainmentEdge {
+export interface ContainmentEdge {
   uuid: string;
   kind: 'member' | 'item' | 'value';
   isMandatory?: boolean;
