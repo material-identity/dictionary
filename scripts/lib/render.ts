@@ -49,6 +49,20 @@ export class RefIndex {
   isSuperseded(entry: Doc): boolean {
     return this.supersededBy.has(String(entry.id));
   }
+
+  /**
+   * old id -> immediate successor id, for every entry that has one. One hop, same as
+   * `replaces` itself (at most one entry may replace a given entry, so this is a chain, never
+   * a DAG) — a consumer chasing an old id to the current one follows the chain by repeated
+   * lookup. Sorted by key so the emitted JSON is deterministic across builds.
+   */
+  supersededMap(): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const oldId of [...this.supersededBy.keys()].sort()) {
+      out[oldId] = String(this.supersededBy.get(oldId)!.id);
+    }
+    return out;
+  }
 }
 
 /**
@@ -143,8 +157,8 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
   if (doc.itemType !== undefined) rows.push(row('itemType', refs.link(doc.itemType)));
   if (Array.isArray(doc.elements)) {
     const body = (doc.elements as Doc[]).map((el) =>
-      `<tr><td>${refs.link(el.dictionaryReference)}</td><td>${el.isMandatory ? 'mandatory' : 'optional'}</td></tr>`).join('');
-    rows.push(row('elements', `<table class="inner"><thead><tr><th>member</th><th>membership</th></tr></thead><tbody>${body}</tbody></table>`));
+      `<tr><td>${refs.link(el.dictionaryReference)}</td><td>${el.isMandatory ? 'mandatory' : 'optional'}</td><td>${el.accessCategory !== undefined ? refs.link(el.accessCategory) : '—'}</td></tr>`).join('');
+    rows.push(row('elements', `<table class="inner"><thead><tr><th>member</th><th>membership</th><th>access</th></tr></thead><tbody>${body}</tbody></table>`));
   }
   if (doc.quantityKind !== undefined) rows.push(row('quantityKind', refs.link(doc.quantityKind)));
   if (doc.dimension !== undefined) rows.push(row('dimension', `<code>${esc(doc.dimension)}</code>`));
@@ -168,6 +182,86 @@ export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex)
 <table class="fields"><tbody>${rows.join('\n')}</tbody></table>`;
 
   return pageShell(title, `/def/${file.stem}`, body, { alternateJson: `/def/${file.stem}.json` });
+}
+
+function schemaTypeLabel(prop: unknown): string {
+  if (prop === true || prop === undefined || prop === null) return 'any';
+  const p = prop as Doc;
+  if (typeof p.$ref === 'string') {
+    const name = p.$ref.replace('#/$defs/', '');
+    return `<a href="#def-${esc(name)}"><code>${esc(name)}</code></a>`;
+  }
+  if (p.type === 'array') return `array of ${schemaTypeLabel(p.items)}`;
+  if (Array.isArray(p.type)) return p.type.map((t) => esc(t)).join(' | ');
+  if (p.type === 'string' && typeof p.format === 'string') return `string (${esc(p.format)})`;
+  return esc(p.type ?? 'any');
+}
+
+function schemaPropertyRows(properties: Doc, required: string[]): string {
+  return Object.entries(properties).map(([name, prop]) => {
+    const label = required.includes(name) ? `<code>${esc(name)}</code> — required` : `<code>${esc(name)}</code>`;
+    const desc = (prop as Doc)?.description !== undefined ? esc((prop as Doc).description) : '';
+    return `<tr><td>${label}</td><td>${schemaTypeLabel(prop)}</td><td>${desc}</td></tr>`;
+  }).join('\n');
+}
+
+function schemaFieldTable(properties: Doc, required: string[]): string {
+  return `<table class="fields"><thead><tr><th>field</th><th>type</th><th>description</th></tr></thead>
+<tbody>${schemaPropertyRows(properties, required)}</tbody></table>`;
+}
+
+/** Most $defs list fixed `properties`; langMap instead constrains keys/values directly. */
+function schemaDefBody(def: Doc): string {
+  const properties = (def.properties ?? {}) as Doc;
+  if (Object.keys(properties).length > 0) {
+    const table = schemaFieldTable(properties, (def.required as string[] | undefined) ?? []);
+    return def.additionalProperties === true ? `${table}\n<p><em>Other keys are also allowed.</em></p>` : table;
+  }
+  const propertyNames = def.propertyNames as Doc | undefined;
+  const keyDesc = typeof propertyNames?.pattern === 'string' ? `keys matching <code>${esc(propertyNames.pattern)}</code>` : 'arbitrary keys';
+  return `<p>An object with ${keyDesc}, each valued as ${schemaTypeLabel(def.additionalProperties)}.</p>`;
+}
+
+function schemaConditionalRequirements(allOf: unknown[]): string {
+  const items = allOf.map((clause) => {
+    const c = clause as Doc;
+    const ifBlock = c.if as Doc | undefined;
+    const thenBlock = c.then as Doc | undefined;
+    const objectType = (ifBlock?.properties as Doc | undefined)?.objectType as Doc | undefined;
+    const required = thenBlock?.required;
+    if (typeof objectType?.const !== 'string' || !Array.isArray(required)) return '';
+    return `<li>when <code>objectType</code> is <code>${esc(objectType.const)}</code>, also required: ${required.map((r: string) => `<code>${esc(r)}</code>`).join(', ')}</li>`;
+  }).filter(Boolean);
+  return items.length ? `<ul>${items.join('\n')}</ul>` : '<p>None.</p>';
+}
+
+/**
+ * Human-readable rendering of schema/dictionary-entry.schema.json, generated at build time
+ * from whatever the schema currently says — unlike an entry page, this is NOT immutable and
+ * changes whenever the schema does.
+ */
+export function renderSchemaPage(schema: Doc): string {
+  const properties = (schema.properties ?? {}) as Doc;
+  const required = (schema.required as string[] | undefined) ?? [];
+  const defs = (schema.$defs ?? {}) as Doc;
+
+  const defsHtml = Object.entries(defs).map(([name, def]) => {
+    return `<h3 id="def-${esc(name)}"><code>${esc(name)}</code></h3>
+${schemaDefBody(def as Doc)}`;
+  }).join('\n');
+
+  const body = `<h1>${esc(schema.title ?? 'Schema reference')}</h1>
+<p class="meta">${esc(schema.description ?? '')}</p>
+<p class="links"><a href="/schema/dictionary-entry.schema.json">Raw JSON Schema</a></p>
+<p>Generated from the schema as of this build — unlike a dictionary entry, this page is <strong>not</strong> immutable and reflects whatever the schema currently says.</p>
+<h2>Envelope fields</h2>
+${schemaFieldTable(properties, required)}
+<h2>Conditional requirements</h2>
+${schemaConditionalRequirements((schema.allOf as unknown[] | undefined) ?? [])}
+<h2>Referenced object shapes</h2>
+${defsHtml}`;
+
+  return pageShell(String(schema.title ?? 'Schema reference'), '/schema', body);
 }
 
 export const INDEX_PAGE_SIZE = 25;
@@ -212,7 +306,7 @@ export function renderIndexPages(repo: RepoModel, refs: RefIndex): Array<{ name:
 ${rows}
 </tbody>
 </table>${nav}
-<p class="contribute"><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a></p>`;
+<p class="contribute"><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/schema">JSON Schema reference</a></p>`;
 
     const canonicalPath = page === 1 ? '/' : `/${pageName(page)}`;
     return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, body, { rssFeed: true }) };

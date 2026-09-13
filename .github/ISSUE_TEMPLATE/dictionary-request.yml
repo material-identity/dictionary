@@ -148,10 +148,14 @@ body:
     id: collection-members
     attributes:
       label: Collection members
-      description: For DataElementCollection — one member per line, "shortName or URI · mandatory|optional".
+      description: >-
+        For DataElementCollection — one member per line, "shortName or URI · mandatory|optional",
+        optionally followed by "· access: <access-category shortName or URI>" when the collection
+        represents a content specification's membership (informative; the legal act is normative).
       placeholder: |-
         tensileStrength · mandatory
         elongationAtFracture · optional
+        heatAnalysis · mandatory · access: authorityOnly
     validations:
       required: false
   - type: textarea
