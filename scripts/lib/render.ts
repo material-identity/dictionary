@@ -63,7 +63,73 @@ export class RefIndex {
     }
     return out;
   }
+
+  doc(uuid: string): Doc | undefined {
+    return this.published.get(uuid);
+  }
+
+  label(uuid: string): string {
+    const doc = this.published.get(uuid);
+    return en(doc?.preferredName) ?? (doc?.shortName as string | undefined) ?? uuid;
+  }
+
+  /** Current entries that contain `uuid` (elements / itemType / enumeration), with the edge that does. */
+  parents(uuid: string): Array<{ uuid: string; edge: ContainmentEdge }> {
+    if (!this.parentIndex) {
+      this.parentIndex = new Map();
+      for (const [parent, doc] of this.published) {
+        if (this.isSuperseded(doc)) continue;
+        for (const edge of containmentEdges(doc)) {
+          const list = this.parentIndex.get(edge.uuid) ?? [];
+          list.push({ uuid: parent, edge });
+          this.parentIndex.set(edge.uuid, list);
+        }
+      }
+    }
+    return this.parentIndex.get(uuid) ?? [];
+  }
+  private parentIndex: Map<string, Array<{ uuid: string; edge: ContainmentEdge }>> | undefined;
+
+  /** Root → … → first parent, following the first parent at each level; the tree shows the rest. */
+  breadcrumb(uuid: string): string[] {
+    const chain: string[] = [];
+    const seen = new Set<string>([uuid]);
+    let cursor = this.parents(uuid)[0]?.uuid;
+    while (cursor !== undefined && !seen.has(cursor)) {
+      chain.unshift(cursor);
+      seen.add(cursor);
+      cursor = this.parents(cursor)[0]?.uuid;
+    }
+    return chain;
+  }
 }
+
+type Kind = 'element' | 'collection' | 'unit' | 'value';
+function kindOf(objectType: unknown): Kind {
+  switch (objectType) {
+    case 'DataElementCollection': return 'collection';
+    case 'MeasurementUnit': case 'Quantity': return 'unit';
+    case 'Value': return 'value';
+    default: return 'element';
+  }
+}
+function kindChip(objectType: unknown): string {
+  return `<span class="chip ${kindOf(objectType)}">${esc(objectType)}</span>`;
+}
+/** Membership badges for a containment edge — they describe the edge, never the entry. */
+function edgeBadges(edge: ContainmentEdge | undefined, refs: RefIndex): string {
+  const out: string[] = [];
+  if (edge?.kind === 'member') out.push(`<span class="badge">${edge.isMandatory ? 'mandatory' : 'optional'}</span>`);
+  if (edge?.kind === 'item') out.push('<span class="badge">item type</span>');
+  if (edge?.kind === 'value') out.push('<span class="badge">value</span>');
+  if (edge?.accessCategory !== undefined) out.push(`<span class="badge tier">access: ${refs.link(edge.accessCategory)}</span>`);
+  return out.join(' ');
+}
+
+const NAV: Array<[key: string, href: string, label: string]> = [
+  ['index', '/', 'Index'], ['tree', '/tree', 'Tree'], ['schema', '/schema', 'Schema'], ['feed', '/feed.xml', 'Feed'],
+];
+const FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231f7a4d'/%3E%3C/svg%3E";
 
 /**
  * GitHub Pages is build-artifact/origin only and must never be advertised as a reference
@@ -78,7 +144,12 @@ export class RefIndex {
  * which host served the bytes, so any crawler or tool consolidates there instead of treating
  * the Pages/materialidentity.org copy as authoritative.
  */
-function pageShell(title: string, canonicalPath: string, body: string, options: { alternateJson?: string; rssFeed?: boolean } = {}): string {
+function pageShell(
+  title: string,
+  canonicalPath: string,
+  body: string,
+  options: { alternateJson?: string; rssFeed?: boolean; nav?: string; description?: string } = {},
+): string {
   const canonicalUrl = `${CANONICAL_BASE}${canonicalPath}`;
   const alternate = options.alternateJson === undefined
     ? ''
@@ -86,20 +157,32 @@ function pageShell(title: string, canonicalPath: string, body: string, options: 
   const rss = options.rssFeed
     ? `\n<link rel="alternate" type="application/rss+xml" title="material-identity dictionary" href="/feed.xml">`
     : '';
+  const description = options.description === undefined ? '' : `\n<meta name="description" content="${esc(options.description)}">`;
+  const nav = NAV.map(([key, href, label]) => `<a href="${href}"${options.nav === key ? ' aria-current="page"' : ''}>${label}</a>`).join('');
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)}</title>
+<title>${esc(title)}</title>${description}
+<meta name="theme-color" content="#1f7a4d" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1a13" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="${FAVICON}">
 <link rel="canonical" href="${esc(canonicalUrl)}">
 <link rel="stylesheet" href="/styles.css">${alternate}${rss}
 </head>
 <body>
-<main>
+<header class="mast"><div class="wrap">
+<a class="wordmark" href="/">material-identity <span>dictionary</span></a>
+<nav class="nav" aria-label="Site">${nav}</nav>
+</div></header>
+<main class="wrap">
 ${body}
 </main>
-<footer><a href="/">Dictionary index</a> · <a href="https://material-identity.eu/">material-identity.eu</a></footer>
+<footer><div class="wrap">
+<span>Content CC0 1.0 · <a href="https://material-identity.eu/">material-identity.eu</a></span>
+<span><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/tree">Tree view</a> · <a href="/schema">JSON Schema reference</a></span>
+</div></footer>
 </body>
 </html>
 `;
@@ -107,7 +190,7 @@ ${body}
 
 function langMapHtml(v: unknown): string {
   const entries = Object.entries(lang(v)).sort(([a], [b]) => (a === 'en' ? -1 : b === 'en' ? 1 : a.localeCompare(b, 'en')));
-  return `<dl class="langmap">${entries.map(([k, s]) => `<dt>${esc(k)}</dt><dd>${esc(s)}</dd>`).join('')}</dl>`;
+  return `<dl class="langmap">${entries.map(([k, s]) => `<dt>${esc(k)}</dt><dd lang="${esc(k)}">${esc(s)}</dd>`).join('')}</dl>`;
 }
 
 function standardRefHtml(v: unknown): string {
@@ -127,61 +210,118 @@ export function statusBanner(entry: Doc, refs: RefIndex): string {
   return `<div class="banner superseded">Superseded by ${refs.link(successor.id)}. This entry remains resolvable forever, byte-identical to its publication; do not use it for new passports.</div>`;
 }
 
+/** A reference to another entry, shown as its label plus its kind chip (and a unit's symbol). */
+function refHtml(uri: unknown, refs: RefIndex): string {
+  const uuid = defUuidOf(uri);
+  const target = uuid ? refs.doc(uuid) : undefined;
+  if (!target) return refs.link(uri);
+  const symbol = target.objectType === 'MeasurementUnit' && en(target.symbol) ? ` <code>${esc(en(target.symbol))}</code>` : '';
+  return `<span class="ref">${refs.link(uri)}${symbol} ${kindChip(target.objectType)}</span>`;
+}
+
+function externalLink(uri: unknown): string {
+  return `<a href="${esc(uri)}" rel="external">${esc(uri)}</a>`;
+}
+
+/**
+ * Entry page as a document (issue #92): breadcrumb from containment, hero, definition as
+ * prose, then facts grouped by meaning. The JSON representation is untouched — this is
+ * presentation only; nothing here is read back from stored state.
+ */
 export function renderEntryPage(file: RepoFile, repo: RepoModel, refs: RefIndex): string {
   const doc = file.doc as Doc;
   const title = en(doc.preferredName) ?? String(doc.shortName ?? file.stem);
-  const rows: string[] = [];
+  const fact = (label: string, html: string): string => `<dt>${esc(label)}</dt><dd>${html}</dd>`;
+  const section = (heading: string, facts: string[]): string =>
+    facts.length === 0 ? '' : `<section><h2>${esc(heading)}</h2><dl class="facts">${facts.join('\n')}</dl></section>`;
 
-  rows.push(row('id', `<a href="/def/${esc(file.stem)}">${esc(doc.id)}</a>`));
-  if (doc.replaces !== undefined) rows.push(row('replaces', refs.link(doc.replaces)));
-  rows.push(row('isDefinedBy', `<a href="${esc(doc.isDefinedBy)}" rel="external">${esc(doc.isDefinedBy)}</a>`));
-  rows.push(row('objectType', `<code>${esc(doc.objectType)}</code>`));
-  if (doc.shortName !== undefined) rows.push(row('shortName', `<code>${esc(doc.shortName)}</code>`));
-  if (doc.symbol !== undefined) rows.push(row('symbol', langMapHtml(doc.symbol)));
-  if (doc.preferredName !== undefined) rows.push(row('preferredName', langMapHtml(doc.preferredName)));
-  if (doc.definition !== undefined) rows.push(row('definition', langMapHtml(doc.definition)));
-  for (const field of ['inheritsFrom', 'identicalTo'] as const) {
-    const v = doc[field];
-    if (Array.isArray(v)) rows.push(row(field, v.map((u) => `<a href="${esc(u)}" rel="external">${esc(u)}</a>`).join('<br>')));
-  }
-  if (doc.valueDataType !== undefined) rows.push(row('valueDataType', `<code>${esc(doc.valueDataType)}</code>`));
-  if (doc.unit !== undefined) rows.push(row('unit', refs.link(doc.unit)));
-  if (doc.exampleValue !== undefined) rows.push(row('exampleValue', `<code>${esc(JSON.stringify(doc.exampleValue))}</code>`));
+  // hero
+  const crumbs = ['<li><a href="/">Dictionary</a></li>',
+    ...refs.breadcrumb(file.stem).map((u) => `<li><a href="/def/${esc(u)}">${esc(refs.label(u))}</a></li>`),
+    `<li>${esc(title)}</li>`];
+  const names = Object.entries(lang(doc.preferredName)).filter(([k]) => k !== 'en')
+    .map(([k, v]) => `<p class="alt-name"><span class="lang">${esc(k)}</span><span lang="${esc(k)}">${esc(v)}</span></p>`).join('');
+  const symbolText = en(doc.symbol);
+  // caption first in the DOM (reads "symbol Rm"), reversed visually by the stylesheet
+  const symbol = symbolText === undefined ? '' : `<p class="symbol-block"><span class="symbol-cap">symbol</span><span class="symbol${doc.objectType === 'MeasurementUnit' ? ' upright' : ''}">${esc(symbolText)}</span></p>`;
+  const shortName = doc.shortName !== undefined ? `<span class="chip neutral"><code>${esc(doc.shortName)}</code></span>` : '';
+
+  // definition as prose; a missing German definition is shown, not hidden (#76)
+  const defs = lang(doc.definition);
+  const definition = doc.definition === undefined ? '' : `<div class="definition">${
+    Object.entries(defs).sort(([a], [b]) => (a === 'en' ? -1 : b === 'en' ? 1 : a.localeCompare(b, 'en')))
+      .map(([k, v]) => `<span class="lang">${esc(k)}</span><p lang="${esc(k)}">${esc(v)}</p>`).join('')
+  }${defs.de === undefined ? '<span class="lang">de</span><p class="missing">No German definition yet — request one via a dictionary request.</p>' : ''}</div>`;
+
+  // value
+  const value: string[] = [];
+  if (doc.value !== undefined) value.push(fact('Value', `<code>${esc(JSON.stringify(doc.value))}</code>`));
+  if (doc.valueDataType !== undefined) value.push(fact('Data type', `<code>${esc(doc.valueDataType)}</code>`));
+  if (doc.unit !== undefined) value.push(fact('Unit', refHtml(doc.unit, refs)));
+  if (doc.quantityKind !== undefined) value.push(fact('Quantity kind', refHtml(doc.quantityKind, refs)));
+  if (doc.dimension !== undefined) value.push(fact('Dimension', `<code>${esc(doc.dimension)}</code>`));
+  if (doc.coherentSiUnit !== undefined) value.push(fact('Coherent SI unit', refHtml(doc.coherentSiUnit, refs)));
+  if (doc.exampleValue !== undefined) value.push(fact('Example', `<code>${esc(JSON.stringify(doc.exampleValue))}</code>`));
+  if (doc.resourceMediaType !== undefined) value.push(fact('Media type', `<code>${esc(doc.resourceMediaType)}</code>`));
+  if (doc.itemType !== undefined) value.push(fact('Item type', refHtml(doc.itemType, refs)));
   if (Array.isArray(doc.enumeration)) {
-    rows.push(row('enumeration', `<ul>${doc.enumeration.map((u) => `<li>${refs.link(u)}</li>`).join('')}</ul>`));
+    value.push(fact('Permitted values', `<ul class="plain">${doc.enumeration.map((u) => `<li>${refHtml(u, refs)}</li>`).join('')}</ul>`));
   }
-  if (doc.definitionStandard !== undefined) rows.push(row('definitionStandard', standardRefHtml(doc.definitionStandard)));
-  if (doc.testStandard !== undefined) rows.push(row('testStandard', standardRefHtml(doc.testStandard)));
-  if (doc.legalBasis !== undefined) rows.push(row('legalBasis', standardRefHtml(doc.legalBasis)));
-  if (doc.resourceMediaType !== undefined) rows.push(row('resourceMediaType', `<code>${esc(doc.resourceMediaType)}</code>`));
-  if (doc.itemType !== undefined) rows.push(row('itemType', refs.link(doc.itemType)));
   if (Array.isArray(doc.elements)) {
-    const body = (doc.elements as Doc[]).map((el) =>
-      `<tr><td>${refs.link(el.dictionaryReference)}</td><td>${el.isMandatory ? 'mandatory' : 'optional'}</td><td>${el.accessCategory !== undefined ? refs.link(el.accessCategory) : '—'}</td></tr>`).join('');
-    rows.push(row('elements', `<table class="inner"><thead><tr><th>member</th><th>membership</th><th>access</th></tr></thead><tbody>${body}</tbody></table>`));
-  }
-  if (doc.quantityKind !== undefined) rows.push(row('quantityKind', refs.link(doc.quantityKind)));
-  if (doc.dimension !== undefined) rows.push(row('dimension', `<code>${esc(doc.dimension)}</code>`));
-  if (doc.coherentSiUnit !== undefined) rows.push(row('coherentSiUnit', refs.link(doc.coherentSiUnit)));
-  if (doc.crossReferences !== undefined) {
-    const body = Object.entries(doc.crossReferences as Doc).map(([k, v]) =>
-      `<tr><td><code>${esc(k)}</code></td><td>${String(v).startsWith('http') ? `<a href="${esc(v)}" rel="external">${esc(v)}</a>` : esc(v)}</td></tr>`).join('');
-    rows.push(row('crossReferences', `<table class="inner"><tbody>${body}</tbody></table>`));
+    const members = (doc.elements as Doc[]).map((el) => {
+      const edge: ContainmentEdge = { uuid: defUuidOf(el.dictionaryReference) ?? '', kind: 'member', isMandatory: el.isMandatory === true, accessCategory: typeof el.accessCategory === 'string' ? el.accessCategory : undefined };
+      return `<div class="member">${refHtml(el.dictionaryReference, refs)} ${edgeBadges(edge, refs)}</div>`;
+    }).join('');
+    value.push(fact('Members', members));
   }
   if (Array.isArray(doc.conversions)) {
-    const body = (doc.conversions as Doc[]).map((c) =>
-      `<tr><td>${refs.link(c.toUnit)}</td><td>${esc(c.factor)}</td><td>${esc(c.offset ?? 0)}</td></tr>`).join('');
-    rows.push(row('conversions', `<table class="inner"><thead><tr><th>toUnit</th><th>factor</th><th>offset</th></tr></thead><tbody>${body}</tbody></table>`));
+    const rows = (doc.conversions as Doc[]).map((c) =>
+      `<tr><td>${refHtml(c.toUnit, refs)}</td><td>${esc(c.factor)}</td><td>${esc(c.offset ?? 0)}</td></tr>`).join('');
+    value.push(fact('Conversions', `<div class="table-scroll"><table class="inner"><thead><tr><th>to unit</th><th>factor</th><th>offset</th></tr></thead><tbody>${rows}</tbody></table></div>`));
   }
-  if (doc.value !== undefined) rows.push(row('value', `<code>${esc(JSON.stringify(doc.value))}</code>`));
+  if (doc.crossReferences !== undefined) {
+    const rows = Object.entries(doc.crossReferences as Doc).map(([k, v]) =>
+      `<tr><td><code>${esc(k)}</code></td><td>${String(v).startsWith('http') ? externalLink(v) : esc(v)}</td></tr>`).join('');
+    value.push(fact('Cross-references', `<table class="inner"><tbody>${rows}</tbody></table>`));
+  }
+
+  // contained by — badges describe the membership, not this entry
+  const parents = refs.parents(file.stem);
+  const containedBy = parents.length === 0 ? '' : `<section><h2>Contained by</h2>${
+    parents.map(({ uuid, edge }) => `<div class="member">${refHtml(`${DEF_PREFIX}${uuid}`, refs)} ${edgeBadges(edge, refs)}</div>`).join('')
+  }<p class="meta">Membership badges come from the containing collection, not from this entry.</p></section>`;
+
+  // sources
+  const sources: string[] = [];
+  if (doc.definitionStandard !== undefined) sources.push(fact('Definition standard', standardRefHtml(doc.definitionStandard)));
+  if (doc.testStandard !== undefined) sources.push(fact('Test standard', standardRefHtml(doc.testStandard)));
+  if (doc.legalBasis !== undefined) sources.push(fact('Legal basis', standardRefHtml(doc.legalBasis)));
+  for (const [field, label] of [['inheritsFrom', 'Inherits from'], ['identicalTo', 'Identical to']] as const) {
+    const v = doc[field];
+    if (Array.isArray(v)) sources.push(fact(label, v.map((u) => externalLink(u)).join('<br>')));
+  }
+  sources.push(fact('Defined by', `${externalLink(doc.isDefinedBy)} <span class="aside">— the dictionary that syndicates this entry, not the authority behind its meaning</span>`));
+
+  // identity
+  const identity = `<section><h2>Identity</h2>
+<div class="identity"><div><span class="eyebrow">Dictionary element id · immutable</span><span class="mono">${esc(doc.id)}</span></div>
+<div class="actions"><a href="/def/${esc(file.stem)}.json" class="btn">Raw JSON</a></div></div>${
+    doc.replaces !== undefined ? `<dl class="facts">${fact('Replaces', refHtml(doc.replaces, refs))}</dl>` : ''
+  }</section>`;
 
   const body = `${statusBanner(doc, refs)}
-<h1>${esc(title)}</h1>
-<p class="meta"><code>${esc(doc.shortName ?? '')}</code> · ${esc(doc.objectType)}</p>
-<p class="links"><a href="/def/${esc(file.stem)}.json">Raw JSON</a></p>
-<table class="fields"><tbody>${rows.join('\n')}</tbody></table>`;
+<nav aria-label="Breadcrumb"><ol class="crumbs">${crumbs.join('')}</ol></nav>
+<div class="hero"><div>
+<div class="chips">${kindChip(doc.objectType)} ${shortName}</div>
+<h1>${esc(title)}</h1>${names}
+</div>${symbol}</div>
+${definition}
+${section('Value', value)}
+${containedBy}
+${section('Sources', sources)}
+${identity}`;
 
-  return pageShell(title, `/def/${file.stem}`, body, { alternateJson: `/def/${file.stem}.json` });
+  return pageShell(title, `/def/${file.stem}`, body, { alternateJson: `/def/${file.stem}.json`, description: en(doc.definition) });
 }
 
 /** A containment edge: the only kind of edge the tree nests. Reference edges (unit, quantityKind, …) stay links. */
@@ -234,15 +374,8 @@ export function renderTreePage(repo: RepoModel, refs: RefIndex): string {
     .filter(([uuid]) => !contained.has(uuid))
     .sort(([ua, a], [ub, b]) => labelOf(ua, a).localeCompare(labelOf(ub, b), 'en') || ua.localeCompare(ub, 'en'));
 
-  const badges = (edge: ContainmentEdge | undefined, doc: Doc | undefined): string => {
-    const out: string[] = [];
-    if (edge?.kind === 'member') out.push(edge.isMandatory ? 'mandatory' : 'optional');
-    if (edge?.kind === 'item') out.push('item type');
-    if (edge?.kind === 'value') out.push('value');
-    if (edge?.accessCategory !== undefined) out.push(`access: ${refs.link(edge.accessCategory)}`);
-    if (doc && refs.isSuperseded(doc)) out.push('superseded');
-    return out.map((b) => `<span class="badge">${b}</span>`).join(' ');
-  };
+  const badges = (edge: ContainmentEdge | undefined, doc: Doc | undefined): string =>
+    [edgeBadges(edge, refs), doc && refs.isSuperseded(doc) ? '<span class="badge dead">superseded</span>' : ''].filter(Boolean).join(' ');
 
   const rendered = new Set<string>();
   const node = (uuid: string, edge: ContainmentEdge | undefined, path: Set<string>, depth: number): string => {
@@ -256,13 +389,13 @@ export function renderTreePage(repo: RepoModel, refs: RefIndex): string {
     if (doc.value !== undefined) facts.push(`value <code>${esc(JSON.stringify(doc.value))}</code>`);
     if (doc.valueDataType !== undefined) facts.push(`<code>${esc(doc.valueDataType)}</code>`);
     if (doc.unit !== undefined) facts.push(`unit ${refs.link(doc.unit)}`);
-    facts.push(`<a href="/def/${esc(uuid)}">entry page</a>`);
+    facts.push(`<a href="/def/${esc(uuid)}" aria-label="Entry page: ${esc(labelOf(uuid, doc))}">entry page</a>`);
 
     const nextPath = new Set(path).add(uuid);
     const children = containmentEdges(doc).map((e) => node(e.uuid, e, nextPath, depth + 1)).join('\n');
     const shortName = doc.shortName !== undefined ? ` <code>${esc(doc.shortName)}</code>` : '';
     return `<details${depth === 0 ? ' open' : ''}>
-<summary>${esc(labelOf(uuid, doc))}${shortName} · <span class="type">${esc(doc.objectType)}</span> ${badges(edge, doc)}</summary>
+<summary>${esc(labelOf(uuid, doc))}${shortName} ${kindChip(doc.objectType)} ${badges(edge, doc)}</summary>
 <div class="node-body">${doc.definition !== undefined ? langMapHtml(doc.definition) : ''}<p class="facts">${facts.join(' · ')}</p>
 ${children}</div>
 </details>`;
@@ -284,7 +417,7 @@ ${items.map(([uuid]) => node(uuid, undefined, new Set(), 0)).join('\n')}
 <p class="meta">${elementRoots.length} element ${elementRoots.length === 1 ? 'root' : 'roots'} · ${referenceRoots.length} units and quantities · nests containment only (<code>elements</code>, <code>itemType</code>, <code>enumeration</code>); references such as <code>unit</code> or <code>quantityKind</code> are links inside a node. Badges come from the parent's membership, so the same entry may carry different badges under different parents. Superseded entries are omitted, as in the index.</p>
 ${section('Elements and collections', 'Current entries nothing contains, with everything they contain nested below.', elementRoots)}
 ${section('Units and quantities', 'Referenced by the entries above via <code>unit</code>, <code>quantityKind</code> or <code>coherentSiUnit</code> — never contained, so always top-level.', referenceRoots)}`;
-  return pageShell('Dictionary tree', '/tree', body);
+  return pageShell('Dictionary tree', '/tree', body, { nav: 'tree' });
 }
 
 function schemaTypeLabel(prop: unknown): string {
@@ -392,7 +525,7 @@ export function renderIndexPages(repo: RepoModel, refs: RefIndex): Array<{ name:
     const rows = entries.slice(i * INDEX_PAGE_SIZE, page * INDEX_PAGE_SIZE).map(({ stem, doc, label }) => `<tr>
 <td><a href="/def/${esc(stem)}">${esc(label)}</a></td>
 <td><code>${esc(doc.shortName ?? '')}</code></td>
-<td>${esc(doc.objectType)}</td>
+<td>${kindChip(doc.objectType)}</td>
 </tr>`).join('\n');
 
     const nav = pageCount === 1 ? '' : `\n<nav class="pages">${[
@@ -404,14 +537,13 @@ export function renderIndexPages(repo: RepoModel, refs: RefIndex): Array<{ name:
     const body = `<h1>Dictionary index</h1>
 <p class="meta">${entries.length} current ${entries.length === 1 ? 'entry' : 'entries'} · immutable, permanent versions at <code>https://material-identity.eu/def/&lt;uuid&gt;</code></p>
 <table class="versions">
-<thead><tr><th>preferredName (en)</th><th>shortName</th><th>objectType</th></tr></thead>
+<thead><tr><th>Name</th><th>shortName</th><th>Kind</th></tr></thead>
 <tbody>
 ${rows}
 </tbody>
-</table>${nav}
-<p class="contribute"><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/tree">Tree view</a> · <a href="/schema">JSON Schema reference</a></p>`;
+</table>${nav}`;
 
     const canonicalPath = page === 1 ? '/' : `/${pageName(page)}`;
-    return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, body, { rssFeed: true }) };
+    return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, body, { rssFeed: true, nav: 'index' }) };
   });
 }
