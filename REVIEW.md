@@ -28,10 +28,16 @@ pinning, immutability, move purity, the two-yes gate, coverage.
 - [ ] `definitionStandard`/`testStandard` name the **correct document and clause** — open the
       cited standard (local `standards/` library) and verify the clause actually defines/tests
       this concept; a wrong clause is worse than none.
-- [ ] The reference names the version-independent designation (EN 13445-3), not a dated copy,
-      unless the concept is version-bound.
+- [ ] `definitionStandard`/`testStandard`/`legalBasis`'s `uri` is **version-stable**: a dated
+      edition for a standard, a specific expression for legislation — never a living-document
+      link that can change under an immutable entry. The undated, version-independent
+      designation (e.g. "EN 13445-3") belongs in the human-readable `name` field only.
 - [ ] `isDefinedBy` is the dictionary root, not a standard — provenance of the entry,
       not of the concept.
+- [ ] `legalBasis` is used for the law/regulation that defines or mandates the concept —
+      never for a technical/testing standard (that's `definitionStandard`/`testStandard`).
+      Its `uri` pins to a specific expression (e.g. an Official Journal text), never a live
+      consolidated alias that can change under an immutable entry.
 
 ## 4 Envelope idioms
 
@@ -41,6 +47,11 @@ pinning, immutability, move purity, the two-yes gate, coverage.
 - [ ] Multilingual *values* (not metadata) use `rdf:langString` + `MultiLanguageDataElement`.
 - [ ] `isMandatory` sits on collection **membership**; specification-independent collections
       omit the flags (mandatoriness belongs to the spec context, not the concept).
+- [ ] `accessCategory` likewise sits on **membership**, never on the entry, and only on a
+      collection that represents a content specification's membership — purely semantic
+      collections leave it absent. It references a `Value` of the access-category vocabulary
+      (never an ad-hoc entry) and is informative: the applicable legal act is normative, the
+      passport interface enforces. The dictionary never claims to grant or deny access.
 - [ ] Entries carry no status/lifecycle fields at all — supersession is only ever expressed
       via `replaces`; "current" and "superseded" are derived at build time, never stored.
 

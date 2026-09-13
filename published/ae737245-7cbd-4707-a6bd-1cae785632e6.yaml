@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/ae737245-7cbd-4707-a6bd-1cae785632e6
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: remanufacturer
+preferredName:
+  en: Remanufacturer
+  de: Wiederaufarbeitungsbetrieb
+definition:
+  en: Natural or legal person that carries out remanufacturing — actions through which a new product is produced from objects that are waste, products or components, with at least one change that substantially affects the safety, performance, purpose or type of the product.
+  de: Natürliche oder juristische Person, die Wiederaufarbeitungen durchführt — Maßnahmen, durch die aus Gegenständen, bei denen es sich um Abfälle, Produkte oder Bauteile handelt, ein neues Produkt hergestellt wird und bei denen mindestens eine Änderung vorgenommen wird, die die Sicherheit, Leistung, Zweckbestimmung oder Art des Produkts wesentlich beeinflusst.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(16); Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

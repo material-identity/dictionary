@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/2f540073-4fe6-42f6-a541-0779099d39c1
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: customer
+preferredName:
+  en: Customer
+  de: Kunde
+definition:
+  en: Natural or legal person that purchases, hires or receives a product for their own use, whether or not acting for purposes outside their trade, business, craft or profession.
+  de: Natürliche oder juristische Person, die ein Produkt für den Eigengebrauch kauft, mietet oder erhält, unabhängig davon, ob sie zu Zwecken handelt, die außerhalb ihrer gewerblichen, geschäftlichen, handwerklichen oder beruflichen Tätigkeit liegen.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(35); Art. 11(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

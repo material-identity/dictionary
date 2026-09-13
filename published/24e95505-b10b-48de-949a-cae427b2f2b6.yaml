@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/24e95505-b10b-48de-949a-cae427b2f2b6
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: authorityOnly
+preferredName:
+  en: Authority only
+  de: Nur Behörden
+definition:
+  en: Access category for a data element that is accessible only to notified bodies, market surveillance authorities, customs authorities and the Commission.
+  de: Zugriffskategorie für ein Datenelement, das nur notifizierten Stellen, Marktüberwachungsbehörden, Zollbehörden und der Kommission zugänglich ist.
+legalBasis:
+  name: Regulation (EU) 2023/1542
+  clause: Art. 77(2)(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2023/1542/oj

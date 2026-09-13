@@ -8,7 +8,7 @@ const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 
 test('loadRepo loads the green tree into the full model', () => {
   const repo = loadRepo(join(fixtures, 'green'));
-  assert.equal(repo.published.length, 7);
+  assert.equal(repo.published.length, 8);
   assert.equal(repo.drafts.length, 1);
   assert.equal(repo.errors.length, 0);
 
