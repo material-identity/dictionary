@@ -98,7 +98,8 @@ test('decide: JSON is the default; HTML only when Accept names text/html', () =>
 
 test('decide: well-known URIs are typed and cached for a day, never immutable (#107, #109)', () => {
   const key = decide('/.well-known/pgp-security.asc', '*/*');
-  assert.equal(key.originPath, '/.well-known/pgp-security.asc');
+  // undotted at the origin — the Pages artifact tar drops dot-directories (#110)
+  assert.equal(key.originPath, '/well-known/pgp-security.asc');
   assert.equal(key.headers['content-type'], 'application/pgp-keys');
   // a key can be rotated or revoked, so it must never inherit an entry's immutable caching
   assert.equal(key.headers['cache-control'], 'public, max-age=86400');
@@ -106,14 +107,20 @@ test('decide: well-known URIs are typed and cached for a day, never immutable (#
 
   // RFC 9116 §3 requires security.txt to be served as text/plain with a charset
   const sec = decide('/.well-known/security.txt', '*/*');
-  assert.equal(sec.originPath, '/.well-known/security.txt');
+  assert.equal(sec.originPath, '/well-known/security.txt');
   assert.equal(sec.headers['content-type'], 'text/plain; charset=utf-8');
   assert.equal(sec.headers['cache-control'], 'public, max-age=86400');
 
-  // anything else well-known gets the ceiling and the origin's own type
+  // anything else well-known gets the ceiling and the origin's own type, nested paths included
   const other = decide('/.well-known/openpgpkey/hu/abc', '*/*');
+  assert.equal(other.originPath, '/well-known/openpgpkey/hu/abc');
   assert.equal(other.headers['cache-control'], 'public, max-age=86400');
   assert.equal(other.headers['content-type'], undefined);
+
+  // no origin path we serve may start with a dot, or the artifact tar drops it again (#110)
+  for (const p of ['/.well-known/security.txt', '/.well-known/pgp-security.asc', '/.well-known/a/b']) {
+    assert.ok(!decide(p, '*/*').originPath.includes('/.'), `${p} must not map to a dot-directory`);
+  }
 
   // .asc / .txt anywhere else are not special-cased
   assert.equal(decide('/def/whatever.asc', '*/*').headers['content-type'], undefined);

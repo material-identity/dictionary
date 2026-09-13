@@ -29,11 +29,16 @@ export function decide(pathname: string, accept: string | null): RouteDecision {
   // RFC 8615 well-known URIs (#107, #109). Cacheable but never immutable like an entry: a key can
   // be rotated or revoked and security.txt expires, so a day is the ceiling. Pages would serve
   // .asc as a generic byte stream and .txt without a charset, hence the explicit types.
+  //
+  // The origin stores these under `well-known/`, undotted (#110): actions/upload-pages-artifact
+  // tars with `--exclude=.[^/]*` and silently drops any dot-directory, which 404'd the live URL
+  // while every local test passed. Rewriting here keeps the canonical, RFC-mandated URL intact —
+  // mapping a URI onto an origin file is this Worker's whole job.
   if (pathname.startsWith('/.well-known/')) {
     const headers: Record<string, string> = { 'cache-control': 'public, max-age=86400' };
     if (pathname.endsWith('.asc')) headers['content-type'] = 'application/pgp-keys';
     if (pathname.endsWith('.txt')) headers['content-type'] = 'text/plain; charset=utf-8'; // RFC 9116 §3
-    return { originPath: pathname, headers };
+    return { originPath: `/well-known/${pathname.slice('/.well-known/'.length)}`, headers };
   }
 
   // index, pagination, styles, raw origin files: pass through with a short cache

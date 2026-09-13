@@ -43,3 +43,19 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+      # A green deploy is not proof the site serves what we built: #110 shipped a "successful"
+      # deploy whose artifact silently omitted .well-known/, and only a manual curl caught it.
+      # Fail the run instead, on the canonical host the Worker actually fronts.
+      - name: smoke — the canonical URLs answer
+        run: |
+          set -uo pipefail
+          fail=0
+          for path in / /feed.xml /.well-known/security.txt /.well-known/pgp-security.asc; do
+            # -f makes a 4xx an error so --retry-all-errors keeps trying: the Worker caches its
+            # own 404 for 60s, so the first probe after a deploy can legitimately still miss.
+            code=$(curl -fsS -L -o /dev/null -w '%{http_code}' \
+              --retry 10 --retry-delay 10 --retry-all-errors \
+              "https://material-identity.eu${path}") || { code="${code:-000} FAILED"; fail=1; }
+            printf '%-34s %s\n' "$path" "$code"
+          done
+          exit $fail
