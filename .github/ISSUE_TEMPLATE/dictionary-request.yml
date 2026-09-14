@@ -101,6 +101,57 @@ body:
       description: For units/quantities — URI of the Quantity entry, or its name if new.
     validations:
       required: false
+  - type: markdown
+    attributes:
+      value: >-
+        **Kind-specific fields.** Only the one matching your `objectType` applies — leave the rest
+        blank. Each is required in the envelope for its kind, so a request without it cannot be
+        drafted; the form cannot mark them required because it can't see which kind you picked.
+  - type: input
+    id: item-type
+    attributes:
+      label: itemType — for MultiValuedDataElement
+      description: URI of the entry describing a single item of the list — or its name if new.
+      placeholder: "https://material-identity.eu/def/<uuid> — or: new entry needed: alloyingElement"
+    validations:
+      required: false
+  - type: input
+    id: symbol
+    attributes:
+      label: symbol — for MeasurementUnit
+      description: The printed symbol. Give the English form; drafting expands it to a language map.
+      placeholder: MPa
+    validations:
+      required: false
+  - type: input
+    id: ucum-code
+    attributes:
+      label: ucumCode — for MeasurementUnit
+      description: >-
+        The UCUM code for the unit, which enables automatic conversion. Its syntax is validated
+        automatically, so leave it blank rather than guessing — note UCUM is case-sensitive and
+        spells some units unexpectedly (`Cel` for degree Celsius, `[psi]`, `mm2`).
+      placeholder: MPa
+    validations:
+      required: false
+  - type: input
+    id: dimension
+    attributes:
+      label: dimension — for Quantity
+      description: Dimensional formula in M/L/T/I/Θ/N/J, exponents with `^`.
+      placeholder: M L^-1 T^-2
+    validations:
+      required: false
+  - type: input
+    id: value
+    attributes:
+      label: value — for Value
+      description: >-
+        The literal value this entry stands for. Only for a standalone Value request — members of
+        an enumeration go in the "Enumeration values" field below instead.
+      placeholder: EAF
+    validations:
+      required: false
   - type: input
     id: definition-standard
     attributes:

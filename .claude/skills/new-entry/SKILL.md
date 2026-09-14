@@ -22,7 +22,9 @@ Companion skill: [publish-entry](../publish-entry/SKILL.md) moves the draft live
 1. **Read the issue.** Pull `shortName`, `objectType`, `preferredName` (en, optionally de),
    `definition` (en, optionally de), and every optional field the requester filled in
    (`valueDataType`, `unit`, `quantityKind`, `definitionStandard`, `testStandard`, `legalBasis`,
-   `exampleValue`, enumeration values, collection members, `identicalTo`). Use `legalBasis` for
+   `exampleValue`, enumeration values, collection members, `identicalTo`, plus the kind-specific
+   block — `itemType`, `symbol`, `ucumCode`, `dimension`, `value` — of which only the one matching
+   `objectType` should be filled, and step 4 says which). Use `legalBasis` for
    a law/regulation citation (e.g. an ELI reference) and `definitionStandard`/`testStandard`
    only for a technical/testing standard — don't conflate the two.
 
