@@ -1,0 +1,12 @@
+id: https://material-identity.eu/def/85f9d730-7369-4537-bdb9-55025ceb76b9
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: ES
+preferredName:
+  en: Electrical steel
+  de: Elektroband
+definition:
+  en: Flat steel product with specified magnetic properties, intended for magnetic
+    circuits.
+  de: Flacherzeugnis aus Stahl mit festgelegten magnetischen Eigenschaften,
+    bestimmt für magnetische Kreise.

@@ -1,0 +1,11 @@
+id: https://material-identity.eu/def/6c93db70-6227-417f-95e2-20b23bcbca2f
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: HRC
+preferredName:
+  en: Hot-rolled coil
+  de: Warmbreitband
+definition:
+  en: Flat steel product hot rolled to strip and wound into a coil.
+  de: Warmgewalztes Flacherzeugnis aus Stahl, das zu Band gewalzt und zu einem
+    Coil aufgewickelt ist.

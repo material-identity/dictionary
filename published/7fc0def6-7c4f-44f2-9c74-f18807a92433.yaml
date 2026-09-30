@@ -1,0 +1,15 @@
+id: https://material-identity.eu/def/7fc0def6-7c4f-44f2-9c74-f18807a92433
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: SS
+preferredName:
+  en: Stainless steel product
+  de: Erzeugnis aus nichtrostendem Stahl
+definition:
+  en: Product made of steel with a mass fraction of at least 10.5 % chromium and
+    at most 1.2 % carbon.
+  de: Erzeugnis aus Stahl mit einem Massenanteil von mindestens 10,5 % Chrom und
+    höchstens 1,2 % Kohlenstoff.
+definitionStandard:
+  name: EN 10020
+  uri: urn:cen:en:10020:2000

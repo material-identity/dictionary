@@ -1,0 +1,12 @@
+id: https://material-identity.eu/def/b0d1b07a-30ab-437b-b047-0bd1160cba67
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: stainlessSteel
+preferredName:
+  en: Stainless steel
+  de: Nichtrostender Stahl
+definition:
+  en: Steel with a mass fraction of at least 10.5 % chromium and at most 1.2 %
+    carbon.
+  de: Stahl mit einem Massenanteil von mindestens 10,5 % Chrom und höchstens 1,2 %
+    Kohlenstoff.

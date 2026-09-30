@@ -1,0 +1,25 @@
+id: https://material-identity.eu/def/34bb8a98-ed8a-496b-8981-7bbd732e10c5
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: esprProductCategory
+preferredName:
+  en: ESPR product category
+  de: ESPR-Produktkategorie
+definition:
+  en: Category of intermediate iron and steel product, as delimited for the
+    purposes of ecodesign requirements for iron and steel products, into which
+    the product falls.
+  de: Kategorie von Eisen- und Stahl-Zwischenprodukten im Sinne der
+    Ökodesign-Anforderungen an Eisen- und Stahlerzeugnisse, der das Produkt
+    angehört.
+valueDataType: xsd:string
+enumeration:
+  - https://material-identity.eu/def/6c93db70-6227-417f-95e2-20b23bcbca2f
+  - https://material-identity.eu/def/c8afba69-6295-4438-8328-db3409c1f535
+  - https://material-identity.eu/def/8aa97a59-af35-4534-90fa-f8ef9b455608
+  - https://material-identity.eu/def/85f9d730-7369-4537-bdb9-55025ceb76b9
+  - https://material-identity.eu/def/7fc0def6-7c4f-44f2-9c74-f18807a92433
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 8(a)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
