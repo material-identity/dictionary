@@ -1,0 +1,12 @@
+id: https://material-identity.eu/def/6ad2e817-a781-4fdf-909d-85cef9bed05d
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: surfaceTreatment
+preferredName:
+  en: Surface treatment
+  de: Oberflächenbehandlung
+definition:
+  en: The substance is present in a coating or other surface treatment layer of
+    the product.
+  de: Der Stoff ist in einem Überzug oder einer anderen
+    Oberflächenbehandlungsschicht des Produkts enthalten.

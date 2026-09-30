@@ -1,0 +1,12 @@
+id: https://material-identity.eu/def/75b1792d-658a-43c7-a197-582247e1557c
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: concentrationRange
+preferredName:
+  en: Concentration range
+  de: Konzentrationsbereich
+definition:
+  en: The stated values are the lower and upper limits of the range within which
+    the concentration of the substance lies.
+  de: Die angegebenen Werte sind die Unter- und Obergrenze des Bereichs, in dem
+    die Konzentration des Stoffes liegt.

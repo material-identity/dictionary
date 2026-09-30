@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/597cd178-c7e2-46e5-9844-3e67724913c9
+isDefinedBy: https://material-identity.eu/
+objectType: MultiValuedDataElement
+shortName: substanceOtherNames
+preferredName:
+  en: Other substance names
+  de: Andere Stoffbezeichnungen
+definition:
+  en: Names other than the IUPAC or international name under which the substance
+    is known, including usual names, trade names and abbreviations.
+  de: Andere Bezeichnungen als die IUPAC- oder internationale Bezeichnung, unter
+    denen der Stoff bekannt ist, einschließlich allgemeiner Bezeichnungen,
+    Handelsnamen und Abkürzungen.
+itemType: https://material-identity.eu/def/a21e647c-222a-47a7-95fe-62d67e4bcf39
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(a)(ii)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

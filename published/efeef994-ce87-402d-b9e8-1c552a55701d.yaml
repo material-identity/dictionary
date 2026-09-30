@@ -1,0 +1,21 @@
+id: https://material-identity.eu/def/efeef994-ce87-402d-b9e8-1c552a55701d
+replaces: https://material-identity.eu/def/e847a612-3e02-4161-a78f-c8beff745eff
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: substanceName
+preferredName:
+  en: Substance name
+  de: Stoffname
+definition:
+  en: Name of the substance in the nomenclature of the International Union of Pure
+    and Applied Chemistry (IUPAC), or another international name where no IUPAC
+    name is available.
+  de: Bezeichnung des Stoffes nach der Nomenklatur der Internationalen Union für
+    reine und angewandte Chemie (IUPAC) oder, falls keine IUPAC-Bezeichnung
+    verfügbar ist, eine andere internationale Bezeichnung.
+valueDataType: xsd:string
+exampleValue: lead
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(a)(i)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

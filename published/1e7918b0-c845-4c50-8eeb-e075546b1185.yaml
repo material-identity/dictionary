@@ -1,0 +1,22 @@
+id: https://material-identity.eu/def/1e7918b0-c845-4c50-8eeb-e075546b1185
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: ecNumber
+preferredName:
+  en: EC number
+  de: EG-Nummer
+definition:
+  en: European Community number of the substance as listed in EINECS, ELINCS or
+    the No-Longer-Polymers list, or the list number assigned by the European
+    Chemicals Agency.
+  de: EG-Nummer des Stoffes gemäß dem Europäischen Verzeichnis der auf dem Markt
+    vorhandenen chemischen Stoffe (EINECS), der Europäischen Liste der
+    angemeldeten chemischen Stoffe (ELINCS) oder der No-longer-Polymer-Liste
+    (NLP-Liste) oder die von der Europäischen Chemikalienagentur zugewiesene
+    Listennummer.
+valueDataType: xsd:string
+exampleValue: 231-100-4
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(a)(iii)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
