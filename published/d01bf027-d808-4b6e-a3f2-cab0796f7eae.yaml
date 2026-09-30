@@ -1,0 +1,26 @@
+id: https://material-identity.eu/def/d01bf027-d808-4b6e-a3f2-cab0796f7eae
+isDefinedBy: https://material-identity.eu/
+objectType: RelatedResource
+shortName: declarationOfPerformance
+preferredName:
+  en: Declaration of performance
+  de: Leistungserklärung
+definition:
+  en: Declaration drawn up by the manufacturer of a construction product covered
+    by a harmonised technical specification, expressing the performance of the
+    product in relation to its essential characteristics and, where applicable,
+    its conformity with the applicable product requirements, supplied as
+    structured machine-readable data.
+  de: Vom Hersteller eines von einer harmonisierten technischen Spezifikation
+    erfassten Bauprodukts erstellte Erklärung über die Leistung des Produkts in
+    Bezug auf seine wesentlichen Merkmale und gegebenenfalls über seine
+    Konformität mit den anwendbaren Produktanforderungen, bereitgestellt als
+    strukturierte, maschinenlesbare Daten.
+valueDataType: xsd:anyURI
+resourceMediaType: application/json
+legalBasis:
+  name: Regulation (EU) 2024/3110
+  clause: Art. 13(1), Art. 15, Art. 16, Annex V; Regulation (EU) No 305/2011 Art.
+    4 and Annex III, applicable in accordance with Art. 94 of Regulation (EU)
+    2024/3110
+  uri: https://eur-lex.europa.eu/eli/reg/2024/3110/oj
