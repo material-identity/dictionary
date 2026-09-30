@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/77c9abeb-120d-4425-8972-492e33c7c659
+isDefinedBy: https://material-identity.eu/
+objectType: MeasurementUnit
+shortName: percent
+symbol:
+  en: "%"
+preferredName:
+  en: percent
+  de: Prozent
+definition:
+  en: Dimensionless unit equal to one hundredth (0.01) of the unit one.
+  de: Dimensionslose Einheit, die einem Hundertstel (0,01) der Einheit Eins
+    entspricht.
+dimension: "1"
+crossReferences:
+  uneceCommonCode: P1
+  ucumCode: "%"
+  qudtUnit: http://qudt.org/vocab/unit/PERCENT

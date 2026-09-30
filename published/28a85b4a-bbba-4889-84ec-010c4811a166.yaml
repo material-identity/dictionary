@@ -1,0 +1,20 @@
+id: https://material-identity.eu/def/28a85b4a-bbba-4889-84ec-010c4811a166
+isDefinedBy: https://material-identity.eu/
+objectType: Quantity
+shortName: length
+symbol:
+  en: l
+preferredName:
+  en: length
+  de: Länge
+definition:
+  en: Linear extent in space between two points; base quantity of the
+    International System of Quantities.
+  de: Lineare Ausdehnung im Raum zwischen zwei Punkten; Basisgröße des
+    Internationalen Größensystems.
+dimension: L
+coherentSiUnit: https://material-identity.eu/def/2a4d003c-0ef5-44ae-b3b0-aeefe51fd767
+definitionStandard:
+  name: ISO 80000-3
+  clause: 3-1.1
+  uri: urn:iso:std:iso:80000:-3:ed-2

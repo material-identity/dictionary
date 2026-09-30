@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/89a47dbd-d37f-429f-a4b6-969d24051a80
+isDefinedBy: https://material-identity.eu/
+objectType: MeasurementUnit
+shortName: kilogram
+symbol:
+  en: kg
+preferredName:
+  en: kilogram
+  de: Kilogramm
+definition:
+  en: SI base unit of mass.
+  de: SI-Basiseinheit der Masse.
+quantityKind: https://material-identity.eu/def/409c5b23-fb81-48d6-9336-bb2f75148e08
+dimension: M
+crossReferences:
+  uneceCommonCode: KGM
+  ucumCode: kg
+  qudtUnit: http://qudt.org/vocab/unit/KiloGM

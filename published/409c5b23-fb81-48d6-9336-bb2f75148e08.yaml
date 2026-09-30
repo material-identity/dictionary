@@ -1,0 +1,22 @@
+id: https://material-identity.eu/def/409c5b23-fb81-48d6-9336-bb2f75148e08
+isDefinedBy: https://material-identity.eu/
+objectType: Quantity
+shortName: mass
+symbol:
+  en: m
+preferredName:
+  en: mass
+  de: Masse
+definition:
+  en: Property of a body that determines its resistance to a change of motion and
+    its weight in a gravitational field; base quantity of the International
+    System of Quantities.
+  de: Eigenschaft eines Körpers, die seinen Widerstand gegen eine Änderung des
+    Bewegungszustands und seine Gewichtskraft im Schwerefeld bestimmt;
+    Basisgröße des Internationalen Größensystems.
+dimension: M
+coherentSiUnit: https://material-identity.eu/def/89a47dbd-d37f-429f-a4b6-969d24051a80
+definitionStandard:
+  name: ISO 80000-4
+  clause: 4-1
+  uri: urn:iso:std:iso:80000:-4:ed-2

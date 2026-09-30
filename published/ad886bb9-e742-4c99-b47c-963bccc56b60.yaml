@@ -1,0 +1,15 @@
+id: https://material-identity.eu/def/ad886bb9-e742-4c99-b47c-963bccc56b60
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: nominalWidth
+preferredName:
+  en: Nominal width
+  de: Nennbreite
+definition:
+  en: Nominal dimension of a flat product in its rolling plane, perpendicular to
+    the rolling direction.
+  de: Nennmaß eines Flacherzeugnisses in seiner Walzebene, senkrecht zur
+    Walzrichtung.
+valueDataType: xsd:decimal
+unit: https://material-identity.eu/def/56dce42f-f981-4d52-b3b7-c854ec50418c
+quantityKind: https://material-identity.eu/def/28a85b4a-bbba-4889-84ec-010c4811a166

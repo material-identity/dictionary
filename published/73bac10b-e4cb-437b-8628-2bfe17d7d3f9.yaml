@@ -1,0 +1,15 @@
+id: https://material-identity.eu/def/73bac10b-e4cb-437b-8628-2bfe17d7d3f9
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: postalAddress
+preferredName:
+  en: Postal address
+  de: Postanschrift
+definition:
+  en: Postal address at which the economic operator can be contacted.
+  de: Postanschrift, unter der der Wirtschaftsteilnehmer kontaktiert werden kann.
+valueDataType: xsd:string
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 27(6); Art. 29(3)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

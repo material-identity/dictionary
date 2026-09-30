@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/2c37dd47-3699-407e-9fd5-c03ccb4efa6c
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: otherAlloySteel
+preferredName:
+  en: Other alloy steel
+  de: Anderer legierter Stahl
+definition:
+  en: Steel grade that does not meet the definition of stainless steel and in
+    which at least one of the limit values for alloying elements specified in EN
+    10020 is reached.
+  de: Stahlsorte, die nicht der Begriffsbestimmung für nichtrostenden Stahl
+    entspricht und bei der mindestens einer der in EN 10020 festgelegten
+    Grenzwerte für Legierungselemente erreicht wird.

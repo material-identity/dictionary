@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/669faab7-05d5-49bf-8584-d172c7fce713
+isDefinedBy: https://material-identity.eu/
+objectType: Quantity
+shortName: massFraction
+symbol:
+  en: w
+preferredName:
+  en: mass fraction
+  de: Massenanteil
+definition:
+  en: Quotient of the mass of a constituent and the total mass of the mixture or
+    product that contains it.
+  de: Quotient aus der Masse eines Bestandteils und der Gesamtmasse des Gemisches
+    oder Produkts, das ihn enthält.
+dimension: "1"
+definitionStandard:
+  name: ISO 80000-9
+  uri: urn:iso:std:iso:80000:-9:ed-2

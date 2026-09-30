@@ -1,0 +1,20 @@
+id: https://material-identity.eu/def/402c3df6-503f-4d98-ba62-4060b683f0ac
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: cnCode
+preferredName:
+  en: Combined Nomenclature code
+  de: Code der Kombinierten Nomenklatur
+definition:
+  en: Eight-digit code of the Combined Nomenclature subheading under which the
+    product is classified, of which the first six digits are the Harmonized
+    System code.
+  de: Achtstelliger Code der Unterposition der Kombinierten Nomenklatur, in die
+    das Produkt eingereiht ist; die ersten sechs Ziffern sind der Code des
+    Harmonisierten Systems.
+valueDataType: xsd:string
+exampleValue: "72083900"
+legalBasis:
+  name: Council Regulation (EEC) No 2658/87
+  clause: Art. 1(2), Art. 3(1)
+  uri: https://eur-lex.europa.eu/eli/reg/1987/2658/oj

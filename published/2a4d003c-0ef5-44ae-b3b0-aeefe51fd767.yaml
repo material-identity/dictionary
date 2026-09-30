@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/2a4d003c-0ef5-44ae-b3b0-aeefe51fd767
+isDefinedBy: https://material-identity.eu/
+objectType: MeasurementUnit
+shortName: metre
+symbol:
+  en: m
+preferredName:
+  en: metre
+  de: Meter
+definition:
+  en: SI base unit of length.
+  de: SI-Basiseinheit der Länge.
+quantityKind: https://material-identity.eu/def/28a85b4a-bbba-4889-84ec-010c4811a166
+dimension: L
+crossReferences:
+  uneceCommonCode: MTR
+  ucumCode: m
+  qudtUnit: http://qudt.org/vocab/unit/M

@@ -1,0 +1,33 @@
+id: https://material-identity.eu/def/87a7b37b-303f-41c9-91a5-c0df93ef5968
+replaces: https://material-identity.eu/def/0edb2e42-0cf1-4240-af17-5124298689ba
+isDefinedBy: https://material-identity.eu/
+objectType: DataElementCollection
+shortName: substanceEntry
+preferredName:
+  en: Substance-of-concern entry
+  de: Eintrag besorgniserregender Stoff
+definition:
+  en: One substance of concern present in the product, identified by name and
+    numerical codes, with its location within the product and its concentration.
+  de: Ein im Produkt enthaltener besorgniserregender Stoff, identifiziert durch
+    Namen und numerische Kennungen, mit seinem Ort im Produkt und seiner
+    Konzentration.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(a)–(c)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
+elements:
+  - dictionaryReference: https://material-identity.eu/def/efeef994-ce87-402d-b9e8-1c552a55701d
+    isMandatory: true
+  - dictionaryReference: https://material-identity.eu/def/597cd178-c7e2-46e5-9844-3e67724913c9
+    isMandatory: false
+  - dictionaryReference: https://material-identity.eu/def/1e7918b0-c845-4c50-8eeb-e075546b1185
+    isMandatory: false
+  - dictionaryReference: https://material-identity.eu/def/6f90f298-26b9-4b28-a451-e3f379ce7a71
+    isMandatory: false
+  - dictionaryReference: https://material-identity.eu/def/24a1b0ad-ff61-469e-a3d4-90c2be4c2183
+    isMandatory: false
+  - dictionaryReference: https://material-identity.eu/def/ff8e0a0e-389e-4659-884d-5fbe3d5621bb
+    isMandatory: true
+  - dictionaryReference: https://material-identity.eu/def/a7959908-88a0-47ad-8591-9e01c972da06
+    isMandatory: true

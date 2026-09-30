@@ -1,0 +1,26 @@
+id: https://material-identity.eu/def/8dc23b31-b627-442e-b960-0a3d69fed311
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: productCarbonFootprint
+preferredName:
+  en: Product carbon footprint
+  de: CO2-Fußabdruck des Produkts
+definition:
+  en: Sum of greenhouse gas emissions and greenhouse gas removals in the product
+    system, expressed as CO2 equivalents per tonne of product and based on a
+    life cycle assessment using the single impact category of climate change, as
+    declared under the calculation rules identified by the product carbon
+    footprint methodology reference.
+  de: Summe der Treibhausgasemissionen und -entnahmen im Produktsystem, angegeben
+    als CO2-Äquivalente je Tonne Produkt und beruhend auf einer
+    Lebenszyklusanalyse unter Verwendung der einzigen Wirkungskategorie
+    „Klimawandel“, erklärt nach den Berechnungsregeln, die durch die Referenz
+    der Berechnungsmethode für den CO2-Fußabdruck bezeichnet sind.
+valueDataType: xsd:decimal
+unit: https://material-identity.eu/def/b9b7e7bf-5a5e-4bb4-a76c-b6d5e56fffc0
+quantityKind: https://material-identity.eu/def/a9943b4b-1629-4100-bba8-122fcc318431
+exampleValue: 685
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(25); Art. 5(1)(o); Annex I(n)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

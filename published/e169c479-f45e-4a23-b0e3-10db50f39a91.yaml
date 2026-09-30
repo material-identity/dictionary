@@ -1,0 +1,27 @@
+id: https://material-identity.eu/def/e169c479-f45e-4a23-b0e3-10db50f39a91
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: countryOfOrigin
+preferredName:
+  en: Country of origin
+  de: Ursprungsland
+definition:
+  en: Country or territory in which the product acquired its non-preferential
+    origin, being the country where it was wholly obtained or underwent its
+    last, substantial, economically justified processing or working, identified
+    by its ISO 3166-1 alpha-2 code.
+  de: Land oder Gebiet, in dem das Produkt seinen nichtpräferenziellen Ursprung
+    erworben hat, d. h. in dem es vollständig gewonnen oder hergestellt wurde
+    oder der letzten wesentlichen, wirtschaftlich gerechtfertigten Be- oder
+    Verarbeitung unterzogen wurde, angegeben durch seinen Alpha-2-Code nach ISO
+    3166-1.
+valueDataType: xsd:string
+exampleValue: AT
+definitionStandard:
+  name: ISO 3166-1
+  clause: alpha-2 code elements
+  uri: urn:iso:std:iso:3166:-1:ed-4
+legalBasis:
+  name: Regulation (EU) No 952/2013
+  clause: Art. 59, Art. 60
+  uri: https://eur-lex.europa.eu/eli/reg/2013/952/oj

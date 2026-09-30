@@ -1,0 +1,10 @@
+id: https://material-identity.eu/def/7adaa7b7-bb7d-4f49-859d-948926a38109
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: concentration
+preferredName:
+  en: Concentration
+  de: Konzentration
+definition:
+  en: The stated value is the concentration of the substance.
+  de: Der angegebene Wert ist die Konzentration des Stoffes.

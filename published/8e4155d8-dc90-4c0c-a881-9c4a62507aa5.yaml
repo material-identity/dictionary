@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/8e4155d8-dc90-4c0c-a881-9c4a62507aa5
+isDefinedBy: https://material-identity.eu/
+objectType: RelatedResource
+shortName: declarationOfPerformanceRendition
+preferredName:
+  en: Declaration of performance (human-readable rendition)
+  de: Leistungserklärung (menschenlesbare Fassung)
+definition:
+  en: Human-readable rendition of the declaration of performance of the product,
+    with the same content as the machine-readable declaration.
+  de: Menschenlesbare Fassung der Leistungserklärung des Produkts mit demselben
+    Inhalt wie die maschinenlesbare Erklärung.
+valueDataType: xsd:anyURI
+resourceMediaType: application/pdf
+legalBasis:
+  name: Regulation (EU) 2024/3110
+  clause: Art. 16(2)(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/3110/oj

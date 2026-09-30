@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/4800b015-4873-4839-99d9-90b82448ee8d
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: DRI-EAF
+preferredName:
+  en: Direct reduction / electric arc furnace
+  de: Direktreduktion / Elektrolichtbogenofen
+definition:
+  en: Steelmaking route in which iron ore is reduced in the solid state to direct
+    reduced iron, which then forms the predominant metallic charge melted in an
+    electric arc furnace.
+  de: Stahlerzeugungsroute, bei der Eisenerz im festen Zustand zu direkt
+    reduziertem Eisen reduziert wird, das anschließend den überwiegenden
+    metallischen Einsatz eines Elektrolichtbogenofens bildet.

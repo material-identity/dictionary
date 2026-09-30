@@ -1,0 +1,22 @@
+id: https://material-identity.eu/def/aa2503ef-7af6-4b7f-ab13-1fa811ce23fe
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: concentrationValue
+preferredName:
+  en: Concentration value
+  de: Konzentrationswert
+definition:
+  en: Mass fraction of the substance in the product, being the concentration or
+    the maximum concentration as indicated by the concentration descriptor, or
+    the lower limit where a concentration range is stated.
+  de: Massenanteil des Stoffes im Produkt, d. h. die Konzentration oder die
+    Höchstkonzentration gemäß der Art der Konzentrationsangabe oder, bei Angabe
+    eines Konzentrationsbereichs, dessen Untergrenze.
+valueDataType: xsd:decimal
+unit: https://material-identity.eu/def/77c9abeb-120d-4425-8972-492e33c7c659
+quantityKind: https://material-identity.eu/def/669faab7-05d5-49bf-8584-d172c7fce713
+exampleValue: 0.25
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(c)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

@@ -1,0 +1,19 @@
+id: https://material-identity.eu/def/a2f3af21-04a6-419a-9584-787aeb57fba7
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: concentrationUpperLimit
+preferredName:
+  en: Concentration upper limit
+  de: Obergrenze der Konzentration
+definition:
+  en: Mass fraction of the substance in the product at the upper limit of a stated
+    concentration range.
+  de: Massenanteil des Stoffes im Produkt an der Obergrenze eines angegebenen
+    Konzentrationsbereichs.
+valueDataType: xsd:decimal
+unit: https://material-identity.eu/def/77c9abeb-120d-4425-8972-492e33c7c659
+quantityKind: https://material-identity.eu/def/669faab7-05d5-49bf-8584-d172c7fce713
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(c)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

@@ -1,0 +1,26 @@
+id: https://material-identity.eu/def/a7959908-88a0-47ad-8591-9e01c972da06
+replaces: https://material-identity.eu/def/cd239910-eae2-4e57-9472-f44c9dbd23bb
+isDefinedBy: https://material-identity.eu/
+objectType: DataElementCollection
+shortName: substanceConcentration
+preferredName:
+  en: Concentration of the substance
+  de: Konzentration des Stoffes
+definition:
+  en: Statement of the concentration, maximum concentration or concentration range
+    of the substance of concern at the level of the product, expressed as a mass
+    fraction.
+  de: Angabe der Konzentration, der Höchstkonzentration oder des
+    Konzentrationsbereichs des besorgniserregenden Stoffes auf Ebene des
+    Produkts, ausgedrückt als Massenanteil.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(c)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
+elements:
+  - dictionaryReference: https://material-identity.eu/def/98576949-d3ef-4679-95db-854f79a87bbb
+    isMandatory: true
+  - dictionaryReference: https://material-identity.eu/def/aa2503ef-7af6-4b7f-ab13-1fa811ce23fe
+    isMandatory: true
+  - dictionaryReference: https://material-identity.eu/def/a2f3af21-04a6-419a-9584-787aeb57fba7
+    isMandatory: false

@@ -1,0 +1,22 @@
+id: https://material-identity.eu/def/29ab855b-8ab0-48a7-8d6d-b35ee7e06d38
+isDefinedBy: https://material-identity.eu/
+objectType: RelatedResource
+shortName: recycledContentConformityCertification
+preferredName:
+  en: Recycled content conformity certification
+  de: Konformitätsnachweis zum Rezyklatanteil
+definition:
+  en: Declaration of conformity or certificate, issued for the declared recycled
+    content of the product, attesting that the declared value was determined and
+    verified in accordance with the applicable calculation and verification
+    rules.
+  de: Für den angegebenen Rezyklatanteil des Produkts ausgestellte
+    Konformitätserklärung oder Bescheinigung, die bestätigt, dass der angegebene
+    Wert nach den geltenden Berechnungs- und Prüfregeln ermittelt und überprüft
+    wurde.
+valueDataType: xsd:anyURI
+resourceMediaType: application/pdf
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Annex III(e)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

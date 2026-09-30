@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/bd30379b-b033-4743-bc87-d9ef38b4f7be
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: steelGradeClassification
+preferredName:
+  en: Steel grade classification
+  de: Einteilung der Stahlsorte
+definition:
+  en: Class of the steel grade according to its chemical composition.
+  de: Klasse der Stahlsorte nach ihrer chemischen Zusammensetzung.
+valueDataType: xsd:string
+enumeration:
+  - https://material-identity.eu/def/65dbe65b-19bc-4f99-86c2-ad8a5b6ec1d8
+  - https://material-identity.eu/def/b0d1b07a-30ab-437b-b047-0bd1160cba67
+  - https://material-identity.eu/def/2c37dd47-3699-407e-9fd5-c03ccb4efa6c
+definitionStandard:
+  name: EN 10020
+  uri: urn:cen:en:10020:2000

@@ -1,0 +1,20 @@
+id: https://material-identity.eu/def/058585d8-a86f-4242-b555-13bab56c9adf
+replaces: https://material-identity.eu/def/096c7d7e-3860-44f6-a95f-75319d848515
+isDefinedBy: https://material-identity.eu/
+objectType: MultiValuedDataElement
+shortName: substancesOfConcern
+preferredName:
+  en: Substances of concern
+  de: Besorgniserregende Stoffe
+definition:
+  en: List of the substances of concern present in the product that are subject to
+    the information requirement, each identified with its location and
+    concentration.
+  de: Liste der im Produkt enthaltenen besorgniserregenden Stoffe, die der
+    Informationsanforderung unterliegen, jeweils mit Angabe ihres Ortes im
+    Produkt und ihrer Konzentration.
+itemType: https://material-identity.eu/def/87a7b37b-303f-41c9-91a5-c0df93ef5968
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(27); Art. 7(5)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

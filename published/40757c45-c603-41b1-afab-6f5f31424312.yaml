@@ -1,0 +1,12 @@
+id: https://material-identity.eu/def/40757c45-c603-41b1-afab-6f5f31424312
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: maximumConcentration
+preferredName:
+  en: Maximum concentration
+  de: Höchstkonzentration
+definition:
+  en: The stated value is the highest concentration at which the substance can be
+    present.
+  de: Der angegebene Wert ist die höchste Konzentration, in der der Stoff
+    enthalten sein kann.

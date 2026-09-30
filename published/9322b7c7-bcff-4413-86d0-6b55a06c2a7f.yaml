@@ -1,0 +1,22 @@
+id: https://material-identity.eu/def/9322b7c7-bcff-4413-86d0-6b55a06c2a7f
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: modelIdentifier
+preferredName:
+  en: Model identifier
+  de: Modellkennung
+definition:
+  en: Identifier assigned by the manufacturer to the product model, being the
+    product number that designates a specific product configuration of steel
+    grade, composition, product form and treatment condition shared by all units
+    of the model.
+  de: Vom Hersteller vergebene Kennung des Produktmodells, d. h. die
+    Produktnummer, die eine bestimmte Produktkonfiguration aus Stahlsorte,
+    Zusammensetzung, Erzeugnisform und Behandlungszustand bezeichnet, die allen
+    Einheiten des Modells gemeinsam ist.
+valueDataType: xsd:string
+exampleValue: HRC-S355JR-0400
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 9(2)(d); Annex III(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

@@ -1,0 +1,22 @@
+id: https://material-identity.eu/def/84d1303e-0ac4-49c2-a813-8878cd627299
+isDefinedBy: https://material-identity.eu/
+objectType: MultiLanguageDataElement
+shortName: safeUseInstructions
+preferredName:
+  en: Instructions for safe use
+  de: Anweisungen für die sichere Verwendung
+definition:
+  en: Relevant instructions for the safe use of the product with regard to the
+    substances of concern it contains.
+  de: Einschlägige Anweisungen für die sichere Verwendung des Produkts im Hinblick
+    auf die darin enthaltenen besorgniserregenden Stoffe.
+valueDataType: rdf:langString
+exampleValue:
+  - value: The identification of the substance is enough to allow safe use.
+    language: en
+  - value: Die Identifizierung des Stoffes reicht für eine sichere Verwendung aus.
+    language: de
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(d)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

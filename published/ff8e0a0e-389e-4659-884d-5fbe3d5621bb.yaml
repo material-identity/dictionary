@@ -1,0 +1,19 @@
+id: https://material-identity.eu/def/ff8e0a0e-389e-4659-884d-5fbe3d5621bb
+replaces: https://material-identity.eu/def/e412cabd-7812-47aa-b27e-9c8510fba399
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: location
+preferredName:
+  en: Location in product
+  de: Ort im Produkt
+definition:
+  en: Part of the product in which the substance of concern is present.
+  de: Teil des Produkts, in dem der besorgniserregende Stoff enthalten ist.
+valueDataType: xsd:string
+enumeration:
+  - https://material-identity.eu/def/70616c00-749d-42a8-915a-8ef016dd8173
+  - https://material-identity.eu/def/6ad2e817-a781-4fdf-909d-85cef9bed05d
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(b)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

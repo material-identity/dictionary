@@ -1,0 +1,24 @@
+id: https://material-identity.eu/def/eac0bfa9-3a9e-42c8-9205-442695de3c9a
+replaces: https://material-identity.eu/def/9c6bc44c-5d04-4e3b-8c36-c854a1b55a4d
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: steelmakingRoute
+preferredName:
+  en: Steelmaking route
+  de: Stahlerzeugungsroute
+definition:
+  en: Process route by which the crude steel of the product was produced,
+    identified by the ironmaking and steelmaking process combination; an
+    electric arc furnace route whose metallic charge is predominantly direct
+    reduced iron is reported as DRI-EAF, any other electric arc furnace route as
+    EAF.
+  de: Verfahrensroute, auf der der Rohstahl des Produkts erzeugt wurde, bezeichnet
+    durch die Kombination aus Roheisen- und Stahlerzeugungsverfahren; eine
+    Elektrolichtbogenofen-Route, deren metallischer Einsatz überwiegend aus
+    direkt reduziertem Eisen besteht, wird als DRI-EAF angegeben, jede andere
+    Elektrolichtbogenofen-Route als EAF.
+valueDataType: xsd:string
+enumeration:
+  - https://material-identity.eu/def/77982ce2-f7c9-4e2c-88d6-e94ed81e0db7
+  - https://material-identity.eu/def/5f2d70db-8385-4fc8-94ae-eefbd6c8d209
+  - https://material-identity.eu/def/4800b015-4873-4839-99d9-90b82448ee8d

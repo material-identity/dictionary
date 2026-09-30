@@ -1,0 +1,12 @@
+id: https://material-identity.eu/def/70616c00-749d-42a8-915a-8ef016dd8173
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: homogeneous
+preferredName:
+  en: Not applicable, the product is homogeneous
+  de: Nicht zutreffend, das Produkt ist homogen
+definition:
+  en: The substance is distributed throughout the product, which has no distinct
+    parts with respect to its presence.
+  de: Der Stoff ist im gesamten Produkt verteilt; das Produkt weist hinsichtlich
+    seines Vorkommens keine unterscheidbaren Teile auf.

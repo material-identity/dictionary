@@ -1,0 +1,23 @@
+id: https://material-identity.eu/def/236dd8b8-efad-4aa7-b10f-af230bb40d00
+isDefinedBy: https://material-identity.eu/
+objectType: MeasurementUnit
+shortName: tonne
+symbol:
+  en: t
+preferredName:
+  en: tonne
+  de: Tonne
+definition:
+  en: Unit of mass accepted for use with the SI, equal to 1000 kilograms.
+  de: Zur Verwendung mit dem SI zugelassene Einheit der Masse, gleich 1000
+    Kilogramm.
+quantityKind: https://material-identity.eu/def/409c5b23-fb81-48d6-9336-bb2f75148e08
+dimension: M
+crossReferences:
+  uneceCommonCode: TNE
+  ucumCode: t
+  qudtUnit: http://qudt.org/vocab/unit/TONNE
+conversions:
+  - toUnit: https://material-identity.eu/def/89a47dbd-d37f-429f-a4b6-969d24051a80
+    factor: 1000
+    offset: 0

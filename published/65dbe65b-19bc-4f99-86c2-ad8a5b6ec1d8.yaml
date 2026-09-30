@@ -1,0 +1,12 @@
+id: https://material-identity.eu/def/65dbe65b-19bc-4f99-86c2-ad8a5b6ec1d8
+isDefinedBy: https://material-identity.eu/
+objectType: Value
+value: nonAlloySteel
+preferredName:
+  en: Non-alloy steel
+  de: Unlegierter Stahl
+definition:
+  en: Steel grade in which none of the limit values for alloying elements
+    specified in EN 10020 is reached.
+  de: Stahlsorte, bei der keiner der in EN 10020 festgelegten Grenzwerte für
+    Legierungselemente erreicht wird.

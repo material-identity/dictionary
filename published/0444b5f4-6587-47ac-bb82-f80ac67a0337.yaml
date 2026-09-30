@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/0444b5f4-6587-47ac-bb82-f80ac67a0337
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: steelName
+preferredName:
+  en: Steel name
+  de: Kurzname der Stahlsorte
+definition:
+  en: Designation of the steel grade by symbolic letters and numbers expressing
+    its application and principal characteristics.
+  de: Bezeichnung der Stahlsorte durch Kennbuchstaben und Kennzahlen, die ihre
+    Verwendung und ihre Haupteigenschaften ausdrücken.
+valueDataType: xsd:string
+exampleValue: S355JR
+definitionStandard:
+  name: EN 10027-1
+  clause: 1.1, 4
+  uri: urn:cen:en:10027-1:2016

@@ -1,0 +1,15 @@
+id: https://material-identity.eu/def/a21e647c-222a-47a7-95fe-62d67e4bcf39
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: substanceOtherName
+preferredName:
+  en: Other substance name
+  de: Andere Stoffbezeichnung
+definition:
+  en: One usual name, trade name or abbreviation of the substance.
+  de: Eine allgemeine Bezeichnung, ein Handelsname oder eine Abkürzung des Stoffes.
+valueDataType: xsd:string
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(a)(ii)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

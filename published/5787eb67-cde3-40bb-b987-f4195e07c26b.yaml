@@ -1,0 +1,20 @@
+id: https://material-identity.eu/def/5787eb67-cde3-40bb-b987-f4195e07c26b
+isDefinedBy: https://material-identity.eu/
+objectType: MultiLanguageDataElement
+shortName: endOfLifeInformation
+preferredName:
+  en: End-of-life information
+  de: Informationen zum Ende der Lebensdauer
+definition:
+  en: Information relevant for disassembly, preparation for reuse, reuse,
+    recycling and the environmentally sound management of the product at the end
+    of its life, with regard to the substances of concern it contains.
+  de: Informationen, die für die Zerlegung, die Vorbereitung zur Wiederverwendung,
+    die Wiederverwendung, das Recycling und die umweltgerechte Behandlung des
+    Produkts am Ende seiner Lebensdauer im Hinblick auf die darin enthaltenen
+    besorgniserregenden Stoffe relevant sind.
+valueDataType: rdf:langString
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(e)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

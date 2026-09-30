@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/0b73f419-6685-42ad-90fe-ca389b47b8f6
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: itemSerialNumber
+preferredName:
+  en: Item serial number
+  de: Seriennummer des Artikels
+definition:
+  en: Identifier assigned by the manufacturer to a single physical unit of the
+    product, such as a coil, sheet or tube number.
+  de: Vom Hersteller vergebene Kennung einer einzelnen physischen Einheit des
+    Produkts, etwa eine Coil-, Blech- oder Rohrnummer.
+valueDataType: xsd:string
+exampleValue: C24-118273-07
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 27(5)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

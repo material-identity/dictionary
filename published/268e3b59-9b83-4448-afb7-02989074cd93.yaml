@@ -1,0 +1,17 @@
+id: https://material-identity.eu/def/268e3b59-9b83-4448-afb7-02989074cd93
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: steelNumber
+preferredName:
+  en: Steel number
+  de: Werkstoffnummer
+definition:
+  en: Numerical designation of the steel grade allocated by the European Steel
+    Registration Office.
+  de: Von der Europäischen Registrierstelle für Stahlsorten vergebene numerische
+    Bezeichnung der Stahlsorte.
+valueDataType: xsd:string
+exampleValue: "1.0045"
+definitionStandard:
+  name: EN 10027-2
+  uri: urn:cen:en:10027-2:2015

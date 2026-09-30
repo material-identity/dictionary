@@ -1,0 +1,22 @@
+id: https://material-identity.eu/def/98576949-d3ef-4679-95db-854f79a87bbb
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: concentrationDescriptor
+preferredName:
+  en: Concentration descriptor
+  de: Art der Konzentrationsangabe
+definition:
+  en: Indication of whether the stated concentration of the substance is an exact
+    concentration, a maximum concentration or a concentration range.
+  de: Angabe, ob es sich bei der angegebenen Konzentration des Stoffes um eine
+    Konzentration, eine Höchstkonzentration oder einen Konzentrationsbereich
+    handelt.
+valueDataType: xsd:string
+enumeration:
+  - https://material-identity.eu/def/7adaa7b7-bb7d-4f49-859d-948926a38109
+  - https://material-identity.eu/def/40757c45-c603-41b1-afab-6f5f31424312
+  - https://material-identity.eu/def/75b1792d-658a-43c7-a197-582247e1557c
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 7(5)(c)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

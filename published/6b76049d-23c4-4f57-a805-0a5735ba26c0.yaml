@@ -1,0 +1,14 @@
+id: https://material-identity.eu/def/6b76049d-23c4-4f57-a805-0a5735ba26c0
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: manufacturingDate
+preferredName:
+  en: Manufacturing date
+  de: Herstellungsdatum
+definition:
+  en: Date on which manufacture of the product identified by the unique product
+    identifier was completed.
+  de: Datum, an dem die Herstellung des durch die eindeutige Produktkennung
+    identifizierten Produkts abgeschlossen wurde.
+valueDataType: xsd:date
+exampleValue: 2026-09-14
