@@ -1,0 +1,19 @@
+id: https://material-identity.eu/def/9ad69d75-3e83-482b-a403-f8b3daca807c
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: electronicContact
+preferredName:
+  en: Electronic contact
+  de: Elektronische Kontaktmöglichkeit
+definition:
+  en: "Electronic means of communication through which the economic operator can
+    be contacted, given as a URI such as a mailto: address or a web contact
+    form."
+  de: Elektronisches Kommunikationsmittel, über das der Wirtschaftsteilnehmer
+    kontaktiert werden kann, angegeben als URI, etwa als mailto:-Adresse oder
+    Web-Kontaktformular.
+valueDataType: xsd:anyURI
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 27(6); Art. 29(3)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

@@ -1,0 +1,19 @@
+id: https://material-identity.eu/def/30f6afb0-6865-4549-b0b9-c8e128b6fadc
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: eoriNumber
+preferredName:
+  en: EORI number
+  de: EORI-Nummer
+definition:
+  en: Economic Operators Registration and Identification number, unique in the
+    customs territory of the Union, assigned by a customs authority to the
+    economic operator for customs purposes.
+  de: Nummer zur Registrierung und Identifizierung von Wirtschaftsbeteiligten, die
+    im Zollgebiet der Union eindeutig ist und dem Wirtschaftsbeteiligten von
+    einer Zollbehörde für Zollzwecke zugeteilt wird.
+valueDataType: xsd:string
+legalBasis:
+  name: Commission Delegated Regulation (EU) 2015/2446
+  clause: Art. 1(18)
+  uri: https://eur-lex.europa.eu/eli/reg_del/2015/2446/oj

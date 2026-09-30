@@ -1,0 +1,17 @@
+id: https://material-identity.eu/def/783ab518-e8b0-47f3-9a20-eb1adbe8c167
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: otherOperatorIdentifier
+preferredName:
+  en: Other operator identifier
+  de: Kennung eines anderen Wirtschaftsteilnehmers
+definition:
+  en: Unique operator identifier of an actor involved in the product's value chain
+    other than the manufacturer.
+  de: Eindeutige Kennung eines an der Wertschöpfungskette des Produkts beteiligten
+    Akteurs, der nicht der Hersteller ist.
+valueDataType: xsd:string
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 2(31); Annex III(h)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

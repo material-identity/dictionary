@@ -1,0 +1,27 @@
+id: https://material-identity.eu/def/694e5f94-2fef-4750-bd3d-6530b7bc3042
+isDefinedBy: https://material-identity.eu/
+objectType: DataElementCollection
+shortName: importerInformation
+preferredName:
+  en: Importer information
+  de: Angaben zum Importeur
+definition:
+  en: Name, contact details and customs registration number by which the importer
+    of the product can be identified and contacted.
+  de: Name, Kontaktdaten und zollrechtliche Registriernummer, anhand derer der
+    Importeur des Produkts identifiziert und kontaktiert werden kann.
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 29(3); Annex III(j)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
+elements:
+  - dictionaryReference: https://material-identity.eu/def/1f4ff778-38a8-485b-8094-d11df6ddeac3
+    isMandatory: true
+  - dictionaryReference: https://material-identity.eu/def/0d5cc23f-f750-440b-90d1-bec966a76c3e
+    isMandatory: true
+  - dictionaryReference: https://material-identity.eu/def/73bac10b-e4cb-437b-8628-2bfe17d7d3f9
+    isMandatory: true
+  - dictionaryReference: https://material-identity.eu/def/9ad69d75-3e83-482b-a403-f8b3daca807c
+    isMandatory: true
+  - dictionaryReference: https://material-identity.eu/def/30f6afb0-6865-4549-b0b9-c8e128b6fadc
+    isMandatory: true
