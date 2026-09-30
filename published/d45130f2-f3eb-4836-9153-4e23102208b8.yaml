@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/d45130f2-f3eb-4836-9153-4e23102208b8
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: pcfMethodologyReference
+preferredName:
+  en: Carbon footprint methodology reference
+  de: Referenz der Berechnungsmethode für den CO2-Fußabdruck
+definition:
+  en: Identifier of the calculation and declaration rules according to which the
+    product carbon footprint was determined.
+  de: Kennung der Berechnungs- und Erklärungsregeln, nach denen der CO2-Fußabdruck
+    des Produkts ermittelt wurde.
+valueDataType: xsd:anyURI
+exampleValue: https://www.iso.org/standard/71206.html
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Art. 5(1)(o); Annex I(n)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj

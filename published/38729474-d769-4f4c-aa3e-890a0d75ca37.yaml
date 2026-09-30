@@ -1,0 +1,22 @@
+id: https://material-identity.eu/def/38729474-d769-4f4c-aa3e-890a0d75ca37
+isDefinedBy: https://material-identity.eu/
+objectType: RelatedResource
+shortName: pcfConformityCertification
+preferredName:
+  en: Carbon footprint conformity certification
+  de: Konformitätsnachweis zum CO2-Fußabdruck
+definition:
+  en: Declaration of conformity or certificate, issued for the declared product
+    carbon footprint, attesting that the declared value was determined and
+    verified in accordance with the applicable calculation and verification
+    rules.
+  de: Für den angegebenen CO2-Fußabdruck des Produkts ausgestellte
+    Konformitätserklärung oder Bescheinigung, die bestätigt, dass der angegebene
+    Wert nach den geltenden Berechnungs- und Prüfregeln ermittelt und überprüft
+    wurde.
+valueDataType: xsd:anyURI
+resourceMediaType: application/pdf
+legalBasis:
+  name: Regulation (EU) 2024/1781
+  clause: Annex III(e)
+  uri: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
