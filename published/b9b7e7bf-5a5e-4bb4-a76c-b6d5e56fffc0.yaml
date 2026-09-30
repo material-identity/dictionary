@@ -1,0 +1,19 @@
+id: https://material-identity.eu/def/b9b7e7bf-5a5e-4bb4-a76c-b6d5e56fffc0
+isDefinedBy: https://material-identity.eu/
+objectType: MeasurementUnit
+shortName: kilogramCo2eqPerTonne
+symbol:
+  en: kg CO2e/t
+  de: kg CO2e/t
+preferredName:
+  en: kilogram CO2 equivalent per tonne
+  de: Kilogramm CO2-Äquivalent je Tonne
+definition:
+  en: Unit of carbon footprint intensity equal to one kilogram of carbon dioxide
+    equivalents per tonne of product.
+  de: Einheit des spezifischen CO2-Fußabdrucks, gleich einem Kilogramm
+    CO2-Äquivalente je Tonne Produkt.
+quantityKind: https://material-identity.eu/def/a9943b4b-1629-4100-bba8-122fcc318431
+dimension: "1"
+crossReferences:
+  ucumCode: kg{CO2eq}/t

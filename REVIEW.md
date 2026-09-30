@@ -32,6 +32,13 @@ pinning, immutability, move purity, the two-yes gate, coverage.
       edition for a standard, a specific expression for legislation — never a living-document
       link that can change under an immutable entry. The undated, version-independent
       designation (e.g. "EN 13445-3") belongs in the human-readable `name` field only.
+      Convention (#116–#125): an ISO / EN ISO standard cites the RFC 5141 URN of its edition,
+      `urn:iso:std:iso:<number>[:-<part>]:ed-<n>` (e.g. `urn:iso:std:iso:80000:-4:ed-2`), or,
+      where the edition number cannot be confirmed, the edition-specific
+      `https://www.iso.org/standard/<id>.html` page; a CEN EN without an edition-specific public
+      URI cites a dated URN, `urn:cen:en:<number>[-<part>]:<year>` (e.g. `urn:cen:en:10027-1:2016`).
+      `urn:cen:` is not an IANA-registered namespace — it is used as a version-stable identifier
+      only, not as a resolvable link.
 - [ ] `isDefinedBy` is the dictionary root, not a standard — provenance of the entry,
       not of the concept.
 - [ ] `legalBasis` is used for the law/regulation that defines or mandates the concept —
