@@ -1,0 +1,13 @@
+id: https://material-identity.eu/def/90fdd516-08f8-4118-ab2e-9fe5ed4980ac
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: nominalDiameter
+preferredName:
+  en: Nominal diameter
+  de: Nenndurchmesser
+definition:
+  en: Nominal diameter of the circular cross-section of a long product.
+  de: Nenndurchmesser des kreisförmigen Querschnitts eines Langerzeugnisses.
+valueDataType: xsd:decimal
+unit: https://material-identity.eu/def/56dce42f-f981-4d52-b3b7-c854ec50418c
+quantityKind: https://material-identity.eu/def/28a85b4a-bbba-4889-84ec-010c4811a166

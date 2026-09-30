@@ -1,0 +1,16 @@
+id: https://material-identity.eu/def/ff3cbed2-d039-4314-8405-46162c44110a
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: productMass
+preferredName:
+  en: Product mass
+  de: Produktmasse
+definition:
+  en: Mass of the product identified by the unique product identifier, excluding
+    packaging.
+  de: Masse des durch die eindeutige Produktkennung identifizierten Produkts ohne
+    Verpackung.
+valueDataType: xsd:decimal
+unit: https://material-identity.eu/def/236dd8b8-efad-4aa7-b10f-af230bb40d00
+quantityKind: https://material-identity.eu/def/409c5b23-fb81-48d6-9336-bb2f75148e08
+exampleValue: 24.6

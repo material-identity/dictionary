@@ -1,0 +1,21 @@
+id: https://material-identity.eu/def/a4cfd95c-8f69-4231-a307-a9db4a6ef0bc
+isDefinedBy: https://material-identity.eu/
+objectType: DataElementCollection
+shortName: nominalDimensions
+preferredName:
+  en: Nominal dimensions
+  de: Nennmaße
+definition:
+  en: Set of nominal dimensions defining the size of the product in its delivered
+    product form.
+  de: Gesamtheit der Nennmaße, die die Größe des Produkts in seiner Lieferform
+    festlegen.
+elements:
+  - dictionaryReference: https://material-identity.eu/def/0dcb109a-bfda-4bf6-832b-d01b347d6d9f
+    isMandatory: false
+  - dictionaryReference: https://material-identity.eu/def/ad886bb9-e742-4c99-b47c-963bccc56b60
+    isMandatory: false
+  - dictionaryReference: https://material-identity.eu/def/3f08c850-40c8-476c-ab99-d7a8c6a612c4
+    isMandatory: false
+  - dictionaryReference: https://material-identity.eu/def/90fdd516-08f8-4118-ab2e-9fe5ed4980ac
+    isMandatory: false

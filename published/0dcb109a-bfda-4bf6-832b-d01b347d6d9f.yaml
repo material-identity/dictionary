@@ -1,0 +1,13 @@
+id: https://material-identity.eu/def/0dcb109a-bfda-4bf6-832b-d01b347d6d9f
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: nominalThickness
+preferredName:
+  en: Nominal thickness
+  de: Nenndicke
+definition:
+  en: Nominal dimension of a flat product perpendicular to its rolling plane.
+  de: Nennmaß eines Flacherzeugnisses senkrecht zu seiner Walzebene.
+valueDataType: xsd:decimal
+unit: https://material-identity.eu/def/56dce42f-f981-4d52-b3b7-c854ec50418c
+quantityKind: https://material-identity.eu/def/28a85b4a-bbba-4889-84ec-010c4811a166
