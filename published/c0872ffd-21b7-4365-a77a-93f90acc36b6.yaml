@@ -1,0 +1,18 @@
+id: https://material-identity.eu/def/c0872ffd-21b7-4365-a77a-93f90acc36b6
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: castLotNumber
+preferredName:
+  en: Cast or lot number
+  de: Gieß- oder Losnummer
+definition:
+  en: "Identifier of the traceability unit above or below the heat to which the
+    product belongs: the cast, being a sequence of heats processed together in
+    continuous casting, or the lot, being a grouping of products from the same
+    heat or set of heats processed under the same manufacturing conditions."
+  de: "Kennung der der Schmelze über- oder untergeordneten
+    Rückverfolgbarkeitseinheit, zu der das Produkt gehört: die Gießsequenz, d.
+    h. eine Folge gemeinsam stranggegossener Schmelzen, oder das Los, d. h. eine
+    Gruppe von Erzeugnissen aus derselben Schmelze oder denselben Schmelzen, die
+    unter denselben Fertigungsbedingungen verarbeitet wurden."
+valueDataType: xsd:string

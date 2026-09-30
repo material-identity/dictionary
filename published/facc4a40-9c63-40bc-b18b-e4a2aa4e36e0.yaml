@@ -1,0 +1,20 @@
+id: https://material-identity.eu/def/facc4a40-9c63-40bc-b18b-e4a2aa4e36e0
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: taricCode
+preferredName:
+  en: TARIC code
+  de: TARIC-Code
+definition:
+  en: Ten-digit code of the integrated tariff of the European Union under which
+    the product is classified, consisting of the eight-digit Combined
+    Nomenclature code followed by the two-digit TARIC subheading.
+  de: Zehnstelliger Code des Integrierten Zolltarifs der Europäischen Union, in
+    den das Produkt eingereiht ist, bestehend aus dem achtstelligen Code der
+    Kombinierten Nomenklatur und der zweistelligen TARIC-Unterposition.
+valueDataType: xsd:string
+exampleValue: "7208390090"
+legalBasis:
+  name: Council Regulation (EEC) No 2658/87
+  clause: Art. 2, Art. 3(3)
+  uri: https://eur-lex.europa.eu/eli/reg/1987/2658/oj
