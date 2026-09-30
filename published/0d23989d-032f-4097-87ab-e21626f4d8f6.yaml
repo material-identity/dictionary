@@ -1,0 +1,25 @@
+id: https://material-identity.eu/def/0d23989d-032f-4097-87ab-e21626f4d8f6
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: meltAndPourCountry
+preferredName:
+  en: Country of melt and pour
+  de: Land des Schmelzens und Gießens
+definition:
+  en: Country in which the raw steel or iron of the product was initially produced
+    in liquid form within a steel- or iron-making furnace and subsequently cast
+    into its first solid state, identified by its ISO 3166-1 alpha-2 code.
+  de: Land, in dem der Rohstahl oder das Roheisen des Produkts ursprünglich in
+    flüssiger Form in einem Stahl- oder Eisenerzeugungsofen hergestellt und
+    anschließend in seinen ersten festen Zustand gegossen wurde, angegeben durch
+    seinen Alpha-2-Code nach ISO 3166-1.
+valueDataType: xsd:string
+exampleValue: AT
+definitionStandard:
+  name: ISO 3166-1
+  clause: alpha-2 code elements
+  uri: urn:iso:std:iso:3166:-1:ed-4
+legalBasis:
+  name: Regulation (EU) 2026/1384
+  clause: Art. 4(1)
+  uri: https://eur-lex.europa.eu/eli/reg/2026/1384/oj
