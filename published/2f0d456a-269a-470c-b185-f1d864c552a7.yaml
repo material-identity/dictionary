@@ -1,0 +1,23 @@
+id: https://material-identity.eu/def/2f0d456a-269a-470c-b185-f1d864c552a7
+replaces: https://material-identity.eu/def/c0872ffd-21b7-4365-a77a-93f90acc36b6
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: sequenceOrLotNumber
+preferredName:
+  en: Sequence or lot number
+  de: Sequenz- oder Losnummer
+definition:
+  en: "Identifier of a traceability unit other than the heat to which the product
+    belongs: a casting sequence, being several heats cast consecutively on a
+    continuous caster, or a production or processing lot, being a grouping of
+    products processed together under the same manufacturing conditions, such
+    as a galvanizing lot; it does not identify the heat, which is identified by
+    the heat number."
+  de: "Kennung einer von der Schmelze verschiedenen Rückverfolgbarkeitseinheit, zu
+    der das Produkt gehört: einer Gießsequenz, d. h. mehrerer nacheinander auf
+    einer Stranggießanlage vergossener Schmelzen, oder eines Fertigungs- oder
+    Bearbeitungsloses, d. h. einer Gruppe gemeinsam unter denselben
+    Fertigungsbedingungen bearbeiteter Erzeugnisse, etwa eines
+    Verzinkungsloses; die Schmelze selbst wird nicht durch sie, sondern durch
+    die Schmelzennummer gekennzeichnet."
+valueDataType: xsd:string
