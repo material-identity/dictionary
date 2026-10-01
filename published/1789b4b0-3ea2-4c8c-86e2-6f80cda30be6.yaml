@@ -1,0 +1,19 @@
+id: https://material-identity.eu/def/1789b4b0-3ea2-4c8c-86e2-6f80cda30be6
+isDefinedBy: https://material-identity.eu/
+objectType: SingleValuedDataElement
+shortName: heatNumber
+preferredName:
+  en: Heat number
+  de: Schmelzennummer
+definition:
+  en: "Identifier assigned by the steel producer to a heat, being the quantity of
+    steel melted in one steelmaking furnace and treated in one ladle, which is
+    cast as a unit and characterised by one heat analysis; in EN 10168
+    terminology, the cast number."
+  de: "Vom Stahlhersteller vergebene Kennung einer Schmelze, d. h. der in einem
+    Stahlerzeugungsofen erschmolzenen und in einer Pfanne behandelten
+    Stahlmenge, die als Einheit vergossen wird und durch eine Schmelzenanalyse
+    gekennzeichnet ist; in der englischen Fassung der EN 10168 als „cast
+    number“ bezeichnet."
+valueDataType: xsd:string
+exampleValue: 8R518V
