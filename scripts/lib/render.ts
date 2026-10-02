@@ -185,7 +185,7 @@ ${body}
 </main>
 <footer><div class="wrap">
 <span>Content CC0 1.0 · <a href="https://material-identity.eu/">material-identity.eu</a></span>
-<span><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/tree">Tree view</a> · <a href="/schema">JSON Schema reference</a> · <a href="/dictionary.ttl">RDF (Turtle)</a></span>
+<span><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/tree">Tree view</a> · <a href="/schema">JSON Schema reference</a> · <a href="/dictionary.ttl">RDF (Turtle)</a> · <a href="/examples/">Examples</a></span>
 </div></footer>
 </body>
 </html>
@@ -411,7 +411,7 @@ export function renderAboutPage(repo: RepoModel, refs: RefIndex, release?: strin
 <li><strong>One address, one meaning.</strong> An entry lives at <code>https://material-identity.eu/def/&lt;uuid&gt;</code>. The address says nothing by itself — you resolve it, you never parse it — so a definition can be reworded without breaking anyone's reference.</li>
 <li><strong>It never changes.</strong> A published entry is served with a year-long immutable cache and is never edited or deleted. A reference written today returns the same bytes in twenty years.</li>
 <li><strong>Meanings that move on say so.</strong> When a concept genuinely changes, a new entry is published pointing back at the one it replaces. Nothing is overwritten, and the old address keeps resolving — so an old passport stays readable while new ones move forward.</li>
-<li><strong>People and machines, same address.</strong> Ask for JSON and you get the entry; open it in a browser and you get this site's page for it. Also available as <a href="/dictionary.ttl">RDF</a> for semantic tooling.</li>
+<li><strong>People and machines, same address.</strong> Ask for JSON and you get the entry; open it in a browser and you get this site's page for it. Also available as <a href="/dictionary.ttl">RDF</a> for semantic tooling. To see how a passport specification points at entries, see the <a href="/examples/">examples</a>.</li>
 <li><strong>Free, in both senses.</strong> The content is CC0: no fee, no attribution obligation, nothing to clear with a lawyer before you depend on it.</li>
 </ul>
 </section>
@@ -642,5 +642,74 @@ ${rows}
 
     const canonicalPath = page === 1 ? '/' : `/${pageName(page)}`;
     return { name: pageName(page), html: pageShell(page === 1 ? 'Dictionary index' : `Dictionary index — page ${page}`, canonicalPath, body, { rssFeed: true, nav: 'index' }) };
+  });
+}
+
+/** One content specification under examples/, as the build found it (#130). */
+export interface ExampleSpec {
+  /** path below /examples/, e.g. `content-specifications/dpp-steel-v0.0.2.lock.json` */
+  path: string;
+  doc: Doc;
+  sha256: string;
+}
+
+/** Membership rows, depth-first: nested `elements` and a collection's `item` keep their parent path. */
+function membershipRows(elements: unknown, refs: RefIndex, parent: string[] = []): string[] {
+  const rows: string[] = [];
+  for (const m of Array.isArray(elements) ? (elements as Doc[]) : []) {
+    const path = [...parent, String(m.elementId)];
+    const mandatory = m.isMandatory === undefined ? '' : m.isMandatory ? 'mandatory' : 'optional';
+    const condition = en(m.condition);
+    rows.push(`<tr>
+<td><code>${path.map(esc).join(' / ')}</code></td>
+<td>${refs.link(m.dictionaryReference)}</td>
+<td>${kindChip(m.objectType)}</td>
+<td>${esc(mandatory)}${condition === undefined ? '' : `<br><span class="meta">${esc(condition)}</span>`}</td>
+<td>${esc(m.accessCategory ?? '')}</td>
+<td>${esc(m.granularity ?? '')}</td>
+</tr>`);
+    rows.push(...membershipRows(m.elements, refs, path));
+    if (m.item && typeof m.item === 'object') rows.push(...membershipRows([m.item], refs, [...path.slice(0, -1), `${path.at(-1)}[]`]));
+  }
+  return rows;
+}
+
+/**
+ * /examples/ (#130): content specifications that consume this dictionary, shown next to it.
+ * They are not entries — no /def/ id, outside published/, their own licence — and the page says
+ * so. Everything per file (release, licence, hash, memberships) is read from the file itself.
+ */
+export function renderExamplesPage(specs: ExampleSpec[], refs: RefIndex): string {
+  const sections = specs.map(({ path, doc, sha256 }) => {
+    const dictionary = (doc.dictionary ?? {}) as Doc;
+    const licence = /SPDX-License-Identifier:\s*(\S+)/.exec(String(doc.$comment ?? ''))?.[1];
+    return `<section><h2>${esc(en(doc.title) ?? path)}</h2>
+<table class="fields">
+${row('Specification id', `<code>${esc(doc.specificationId ?? '')}</code>`)}
+${row('Dictionary release', `<code>${esc(dictionary.release ?? '')}</code>`)}
+${row('Licence', licence === undefined ? 'see the source repository' : `${esc(licence)} — its own licence, not this dictionary's CC0`)}
+${row('File', `<a href="/examples/${esc(path)}">/examples/${esc(path)}</a>`)}
+${row('SHA-256', `<code>${esc(sha256)}</code>`)}
+</table>
+<div class="table-scroll"><table class="versions">
+<thead><tr><th>Element</th><th>Dictionary entry</th><th>Kind</th><th>Mandatory</th><th>Access</th><th>Granularity</th></tr></thead>
+<tbody>
+${membershipRows(doc.elements, refs).join('\n')}
+</tbody>
+</table></div></section>`;
+  }).join('\n\n');
+
+  const body = `<h1>Examples</h1>
+<p class="lede">How a passport specification uses this dictionary. Nothing on this page is part of the dictionary: these files are not entries, have no <code>/def/</code> address, and keep their own licence.</p>
+
+<section class="prose"><h2>Content specifications</h2>
+<p>A content specification is the first of the three addressing layers: the set of data elements a passport for one product group carries. It pins a dictionary release (the second layer), and each of its memberships points at one dictionary element id (the third) through <code>dictionaryReference</code>. Being mandatory, an access category, a granularity and a condition are facts about the membership, not about the entry. The same entry can be mandatory and public in one specification and optional or restricted in another.</p>
+<p>The specifications shown here are maintained in <a href="https://github.com/material-identity/schema" rel="external">material-identity/schema</a> and copied here byte for byte. Source commit and publication status are recorded in the <a href="https://github.com/material-identity/dictionary/blob/main/examples/README.md" rel="external">examples README</a>. A test checks that every reference in them resolves to a published entry.</p>
+</section>
+
+${sections || '<p>No examples in this build.</p>'}`;
+
+  return pageShell('Examples', '/examples/', body, {
+    description: 'Content specifications that use the material-identity dictionary, shown as reference examples. They are not part of the dictionary.',
   });
 }
