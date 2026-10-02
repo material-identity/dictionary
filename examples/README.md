@@ -15,7 +15,7 @@ release it pins, and layer 3 is the dictionary element id each membership points
 
 | File | Source | Status |
 |---|---|---|
-| [`content-specifications/dpp-steel-v0.0.2.lock.json`](content-specifications/dpp-steel-v0.0.2.lock.json) | [material-identity/schema](https://github.com/material-identity/schema) `dpp/v0.0.2/specifications/steel.lock.json` at commit `89be4d77a2692af09e51daecd7558d3bd327a411` | **pre-publication**, from [material-identity/schema#380](https://github.com/material-identity/schema/pull/380), not yet merged |
+| [`content-specifications/dpp-steel-v0.0.2.lock.json`](content-specifications/dpp-steel-v0.0.2.lock.json) | [material-identity/schema](https://github.com/material-identity/schema) `dpp/v0.0.2/specifications/steel.lock.json` at commit [`eb99ea2`](https://github.com/material-identity/schema/commit/eb99ea20cd0670d5b070aa7830653c4955b1c8b9) (merge of [material-identity/schema#380](https://github.com/material-identity/schema/pull/380)) | **published** in material-identity/schema `main`, DPP v0.0.2 |
 
 The copy is byte-identical to its source:
 SHA-256 `b94be652ae86178d1d371a9df5d1bfc3cba3b86afcd1b8f8aa257ef4ac021a3f`. The specification
