@@ -59,6 +59,7 @@ served with a short cache, so no derived view can ever contradict an entry.
 | [`/dictionary.ttl`](https://material-identity.eu/dictionary.ttl) | the whole dictionary as RDF; semantics declared in [`/context.jsonld`](https://material-identity.eu/context.jsonld) |
 | [`/feed.xml`](https://material-identity.eu/feed.xml) | new and superseded entries |
 | [`/about`](https://material-identity.eu/about) | what this is, what it promises, what it is not |
+| [`/examples/`](https://material-identity.eu/examples/) | a content specification that uses the dictionary, as a reference example: not part of the dictionary, and it keeps its own licence ([`examples/`](examples/README.md)) |
 
 RDF is a *second* serialization, never a mutation of the first: `/def/<uuid>.json` carries no
 `@context` and never will.

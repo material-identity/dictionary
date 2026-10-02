@@ -41,6 +41,12 @@ export function decide(pathname: string, accept: string | null): RouteDecision {
     return { originPath: `/well-known/${pathname.slice('/.well-known/'.length)}`, headers };
   }
 
+  // Reference examples (#130): not entries, so never immutable — a newer copy replaces a file in
+  // place. Typed explicitly rather than trusting the origin's guess, as for .well-known.
+  if (pathname.startsWith('/examples/') && pathname.endsWith('.json')) {
+    return { originPath: pathname, headers: { 'cache-control': 'public, max-age=300', 'content-type': 'application/json; charset=utf-8' } };
+  }
+
   // index, pagination, styles, raw origin files: pass through with a short cache
   return { originPath: pathname === '/' ? '/index.html' : pathname, headers: { 'cache-control': 'public, max-age=300' } };
 }

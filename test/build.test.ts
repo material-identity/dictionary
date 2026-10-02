@@ -356,12 +356,13 @@ test('the tracked .well-known directory is copied into the site byte-for-byte (#
   }
 });
 
-test('index footer links to the tree view and the schema reference page', () => {
+test('index footer links to the tree view, the schema reference page and the examples', () => {
   const out = buildGreen();
   try {
     const html = readFileSync(join(out, 'index.html'), 'utf8');
     assert.match(html, /<a href="\/tree">Tree view<\/a>/);
     assert.match(html, /<a href="\/schema">JSON Schema reference<\/a>/);
+    assert.match(html, /<a href="\/examples\/">Examples<\/a>/);
   } finally {
     rmSync(out, { recursive: true, force: true });
   }

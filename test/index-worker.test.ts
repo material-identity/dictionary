@@ -138,6 +138,17 @@ test('decide: everything else passes through with a short cache; no /concept rou
   assert.equal(decide(`/concept/${uuid}`, 'application/json').originPath, `/concept/${uuid}`); // no concept resource — plain pass-through
 });
 
+test('decide: example JSON is typed as JSON with a short cache, never immutable (#130)', () => {
+  const spec = decide('/examples/content-specifications/dpp-steel-v0.0.2.lock.json', '*/*');
+  assert.equal(spec.originPath, '/examples/content-specifications/dpp-steel-v0.0.2.lock.json');
+  assert.equal(spec.headers['content-type'], 'application/json; charset=utf-8');
+  assert.equal(spec.headers['cache-control'], 'public, max-age=300');
+
+  // the examples page itself is an ordinary pass-through, and .json elsewhere is not re-typed
+  assert.deepEqual(decide('/examples/', 'text/html'), { originPath: '/examples/', headers: { 'cache-control': 'public, max-age=300' } });
+  assert.equal(decide('/superseded.json', '*/*').headers['content-type'], undefined);
+});
+
 test('worker fetch handler maps to the origin and stamps headers (stubbed origin)', async () => {
   const uuid = 'c38a85eb-1a37-416d-ab21-7ddcc599754d';
   const seen: string[] = [];

@@ -123,6 +123,10 @@ section for the full explanation).
   Two probes, because Cloudflare 403s the runner on ordinary paths but exempts `/.well-known/`
   (#112): the origin for artifact completeness, the canonical host for the Worker's rewrite and
   content types. Probe the origin, not `material-identity.eu`, for anything outside `.well-known`
+- `examples/` — reference examples (#130), **not entries**: never under `published/`, keep their own
+  licence (the steel content spec is CC-BY-4.0, a byte-identical copy from material-identity/schema).
+  Copied wholesale into `site/examples/` with a derived `/examples/` page; the Worker types `.json`
+  there. `test/examples.test.ts` fails if any `dictionaryReference` does not resolve under `published/`
 - `REVIEW.md` — what reviewers check beyond CI; read it before reviewing any publish PR
 - `standards/` — local-only licensed docs; only its README is committed
 

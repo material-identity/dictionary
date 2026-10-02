@@ -2,12 +2,13 @@
 // Build (plan §4 M3, redesigned per issue #57): repo model → site/ — canonical JSON +
 // human HTML per entry, one stylesheet. Deterministic transform, no network, content
 // never altered. Usage: npm run build [-- --root <dir>] [-- --out <dir>]
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadRepo } from './lib/repo.ts';
 import { canonicalJson } from './lib/emit.ts';
-import { RefIndex, renderAboutPage, renderEntryPage, renderGraphPage, renderIndexPages, renderSchemaPage, renderTreePage } from './lib/render.ts';
+import { type ExampleSpec, RefIndex, renderAboutPage, renderEntryPage, renderExamplesPage, renderGraphPage, renderIndexPages, renderSchemaPage, renderTreePage } from './lib/render.ts';
 import { renderFeed } from './lib/feed.ts';
 import { citation } from './lib/cite.ts';
 import { renderTurtle } from './lib/rdf.ts';
@@ -25,6 +26,9 @@ const WELL_KNOWN_PATH = join(LIB_DIR, '..', '.well-known');
 // `--exclude=.[^/]*`, so a site/.well-known/ is silently dropped and the URL 404s in production.
 // The Worker maps the canonical /.well-known/<x> onto this path; the origin is never advertised.
 const WELL_KNOWN_OUT = 'well-known';
+// Reference examples (#130) — content specifications that USE the dictionary. Not entries: never
+// under published/, copied wholesale like .well-known, with a derived /examples/ index page.
+export const EXAMPLES_PATH = join(LIB_DIR, '..', 'examples');
 
 export interface BuildResult {
   entries: number;
@@ -79,9 +83,23 @@ export function build(root: string, out: string): BuildResult {
   // derived second serialization. The canonical /def/<uuid>.json is untouched by both.
   cpSync(CONTEXT_PATH, join(out, 'context.jsonld'));
   if (existsSync(WELL_KNOWN_PATH)) cpSync(WELL_KNOWN_PATH, join(out, WELL_KNOWN_OUT), { recursive: true });
+  if (existsSync(EXAMPLES_PATH)) {
+    cpSync(EXAMPLES_PATH, join(out, 'examples'), { recursive: true });
+    writeFileSync(join(out, 'examples', 'index.html'), renderExamplesPage(loadExampleSpecs(EXAMPLES_PATH), refs));
+  }
   const issued = new Map([...releases].map(([path, release]) => [path, release.date]));
   writeFileSync(join(out, 'dictionary.ttl'), renderTurtle(repo, refs, issued));
   return { entries, out };
+}
+
+/** Every examples/content-specifications/*.json, sorted, with the SHA-256 of its exact bytes. */
+export function loadExampleSpecs(dir: string): ExampleSpec[] {
+  const specDir = join(dir, 'content-specifications');
+  if (!existsSync(specDir)) return [];
+  return readdirSync(specDir).filter((n) => n.endsWith('.json')).sort().map((name) => {
+    const bytes = readFileSync(join(specDir, name));
+    return { path: `content-specifications/${name}`, doc: JSON.parse(bytes.toString('utf8')), sha256: createHash('sha256').update(bytes).digest('hex') };
+  });
 }
 
 function flagValue(args: string[], flag: string): string | undefined {
