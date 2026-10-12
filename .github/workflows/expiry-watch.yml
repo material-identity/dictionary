@@ -1,11 +1,11 @@
 # Expiry watch (#133): the security.txt `Expires` date and the PGP key lapse silently, so this
-# runs the same validate checks weekly with a 60-day horizon and keeps exactly one issue open
+# runs the same validate checks daily with a 5-day horizon and keeps exactly one issue open
 # while anything is due. No calendar entries — the tracker is the reminder. Read-only otherwise.
 name: expiry-watch
 
 on:
   schedule:
-    - cron: '17 6 * * 1'
+    - cron: '17 6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -26,11 +26,11 @@ jobs:
 
       - run: npm ci
 
-      - name: expiry checks (60-day horizon)
+      - name: expiry checks (5-day horizon)
         id: check
         run: |
           set +e
-          npm run validate -- --base HEAD --horizon-days 60 > report.txt 2>&1
+          npm run validate -- --base HEAD --horizon-days 5 > report.txt 2>&1
           echo "status=$?" >> "$GITHUB_OUTPUT"
           cat report.txt
 
@@ -39,13 +39,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           STATUS: ${{ steps.check.outputs.status }}
         run: |
-          title="Security contact expiry due within 60 days"
+          title="Security contact expiry due within 5 days"
           number=$(gh issue list --state open --label type:chore --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
           if [ "$STATUS" = "0" ]; then
             [ -n "$number" ] && gh issue close "$number" --comment "Renewed: the expiry checks pass again."
             exit 0
           fi
-          body=$(printf 'The weekly expiry watch found something due or already lapsed. Renew it in place (security.txt `Expires`, or extend and republish the key in `.well-known/pgp-security.asc`); the issue closes itself on the next green run.\n\n```\n%s\n```\n' "$(grep -E '^(FAIL|  )' report.txt)")
+          body=$(printf 'The daily expiry watch found something due or already lapsed. Renew it in place (security.txt `Expires`, or extend and republish the key in `.well-known/pgp-security.asc`); the issue closes itself on the next green run.\n\n```\n%s\n```\n' "$(grep -E '^(FAIL|  )' report.txt)")
           if [ -n "$number" ]; then
             gh issue edit "$number" --body "$body"
           else
