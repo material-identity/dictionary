@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,6 +16,7 @@ const addFormats = (addFormatsModule as unknown as { default?: typeof addFormats
 const SCHEMA_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'schema', 'dictionary-entry.schema.json');
 /** RFC 9116 recommends an expiry under a year; past it, tooling treats the contact as stale. */
 const SECURITY_TXT_MAX_MONTHS = 12;
+const DAY_MS = 86_400_000;
 
 /**
  * Internal references that must be version-pinned to a published file (R5, plan §2.3).
@@ -187,7 +189,7 @@ export function checkPinning(repo: RepoModel): ValidationIssue[] {
  * it as an unmonitored contact — and a static file rots silently, so the ratchet (plan §2.7)
  * turns "remember to renew it" into a check that refuses the next PR instead.
  */
-export function checkSecurityTxt(root: string, now: Date = new Date()): ValidationIssue[] {
+export function checkSecurityTxt(root: string, now: Date = new Date(), horizonDays = 0): ValidationIssue[] {
   const check = 'security.txt';
   const file = '.well-known/security.txt';
   const path = join(root, file);
@@ -213,6 +215,8 @@ export function checkSecurityTxt(root: string, now: Date = new Date()): Validati
       issues.push({ check, file, message: `Expires "${expires}" is not a valid timestamp` });
     } else if (at <= now) {
       issues.push({ check, file, message: `Expires ${at.toISOString()} has passed — renew it; an expired security.txt reads as an unmonitored contact` });
+    } else if (at.getTime() <= now.getTime() + horizonDays * DAY_MS) {
+      issues.push({ check, file, message: `Expires ${at.toISOString()}, within the ${horizonDays}-day horizon — renew it before it lapses` });
     } else {
       const ceiling = new Date(now);
       ceiling.setMonth(ceiling.getMonth() + SECURITY_TXT_MAX_MONTHS);
@@ -230,6 +234,56 @@ export function checkSecurityTxt(root: string, now: Date = new Date()): Validati
     }
   }
   return issues;
+}
+
+/**
+ * Expiry of the published PGP key (#133). Takes `gpg --with-colons` output so the logic is pure
+ * and testable; `checkPgpKey` is the thin wrapper that shells out. A primary key or subkey that
+ * is revoked, expired, or inside the horizon is reported; a key with no expiry is fine.
+ */
+export function pgpKeyExpiryIssues(colons: string, now: Date, horizonDays = 0): string[] {
+  const messages: string[] = [];
+  let keys = 0;
+  for (const line of colons.split('\n')) {
+    const f = line.split(':');
+    if (f[0] !== 'pub' && f[0] !== 'sub') continue;
+    keys++;
+    const label = `${f[0] === 'pub' ? 'primary key' : 'subkey'} ${f[4]}`;
+    if (f[1] === 'r') {
+      messages.push(`${label} is revoked`);
+      continue;
+    }
+    if (f[6] === '') continue;
+    const at = new Date(Number(f[6]) * 1000);
+    if (at <= now) messages.push(`${label} expired ${at.toISOString()} — publish a renewed key`);
+    else if (at.getTime() <= now.getTime() + horizonDays * DAY_MS) {
+      messages.push(`${label} expires ${at.toISOString()}, within the ${horizonDays}-day horizon — extend it and republish`);
+    }
+  }
+  if (keys === 0) messages.push('contains no parseable public key');
+  return messages;
+}
+
+export function checkPgpKey(root: string, now: Date = new Date(), horizonDays = 0): ValidationIssue[] {
+  const check = 'pgp-key';
+  const file = '.well-known/pgp-security.asc';
+  const path = join(root, file);
+  try {
+    readFileSync(path);
+  } catch {
+    return []; // absent is fine, as for security.txt
+  }
+  let colons: string;
+  try {
+    colons = execFileSync('gpg', ['--batch', '--no-tty', '--show-keys', '--with-colons', path], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (err) {
+    const missing = (err as NodeJS.ErrnoException).code === 'ENOENT';
+    return [{ check, file, message: missing ? 'gpg is not installed, so the key cannot be checked' : 'gpg could not read the key' }];
+  }
+  return pgpKeyExpiryIssues(colons, now, horizonDays).map((message) => ({ check, file, message }));
 }
 
 /** Check 1 — immutability (R6): only additions are allowed under published/. */
@@ -312,7 +366,7 @@ export interface CheckResult {
  * Run all validate.ts checks (1–6, plus the unnumbered security.txt guard). Checks 1 and 6 need
  * a git context. Check 7 (two-yes gate) lives in CI only.
  */
-export function runChecks(repo: RepoModel, git?: GitContext): CheckResult[] {
+export function runChecks(repo: RepoModel, git?: GitContext, horizonDays = 0): CheckResult[] {
   const noGit = 'no git context (base unresolvable or root is not a work-tree top level)';
   return [
     { name: 'load', issues: repo.errors },
@@ -328,6 +382,7 @@ export function runChecks(repo: RepoModel, git?: GitContext): CheckResult[] {
       : { name: 'check 6 — move purity', issues: [], skipped: noGit },
     // Deliberately unnumbered: 1–6 are the entry rules and 7 is the CI two-yes gate. This one
     // guards the repo's own security contact, not the dictionary (#109).
-    { name: 'security.txt — RFC 9116 freshness', issues: checkSecurityTxt(repo.root) },
+    { name: 'security.txt — RFC 9116 freshness', issues: checkSecurityTxt(repo.root, new Date(), horizonDays) },
+    { name: 'pgp-key — expiry', issues: checkPgpKey(repo.root, new Date(), horizonDays) },
   ];
 }

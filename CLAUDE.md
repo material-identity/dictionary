@@ -116,7 +116,9 @@ section for the full explanation).
   code): `pgp-security.asc` (public key only — never a private one) and `security.txt`
   (RFC 9116). The worker types them and caps their cache at a day. An unnumbered validate check
   fails the build when `Expires` is missing, past, or over a year out — renew it in place, it is
-  not under `published/`. **Nothing emitted into `site/` may start with a dot**:
+  not under `published/`. A sibling `pgp-key` check (needs `gpg`) fails on an expired, revoked, or
+  unparseable key. `--horizon-days <n>` makes both fail n days early; `expiry-watch.yml` runs that weekly
+  (60 days) and keeps one `type:chore` issue open while anything is due (#133) — no calendar entries. **Nothing emitted into `site/` may start with a dot**:
   `upload-pages-artifact` tars with `--exclude=.[^/]*`, so the build writes `site/well-known/`
   and the Worker rewrites `/.well-known/<x>` onto it (#110). A build test asserts the site is
   dot-free, and `deploy.yml` smoke-tests after deploying — a green deploy alone proved nothing.

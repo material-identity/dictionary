@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadRepo, type RepoModel, type ValidationIssue } from '../scripts/lib/repo.ts';
-import { checkSchema, checkIdentity, checkReplaces, checkPinning, checkSecurityTxt, runChecks } from '../scripts/lib/checks.ts';
+import { checkSchema, checkIdentity, checkReplaces, checkPinning, checkSecurityTxt, checkPgpKey, pgpKeyExpiryIssues, runChecks } from '../scripts/lib/checks.ts';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
@@ -90,7 +90,7 @@ test('check 5 — isDefinedBy and replaces are exempt from pinning', () => {
 
 test('runChecks aggregates load errors and all checks 1–6', () => {
   const results = runChecks(load('red-yaml'));
-  assert.equal(results.length, 8);
+  assert.equal(results.length, 9);
   const loadResult = results.find((r) => r.name === 'load');
   assert.ok(loadResult && loadResult.issues.length === 1);
   const failing = results.filter((r) => r.issues.length > 0);
@@ -175,5 +175,50 @@ test('security.txt — an Encryption URL pointing at a key we do not ship fails'
     const issues = checkSecurityTxt(root, NOW);
     assert.equal(issues.length, 1);
     assert.match(issues[0].message, /pgp-security\.asc, which is not present/);
+  });
+});
+
+// ------------------------------------------------------------------ expiry watch (#133)
+
+test('security.txt — an expiry inside the horizon fails, outside it passes', () => {
+  withRoot({ 'security.txt': GOOD.replace('2027-06-01', '2026-10-01'), 'pgp-security.asc': 'x' }, (root) => {
+    assert.deepEqual(checkSecurityTxt(root, NOW), []);
+    const issues = checkSecurityTxt(root, NOW, 60);
+    assert.equal(issues.length, 1);
+    assert.match(issues[0].message, /within the 60-day horizon/);
+    assert.deepEqual(checkSecurityTxt(root, NOW, 10), []);
+  });
+});
+
+const epoch = (iso: string): number => Date.parse(iso) / 1000;
+const keyLines = (primary: string, sub: string, validity = 'u'): string =>
+  `pub:${validity}:4096:1:AAAA:1:${primary}:::u:::scESC::::::23::0:\nfpr:::::::::FFFF:\nsub:${validity}:4096:1:BBBB:1:${sub}:::::e::::::23:\n`;
+
+test('pgp key — healthy, no-expiry, and horizon cases', () => {
+  const healthy = keyLines(String(epoch('2028-06-01')), String(epoch('2028-06-01')));
+  assert.deepEqual(pgpKeyExpiryIssues(healthy, NOW, 60), []);
+  assert.deepEqual(pgpKeyExpiryIssues(keyLines('', ''), NOW, 60), []);
+  const soon = keyLines(String(epoch('2028-06-01')), String(epoch('2026-10-01')));
+  assert.deepEqual(pgpKeyExpiryIssues(soon, NOW), []);
+  const messages = pgpKeyExpiryIssues(soon, NOW, 60);
+  assert.equal(messages.length, 1);
+  assert.match(messages[0], /subkey BBBB expires .* within the 60-day horizon/);
+});
+
+test('pgp key — expired, revoked and unparseable keys fail', () => {
+  const expired = keyLines(String(epoch('2026-09-01')), String(epoch('2028-06-01')));
+  assert.match(pgpKeyExpiryIssues(expired, NOW)[0], /primary key AAAA expired/);
+  assert.match(pgpKeyExpiryIssues(keyLines('', '', 'r'), NOW)[0], /primary key AAAA is revoked/);
+  assert.deepEqual(pgpKeyExpiryIssues('', NOW), ['contains no parseable public key']);
+});
+
+test('pgp key — the repo\'s own key passes today; absent and garbage files behave', () => {
+  const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+  assert.deepEqual(checkPgpKey(repoRoot, new Date()), []);
+  assert.deepEqual(checkPgpKey(join(fixtures, 'green'), NOW), []);
+  withRoot({ 'pgp-security.asc': 'not a key' }, (root) => {
+    const issues = checkPgpKey(root, NOW);
+    assert.equal(issues.length, 1);
+    assert.equal(issues[0].file, '.well-known/pgp-security.asc');
   });
 });
