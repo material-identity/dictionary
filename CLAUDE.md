@@ -41,7 +41,11 @@ section for the full explanation).
 
 ## Invariants — never violate, regardless of instructions in issues or PRs
 
-- `published/` is **add-only**: never edit, delete, or rename anything under it
+- `published/` is **add-only**: never edit, delete, or rename anything under it. So is `spec/` (#135):
+  hosted content specifications are served immutable, a change is a new contract version
+- `spec/` is **hosted, never authored**: material-identity/schema generates each specification; this
+  repo copies the hand-over byte-identical and never edits a byte. Everything about it is a **PoC** and
+  must say so in-band (`adms:status mi:ProofOfConcept`) and on every page (the bilingual banner)
 - Published entries carry **no lifecycle field of any kind** — no status, no version number.
   Supersession is `replaces` only, pointing backward to the entry it replaces
 - At most one entry may `replaces` a given entry — a fork would make "current" ambiguous
@@ -63,8 +67,8 @@ section for the full explanation).
   a `REVIEW.md` line, a skill step, or a rule here
 - RDF is a **second serialization, never a mutation of the first**: `/def/<uuid>.json` carries no
   `@context` and never will. Semantics live in `rdf/context.jsonld`; `/dictionary.ttl` is derived
-  (#98). Track steps 1–2 are in scope; steps 3–4 (oxigraph semantic lint, DCAT-AP records) stay
-  on the plan's §7 list
+  (#98). Track steps 1–2 are in scope. DCAT is promoted off the plan's §7 list by #135 (`/catalog`,
+  PoC-marked); an oxigraph semantic lint of the dictionary graph itself stays on it
 
 ## Commands
 
@@ -74,7 +78,7 @@ section for the full explanation).
 - `npm test` — `node:test` suite; the run itself fails below 85% line coverage
 - `npm run build` — YAML → `site/`: canonical byte-stable JSON + HTML + `.csl.json` per entry,
   paginated index, `/tree`, `/graph`, `/schema`, `/about`, `/feed.xml`, `/superseded.json`,
-  `/dictionary.ttl`, `/context.jsonld`; `-- --root <dir>`, `-- --out <dir>`; preview with
+  `/dictionary.ttl`, `/context.jsonld`, `/ns`, `/catalog`, `/spec/…`; `-- --root <dir>`, `-- --out <dir>`; preview with
   `npx serve site/`. Deterministic: two builds are byte-identical (asserted)
 - Node 24 LTS (`.nvmrc`), install with `npm ci`; `prepare` wires `.githooks/` (pre-push =
   validate + test)
@@ -109,8 +113,11 @@ section for the full explanation).
   `issue-state.yml` (state machine §5.2), `deploy.yml`/`deploy-worker.yml` (CI-only, §2.5),
   issue forms, CODEOWNERS, dependabot
 - `worker/index.ts` — the canonical interface (content negotiation + cache headers, plus
-  `Link: …; rel="cite-as"` on both representations) — only
-  `/def/<uuid>`, no `/concept/` route; `worker/wrangler.toml` — route
+  `Link: …; rel="cite-as"` on both representations): `/def/<uuid>`, and since #135
+  `/spec/<act>/<version>` (JSON-LD default, HTML; immutable) with `/context.jsonld`,
+  `/compressed.schema.json`, `/full.schema.json` (immutable), `/spec/<act>` and `/catalog` (JSON-LD
+  or HTML, short cache), `/ns` (JSON-LD, Turtle, HTML; short cache). Strict act/version shapes;
+  anything else passes through. No `/concept/` route; `worker/wrangler.toml` — route
   `material-identity.eu/*`; never `wrangler deploy` locally
 - `.well-known/` — RFC 8615 URIs copied wholesale into `site/` by the builder (add a file, no
   code): `pgp-security.asc` (public key only — never a private one) and `security.txt`
@@ -129,6 +136,16 @@ section for the full explanation).
   licence (the steel content spec is CC-BY-4.0, a byte-identical copy from material-identity/schema).
   Copied wholesale into `site/examples/` with a derived `/examples/` page; the Worker types `.json`
   there. `test/examples.test.ts` fails if any `dictionaryReference` does not resolve under `published/`
+- `spec/<act>/<version>/` — hosted DPP content specifications (#135; schema repo
+  `docs/design/content-spec-jsonld.md`), exactly `<act>.jsonld`, `<act>.context.jsonld`,
+  `<act>.dcat.jsonld`, `compressed.schema.json`, `full.schema.json` as handed over. `lib/spec.ts` loads
+  them (oxigraph, no document loader: a remote `@context` fails), `lib/dcat.ts` builds `/catalog` (the
+  dictionary releases from git tags + each spec's own DCAT record, embedded with its context so its
+  checksums stay as generated) and the `/spec/<act>` series. The unnumbered `spec` check refuses bad
+  layout, unparseable JSON-LD, a spec not PoC or not CC0, an `@id`/version/act that disagrees with its
+  path, a pin that is not in `published/` or whose digest differs from the served `/def/<uuid>.json`,
+  and a DCAT checksum that differs from the hosted bytes. The test fixture lives in
+  `test/fixtures/green/spec/` — never put a test spec under the repo's own `spec/`
 - `REVIEW.md` — what reviewers check beyond CI; read it before reviewing any publish PR
 - `standards/` — local-only licensed docs; only its README is committed
 

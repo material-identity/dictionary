@@ -1,6 +1,6 @@
 # The required status check on main (ruleset context: "pr-checks", checklist item 12).
 # Carries the entire integrity guarantee: validate.ts checks 1–6, the coverage-gated
-# tests, SBOM + vulnerability scan, and check 7 (two-yes gate) as the final step —
+# tests, SBOM + vulnerability scan, and check 7 (two-yes gate, published/ and spec/) as the final step —
 # a step rather than a job so the single required context covers it (plan §4 M2 item 10).
 # All actions pinned to full commit SHAs (supply-chain house rule; Dependabot bumps them).
 name: pr-checks
@@ -59,9 +59,12 @@ jobs:
             const { owner, repo } = context.repo;
             const pull_number = context.payload.pull_request.number;
             const files = await github.paginate(github.rest.pulls.listFiles, { owner, repo, pull_number, per_page: 100 });
-            const added = files.filter(f => f.status === 'added' && f.filename.startsWith('published/'));
+            // A hosted content specification (spec/, #135) is served immutable like an entry, so its
+            // hand-over gets the same two yeses as a publish.
+            const gated = ['published/', 'spec/'];
+            const added = files.filter(f => f.status === 'added' && gated.some(dir => f.filename.startsWith(dir)));
             if (added.length === 0) {
-              core.info('No additions under published/ — two-yes gate not applicable.');
+              core.info('No additions under published/ or spec/ — two-yes gate not applicable.');
               return;
             }
             const res = await github.graphql(`
@@ -86,7 +89,7 @@ jobs:
             });
             if (accepted.length === 0) {
               core.setFailed(
-                `PR adds ${added.length} file(s) under published/ but closes no issue labeled ` +
+                `PR adds ${added.length} file(s) under published/ or spec/ but closes no issue labeled ` +
                 'type:dictionary-request + state:accepted (or state:in-review, once issue-state.yml ' +
                 'has advanced it). Yes #1 (triage acceptance) is missing — link the accepted request ' +
                 'with "Closes #<n>" (plan §5.3).');
