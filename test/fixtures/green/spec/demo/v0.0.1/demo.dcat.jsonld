@@ -1,0 +1,56 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "adms": "http://www.w3.org/ns/adms#",
+    "spdx": "http://spdx.org/rdf/terms#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "mi": "https://material-identity.eu/ns#"
+  },
+  "@id": "https://material-identity.eu/catalog",
+  "@type": "dcat:Catalog",
+  "dcat:dataset": {
+    "@id": "https://material-identity.eu/spec/demo/v0.0.1",
+    "@type": "dcat:Dataset",
+    "dcterms:title": { "@value": "Demo content specification — test fixture (PoC)", "@language": "en" },
+    "dcterms:description": { "@value": "PROOF OF CONCEPT. Not a content specification of the European Union.", "@language": "en" },
+    "adms:status": { "@id": "mi:ProofOfConcept" },
+    "dcat:version": "v0.0.1",
+    "dcat:isVersionOf": { "@id": "https://material-identity.eu/spec/demo" },
+    "dcterms:issued": { "@value": "2026-11-02", "@type": "xsd:date" },
+    "dcterms:license": { "@id": "http://creativecommons.org/publicdomain/zero/1.0/" },
+    "dcterms:conformsTo": { "@id": "urn:cen:en:18223:2026" },
+    "dcterms:requires": { "@id": "https://material-identity.eu/release/v2026.08.28" },
+    "dcat:distribution": [
+      {
+        "@id": "https://material-identity.eu/spec/demo/v0.0.1#jsonld",
+        "@type": "dcat:Distribution",
+        "dcat:downloadURL": { "@id": "https://material-identity.eu/spec/demo/v0.0.1" },
+        "dcat:mediaType": "application/ld+json",
+        "dcterms:conformsTo": { "@id": "http://www.w3.org/ns/shacl#" },
+        "spdx:checksum": { "spdx:algorithm": { "@id": "spdx:checksumAlgorithm_sha256" }, "spdx:checksumValue": "c90dfd49a794e177b19c1559427c1c504ba58016c49b9a01ef353565f86a4bd7" }
+      },
+      {
+        "@id": "https://material-identity.eu/spec/demo/v0.0.1#context",
+        "@type": "dcat:Distribution",
+        "dcat:downloadURL": { "@id": "https://material-identity.eu/spec/demo/v0.0.1/context.jsonld" },
+        "dcat:mediaType": "application/ld+json",
+        "spdx:checksum": { "spdx:algorithm": { "@id": "spdx:checksumAlgorithm_sha256" }, "spdx:checksumValue": "64c71906fd2eeb51a2e6b54480dc9ac530ceed17f949dd483da3ea7c8d6f97b4" }
+      },
+      {
+        "@id": "https://material-identity.eu/spec/demo/v0.0.1#compressed",
+        "@type": "dcat:Distribution",
+        "dcat:downloadURL": { "@id": "https://material-identity.eu/spec/demo/v0.0.1/compressed.schema.json" },
+        "dcat:mediaType": "application/schema+json",
+        "spdx:checksum": { "spdx:algorithm": { "@id": "spdx:checksumAlgorithm_sha256" }, "spdx:checksumValue": "eb16cf4331e090f6813d873790ff70a3445afbd2ea32e4de5abdbe0ff35546e4" }
+      },
+      {
+        "@id": "https://material-identity.eu/spec/demo/v0.0.1#full",
+        "@type": "dcat:Distribution",
+        "dcat:downloadURL": { "@id": "https://material-identity.eu/spec/demo/v0.0.1/full.schema.json" },
+        "dcat:mediaType": "application/schema+json",
+        "spdx:checksum": { "spdx:algorithm": { "@id": "spdx:checksumAlgorithm_sha256" }, "spdx:checksumValue": "bb27ef5ee80e4abcc1f38a6e1a09df0d4e57185ae73fc8b793a7a5dccad93a1d" }
+      }
+    ]
+  }
+}

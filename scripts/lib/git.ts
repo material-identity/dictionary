@@ -136,6 +136,28 @@ export interface Release {
   date: string;
 }
 
+/** A dictionary release tag: `vYYYY.MM.DD` (other tags, e.g. `draft-base`, are not releases). */
+export const RELEASE_TAG = /^v\d{4}\.\d{2}\.\d{2}$/;
+
+/**
+ * Every dictionary release, sorted by tag, for the DCAT catalogue (#135). Silently empty outside a
+ * git work-tree top level, like getAddedCommits — a fixture-tree build lists no release.
+ */
+export function getReleaseTags(root: string): Release[] {
+  if (typeof requireToplevel(root) !== 'string') return [];
+  let output: string;
+  try {
+    output = git(root, ['tag', '--list', '--format=%(refname:short) %(creatordate:short)']);
+  } catch {
+    return [];
+  }
+  return output.split('\n')
+    .map((line) => line.trim().split(' '))
+    .filter(([tag, date]) => RELEASE_TAG.test(tag ?? '') && date !== undefined)
+    .map(([tag, date]) => ({ tag, date }))
+    .sort((a, b) => a.tag.localeCompare(b.tag, 'en'));
+}
+
 /**
  * The first tagged release containing each published file (issue #94): an entry is cited by the
  * release it shipped in, not by the day its commit happened to land. Entries merged since the

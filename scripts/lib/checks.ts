@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +9,10 @@ import addFormatsModule from 'ajv-formats';
 import { validate as uuidValidate, version as uuidVersion } from 'uuid';
 import { DEF_PREFIX, type RepoFile, type RepoModel, type ValidationIssue } from './repo.ts';
 import type { DiffEntry, GitContext } from './git.ts';
+import { canonicalJson } from './emit.ts';
+import { embeddedDataset } from './dcat.ts';
+import { CC0 } from './rdf.ts';
+import { ask, distributionPins, loadSpecs, type SpecLoad } from './spec.ts';
 
 // ajv/ajv-formats ship CJS; under native ESM the class may sit on .default or be the export itself.
 const Ajv2019 = (Ajv2019Module as unknown as { default?: typeof Ajv2019Module }).default ?? Ajv2019Module;
@@ -286,17 +291,23 @@ export function checkPgpKey(root: string, now: Date = new Date(), horizonDays = 
   return pgpKeyExpiryIssues(colons, now, horizonDays).map((message) => ({ check, file, message }));
 }
 
-/** Check 1 — immutability (R6): only additions are allowed under published/. */
+/**
+ * Check 1 — immutability (R6): only additions are allowed under published/, and under spec/ — a
+ * hosted content specification is served immutable, so a change is a new contract version (#135).
+ */
 export function checkImmutability(diff: DiffEntry[]): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   for (const entry of diff) {
-    if (!entry.path.startsWith('published/')) continue;
+    const spec = entry.path.startsWith('spec/');
+    if (!spec && !entry.path.startsWith('published/')) continue;
     if (entry.status === 'A') continue;
     const verb = entry.status === 'D' ? 'deleted' : entry.status === 'M' ? 'modified' : `changed (${entry.status})`;
     issues.push({
       check: '1 immutability',
       file: entry.path,
-      message: `published file ${verb} — published/ is add-only (R6); publish a new entry with replaces instead`,
+      message: spec
+        ? `hosted specification file ${verb} — spec/ is add-only (#135); a change is a new contract version under a new directory`
+        : `published file ${verb} — published/ is add-only (R6); publish a new entry with replaces instead`,
     });
   }
   return issues;
@@ -355,6 +366,64 @@ export function checkMovePurity(repo: RepoModel, git: GitContext): ValidationIss
   return issues;
 }
 
+/**
+ * Hosted content specifications (#135). This repo hosts what material-identity/schema generated
+ * and does not re-validate content (design §7.2 step 4) — but it refuses to serve, as immutable,
+ * a file that is not what it claims to be: JSON-LD that does not parse with an inline context, a
+ * spec that is not marked as a proof of concept or not CC0, an id that disagrees with where it is
+ * served, a pin to an entry this dictionary has not published (or whose served bytes differ from
+ * the pinned digest), or a DCAT record whose checksums do not match the bytes served here.
+ */
+export function checkSpecs(load: SpecLoad, repo: RepoModel): ValidationIssue[] {
+  const issues: ValidationIssue[] = [...load.issues];
+  const check = 'spec';
+  const published = new Map(repo.published.filter((f) => f.doc).map((f) => [f.stem, f.doc!]));
+
+  for (const spec of load.specs) {
+    const file = `${spec.relDir}/${spec.act}.jsonld`;
+    const add = (message: string, at = file): void => { issues.push({ check, file: at, message }); };
+    const g = spec.graph;
+    const s = `<${spec.iri}>`;
+
+    if (!ask(g, `${s} a mi:ContentSpecification`)) add(`no node ${spec.iri} typed mi:ContentSpecification — the @id must be the IRI the spec is served at`);
+    if (!ask(g, `${s} adms:status mi:ProofOfConcept`)) add('adms:status is not mi:ProofOfConcept — every hosted specification is a proof of concept and must say so in-band');
+    if (!ask(g, `${s} dcterms:license <${CC0}>`)) add(`dcterms:license is not CC0 (<${CC0}>)`);
+    if (!ask(g, `${s} dcat:version "${spec.version}"`)) add(`dcat:version is not "${spec.version}", the version directory it is served from`);
+    if (!ask(g, `${s} mi:act "${spec.act}"`)) add(`mi:act is not "${spec.act}", the act directory it is served from`);
+
+    const pins = distributionPins(g, spec.iri);
+    if (pins.length === 0) add('pins no dictionary entry (dcterms:requires → dcat:Distribution with a dcat:downloadURL)');
+    for (const pin of pins) {
+      const uuid = defUuid(pin.url);
+      const doc = uuid === undefined ? undefined : published.get(uuid);
+      if (doc === undefined) {
+        add(`pinned ${pin.url} is not an entry in published/`);
+      } else if (pin.sha256 === undefined) {
+        add(`pinned ${pin.url} carries no spdx:checksum — a pin without a digest is never publishable`);
+      } else {
+        const served = createHash('sha256').update(canonicalJson(doc)).digest('hex');
+        if (pin.sha256 !== served) add(`pinned ${pin.url} has checksum ${pin.sha256}, but /def/${uuid} serves ${served}`);
+      }
+    }
+
+    const dcatFile = `${spec.relDir}/${spec.act}.dcat.jsonld`;
+    const d = spec.dcatGraph;
+    if (embeddedDataset(spec) === undefined) add(`the DCAT record has no node for ${spec.iri}`, dcatFile);
+    if (!ask(d, `${s} a dcat:Dataset`)) add(`the DCAT record does not describe ${spec.iri} as a dcat:Dataset`, dcatFile);
+    if (!ask(d, `${s} adms:status mi:ProofOfConcept`)) add('the DCAT record does not mark the spec mi:ProofOfConcept', dcatFile);
+    if (!ask(d, `${s} dcterms:license <${CC0}>`)) add(`the DCAT record's dcterms:license is not CC0 (<${CC0}>)`, dcatFile);
+    const served = new Map(spec.files.filter((f) => f.served !== undefined).map((f) => [f.url, f]));
+    const distributions = distributionPins(d, spec.iri, 'dcat:distribution');
+    if (!distributions.some((dist) => dist.url === spec.iri)) add(`the DCAT record lists no distribution of the spec itself (dcat:downloadURL <${spec.iri}>)`, dcatFile);
+    for (const dist of distributions) {
+      const hosted = served.get(dist.url);
+      if (hosted === undefined) add(`distribution ${dist.url} is not a file hosted for this spec`, dcatFile);
+      else if (dist.sha256 !== hosted.sha256) add(`distribution ${dist.url} has checksum ${dist.sha256 ?? '(none)'}, but the hosted ${hosted.source} hashes to ${hosted.sha256}`, dcatFile);
+    }
+  }
+  return issues;
+}
+
 export interface CheckResult {
   name: string;
   issues: ValidationIssue[];
@@ -363,7 +432,7 @@ export interface CheckResult {
 }
 
 /**
- * Run all validate.ts checks (1–6, plus the unnumbered security.txt guard). Checks 1 and 6 need
+ * Run all validate.ts checks (1–6, plus the unnumbered hosted-spec and security.txt guards). Checks 1 and 6 need
  * a git context. Check 7 (two-yes gate) lives in CI only.
  */
 export function runChecks(repo: RepoModel, git?: GitContext, horizonDays = 0): CheckResult[] {
@@ -377,6 +446,8 @@ export function runChecks(repo: RepoModel, git?: GitContext, horizonDays = 0): C
     { name: 'check 3 — identity', issues: checkIdentity(repo) },
     { name: 'check 4 — replaces', issues: checkReplaces(repo) },
     { name: 'check 5 — pinning', issues: checkPinning(repo) },
+    // Unnumbered like security.txt: 1–6 are the entry rules. Hosted specs ride on check 1 (add-only).
+    { name: 'spec — hosted content specifications', issues: checkSpecs(loadSpecs(repo.root), repo) },
     git
       ? { name: 'check 6 — move purity', issues: checkMovePurity(repo, git) }
       : { name: 'check 6 — move purity', issues: [], skipped: noGit },

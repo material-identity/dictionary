@@ -1,0 +1,90 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "sh": "http://www.w3.org/ns/shacl#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "adms": "http://www.w3.org/ns/adms#",
+    "spdx": "http://spdx.org/rdf/terms#",
+    "mi": "https://material-identity.eu/ns#",
+    "def": "https://material-identity.eu/def/",
+    "s": "https://material-identity.eu/spec/demo/v0.0.1#",
+    "title": { "@id": "dcterms:title", "@container": "@language" },
+    "description": { "@id": "dcterms:description", "@container": "@language" },
+    "pin": { "@id": "dcterms:requires", "@container": "@set" },
+    "entry": { "@id": "dcat:downloadURL", "@type": "@id" },
+    "checksum": "spdx:checksum",
+    "algorithm": { "@id": "spdx:algorithm", "@type": "@id" },
+    "sha256": "spdx:checksumValue",
+    "property": { "@id": "sh:property", "@container": "@set" },
+    "path": { "@id": "sh:path", "@type": "@id" },
+    "datatype": { "@id": "sh:datatype", "@type": "@id" },
+    "nodeKind": { "@id": "sh:nodeKind", "@type": "@id" },
+    "minCount": "sh:minCount",
+    "maxCount": "sh:maxCount",
+    "order": "sh:order",
+    "node": "sh:node",
+    "closed": "sh:closed",
+    "elementId": "mi:elementId",
+    "accessCategory": { "@id": "mi:accessCategory", "@type": "@vocab" },
+    "granularity": { "@id": "mi:granularity", "@type": "@id" },
+    "condition": { "@id": "mi:condition", "@container": "@language" },
+    "authorityOnly": "https://material-identity.eu/def/7a1e2c3d-4b5f-4a6e-9c8d-1f2e3d4c5b6a"
+  },
+  "@id": "https://material-identity.eu/spec/demo/v0.0.1",
+  "@type": ["mi:ContentSpecification", "sh:NodeShape", "rdfs:Class"],
+  "title": {
+    "en": "Demo content specification — test fixture (PoC)",
+    "de": "Demo-Inhaltsspezifikation — Testdatensatz (PoC)"
+  },
+  "description": {
+    "en": "PROOF OF CONCEPT. A test fixture of the dictionary repository. Not a content specification of the European Union.",
+    "de": "PROOF OF CONCEPT. Ein Testdatensatz des Wörterbuch-Repositorys. Keine Inhaltsspezifikation der Europäischen Union."
+  },
+  "adms:status": { "@id": "mi:ProofOfConcept" },
+  "dcat:version": "v0.0.1",
+  "dcat:isVersionOf": { "@id": "https://material-identity.eu/spec/demo" },
+  "dcterms:issued": { "@value": "2026-11-02", "@type": "xsd:date" },
+  "dcterms:license": { "@id": "http://creativecommons.org/publicdomain/zero/1.0/" },
+  "dcterms:rights": "SPDX-License-Identifier: CC0-1.0",
+  "dcterms:publisher": { "@id": "https://material-identity.eu/" },
+  "dcterms:conformsTo": { "@id": "urn:cen:en:18223:2026" },
+  "mi:act": "demo",
+  "mi:dppSchemaVersion": { "@id": "https://material-identity.org/schemas/dpp/v0.0.3" },
+  "mi:passportContext": { "@id": "https://material-identity.eu/spec/demo/v0.0.1/context.jsonld" },
+
+  "pin": [
+    { "@id": "https://material-identity.eu/release/v2026.08.28", "@type": "dcat:Dataset", "dcat:version": "v2026.08.28" },
+    { "@type": "dcat:Distribution", "dcat:mediaType": "application/json", "entry": "def:2f3de2bb-0588-4513-bfc3-41d021815a81",
+      "checksum": { "algorithm": "spdx:checksumAlgorithm_sha256", "sha256": "cb2f32484b2602aad2a2fbb189722ba140e310927745de7a00e6ff8aefd0722d" } },
+    { "@type": "dcat:Distribution", "dcat:mediaType": "application/json", "entry": "def:c38a85eb-1a37-416d-ab21-7ddcc599754d",
+      "checksum": { "algorithm": "spdx:checksumAlgorithm_sha256", "sha256": "51a28c90bcf24fc116251ef96216a331f278556bf92935dda49f345971cfe075" } },
+    { "@type": "dcat:Distribution", "dcat:mediaType": "application/json", "entry": "def:4eae703a-fa15-4118-8bc4-7926a22a12fb",
+      "checksum": { "algorithm": "spdx:checksumAlgorithm_sha256", "sha256": "f136650e084da6b9e55657d0556957f14bcf8b1aed7256fb3af4ba46f7f94476" } },
+    { "@type": "dcat:Distribution", "dcat:mediaType": "application/json", "entry": "def:7a1e2c3d-4b5f-4a6e-9c8d-1f2e3d4c5b6a",
+      "checksum": { "algorithm": "spdx:checksumAlgorithm_sha256", "sha256": "a9ba77a780962cfe6242caedf9d8a33919096d15b234a7a15629269c3c3a6908" } }
+  ],
+
+  "closed": true,
+  "sh:ignoredProperties": { "@list": [{ "@id": "rdf:type" }] },
+  "property": [
+    { "path": "mi:dppSchemaVersion", "sh:hasValue": { "@id": "https://material-identity.org/schemas/dpp/v0.0.3" }, "minCount": 1, "maxCount": 1 },
+
+    { "@id": "s:steelmakingRoute", "elementId": "steelmakingRoute", "order": 2,
+      "path": "def:4eae703a-fa15-4118-8bc4-7926a22a12fb", "nodeKind": "sh:IRI", "maxCount": 1,
+      "accessCategory": "authorityOnly", "granularity": "mi:batch",
+      "condition": { "en": "Mandatory where the route is known.", "de": "Verpflichtend, wenn die Route bekannt ist." } },
+
+    { "@id": "s:mechanicalProperties", "elementId": "mechanicalProperties", "order": 1,
+      "path": "def:2f3de2bb-0588-4513-bfc3-41d021815a81", "minCount": 1, "maxCount": 1,
+      "accessCategory": "authorityOnly", "granularity": "mi:batch",
+      "node": { "@id": "s:MechanicalProperties", "@type": "sh:NodeShape", "closed": true, "property": [
+        { "@id": "s:mechanicalProperties.maxPressure", "elementId": "maxPressure", "order": 1,
+          "path": "def:c38a85eb-1a37-416d-ab21-7ddcc599754d", "datatype": "xsd:float", "minCount": 1, "maxCount": 1,
+          "accessCategory": "authorityOnly" }
+      ] } }
+  ]
+}

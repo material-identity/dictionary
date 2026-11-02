@@ -90,7 +90,7 @@ test('check 5 — isDefinedBy and replaces are exempt from pinning', () => {
 
 test('runChecks aggregates load errors and all checks 1–6', () => {
   const results = runChecks(load('red-yaml'));
-  assert.equal(results.length, 9);
+  assert.equal(results.length, 10);
   const loadResult = results.find((r) => r.name === 'load');
   assert.ok(loadResult && loadResult.issues.length === 1);
   const failing = results.filter((r) => r.issues.length > 0);

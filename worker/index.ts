@@ -3,28 +3,81 @@
  * per issue #57 — no concept resource, so no /concept/<uuid> route).
  * Stateless mapping: URI + Accept → origin file + headers. No entry knowledge —
  * reproducible on any reverse proxy (D3). Deploys are CI-only (deploy-worker.yml).
+ * Routes: /def/<uuid>, /spec/<act>[/<version>[/<file>]], /catalog, /ns (#135), /.well-known/,
+ * /examples/; everything else passes through.
  */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// Content specifications (#135; schema design content-spec-jsonld.md §2.1). Strict shapes: an act
+// key and a semantic contract version. Anything else under /spec/ falls through untouched.
+const ACT = '[a-z][a-z0-9-]*';
+const VERSION = 'v\\d+\\.\\d+\\.\\d+';
+const SPEC = new RegExp(`^/spec/(${ACT})/(${VERSION})$`);
+const SPEC_FILE = new RegExp(`^/spec/(${ACT})/(${VERSION})/(context\\.jsonld|compressed\\.schema\\.json|full\\.schema\\.json)$`);
+const SERIES = new RegExp(`^/spec/(${ACT})$`);
+
+const IMMUTABLE = 'public, max-age=31536000, immutable';
+const SHORT = 'public, max-age=300';
+const HTML = 'text/html; charset=utf-8';
+const JSON_LD = 'application/ld+json';
+const TURTLE = 'text/turtle; charset=utf-8';
 
 export interface RouteDecision {
   originPath: string;
   headers: Record<string, string>;
 }
 
+const wantsHtml = (accept: string | null): boolean => (accept ?? '').includes('text/html');
+
+/**
+ * A negotiated JSON-LD resource stored as `<dir>/index.jsonld` + `<dir>/index.html` at the origin.
+ * Vary: one URI, two representations, so no cache may hand a browser's HTML to a JSON-LD client.
+ */
+function negotiated(dir: string, accept: string | null, cache: string): RouteDecision {
+  const html = wantsHtml(accept);
+  return {
+    originPath: `${dir}/index.${html ? 'html' : 'jsonld'}`,
+    headers: { 'content-type': html ? HTML : JSON_LD, 'cache-control': cache, vary: 'Accept' },
+  };
+}
+
 /** Pure mapping, unit-tested. JSON is the default; HTML only when Accept names text/html (handover §8). */
 export function decide(pathname: string, accept: string | null): RouteDecision {
+  // A published content specification never changes (design §2.3): a new contract version is a
+  // new IRI, so the spec and its sub-resources are as immutable as an entry.
+  const spec = SPEC.exec(pathname);
+  if (spec) {
+    const decision = negotiated(pathname, accept, IMMUTABLE);
+    const citeAs = `<https://material-identity.eu${pathname}>; rel="cite-as"`;
+    decision.headers.link = wantsHtml(accept) ? `<${pathname}>; rel="canonical", ${citeAs}` : citeAs;
+    return decision;
+  }
+  const specFile = SPEC_FILE.exec(pathname);
+  if (specFile) {
+    const type = specFile[3] === 'context.jsonld' ? JSON_LD : 'application/schema+json';
+    return { originPath: pathname, headers: { 'content-type': type, 'cache-control': IMMUTABLE } };
+  }
+  // Derived listings: a new version or release joins them, so they get the short cache of /feed.xml.
+  if (SERIES.test(pathname) || pathname === '/catalog') return negotiated(pathname, accept, SHORT);
+  // The mi: vocabulary (design §3.3, §9 Q6). Turtle on request, since that is what RDF tools ask for.
+  if (pathname === '/ns') {
+    if (!wantsHtml(accept) && (accept ?? '').includes('text/turtle')) {
+      return { originPath: '/ns/index.ttl', headers: { 'content-type': TURTLE, 'cache-control': SHORT, vary: 'Accept' } };
+    }
+    return negotiated('/ns', accept, SHORT);
+  }
+
   const m = /^\/def\/([^/]+)$/.exec(pathname);
   if (m && UUID.test(m[1])) {
     const uuid = m[1];
-    const wantsHtml = (accept ?? '').includes('text/html');
+    const html = wantsHtml(accept);
     const headers: Record<string, string> = {
-      'content-type': wantsHtml ? 'text/html; charset=utf-8' : 'application/json; charset=utf-8',
-      'cache-control': 'public, max-age=31536000, immutable', // entries never change (R6)
+      'content-type': html ? HTML : 'application/json; charset=utf-8',
+      'cache-control': IMMUTABLE, // entries never change (R6)
     };
     // RFC 8574: cite the canonical id whatever URL was fetched; HTML also names itself canonical.
     const citeAs = `<https://material-identity.eu/def/${uuid}>; rel="cite-as"`;
-    headers.link = wantsHtml ? `</def/${uuid}>; rel="canonical", ${citeAs}` : citeAs;
-    return { originPath: `/def/${uuid}.${wantsHtml ? 'html' : 'json'}`, headers };
+    headers.link = html ? `</def/${uuid}>; rel="canonical", ${citeAs}` : citeAs;
+    return { originPath: `/def/${uuid}.${html ? 'html' : 'json'}`, headers };
   }
   // RFC 8615 well-known URIs (#107, #109). Cacheable but never immutable like an entry: a key can
   // be rotated or revoked and security.txt expires, so a day is the ceiling. Pages would serve

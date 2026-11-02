@@ -173,3 +173,84 @@ test('worker fetch handler maps to the origin and stamps headers (stubbed origin
     globalThis.fetch = realFetch;
   }
 });
+
+// ------------------------------------------------------------------ content specifications, catalogue, vocabulary (#135)
+
+test('decide: a spec IRI is JSON-LD by default, HTML for browsers, immutable, cite-as itself', () => {
+  const ld = decide('/spec/steel/v0.0.3', 'application/ld+json');
+  assert.deepEqual(ld, {
+    originPath: '/spec/steel/v0.0.3/index.jsonld',
+    headers: {
+      'content-type': 'application/ld+json',
+      'cache-control': 'public, max-age=31536000, immutable',
+      vary: 'Accept',
+      link: '<https://material-identity.eu/spec/steel/v0.0.3>; rel="cite-as"',
+    },
+  });
+  assert.equal(decide('/spec/steel/v0.0.3', '*/*').originPath, '/spec/steel/v0.0.3/index.jsonld');
+  assert.equal(decide('/spec/steel/v0.0.3', null).originPath, '/spec/steel/v0.0.3/index.jsonld');
+
+  const html = decide('/spec/steel/v0.0.3', 'text/html,application/xhtml+xml,*/*;q=0.8');
+  assert.equal(html.originPath, '/spec/steel/v0.0.3/index.html');
+  assert.equal(html.headers['content-type'], 'text/html; charset=utf-8');
+  assert.equal(html.headers['cache-control'], 'public, max-age=31536000, immutable');
+  assert.equal(html.headers.link, '</spec/steel/v0.0.3>; rel="canonical", <https://material-identity.eu/spec/steel/v0.0.3>; rel="cite-as"');
+  // multi-digit versions and hyphenated acts are legitimate
+  assert.equal(decide('/spec/construction-products/v10.20.300', '*/*').originPath, '/spec/construction-products/v10.20.300/index.jsonld');
+});
+
+test('decide: a spec\'s sub-resources are typed and immutable, whatever the Accept header', () => {
+  const ctx = decide('/spec/steel/v0.0.3/context.jsonld', 'text/html');
+  assert.deepEqual(ctx, { originPath: '/spec/steel/v0.0.3/context.jsonld', headers: { 'content-type': 'application/ld+json', 'cache-control': 'public, max-age=31536000, immutable' } });
+  for (const name of ['compressed.schema.json', 'full.schema.json']) {
+    const schema = decide(`/spec/steel/v0.0.3/${name}`, '*/*');
+    assert.deepEqual(schema, { originPath: `/spec/steel/v0.0.3/${name}`, headers: { 'content-type': 'application/schema+json', 'cache-control': 'public, max-age=31536000, immutable' } });
+  }
+});
+
+test('decide: the series index and the catalogue negotiate like a spec but keep a short cache', () => {
+  for (const [path, dir] of [['/spec/steel', '/spec/steel'], ['/catalog', '/catalog']]) {
+    assert.deepEqual(decide(path, '*/*'), { originPath: `${dir}/index.jsonld`, headers: { 'content-type': 'application/ld+json', 'cache-control': 'public, max-age=300', vary: 'Accept' } });
+    assert.deepEqual(decide(path, 'text/html'), { originPath: `${dir}/index.html`, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300', vary: 'Accept' } });
+    assert.ok(!decide(path, '*/*').headers['cache-control'].includes('immutable'), `${path} gains members, so it must never be immutable`);
+  }
+});
+
+test('decide: /ns serves the vocabulary as JSON-LD, Turtle on request, HTML for browsers', () => {
+  assert.deepEqual(decide('/ns', '*/*'), { originPath: '/ns/index.jsonld', headers: { 'content-type': 'application/ld+json', 'cache-control': 'public, max-age=300', vary: 'Accept' } });
+  assert.deepEqual(decide('/ns', 'text/turtle'), { originPath: '/ns/index.ttl', headers: { 'content-type': 'text/turtle; charset=utf-8', 'cache-control': 'public, max-age=300', vary: 'Accept' } });
+  assert.equal(decide('/ns', 'text/html').originPath, '/ns/index.html');
+  assert.equal(decide('/ns', 'text/html, text/turtle;q=0.5').originPath, '/ns/index.html'); // a browser always gets the page
+});
+
+test('decide: anything that is not exactly a spec shape falls through as before', () => {
+  for (const p of [
+    '/spec', '/spec/', '/spec/steel/', '/spec/Steel', '/spec/1steel', '/spec/steel_x', '/spec/steel/v0.0.3/', '/spec/steel/0.0.3',
+    '/spec/steel/v0.3', '/spec/steel/latest', '/spec/steel/v0.0.3/steel.dcat.jsonld', '/spec/steel/v0.0.3/index.jsonld',
+    '/spec/steel/v0.0.3/context.jsonld/x', '/spec/a/b/c/d', '/catalog/', '/catalog/index.jsonld', '/ns/', '/ns/index.ttl', '/nsx',
+  ]) {
+    assert.deepEqual(decide(p, 'text/html'), { originPath: p, headers: { 'cache-control': 'public, max-age=300' } }, `${p} must pass through`);
+  }
+  // no origin path we map to may start with a dot (#110)
+  for (const p of ['/spec/steel/v0.0.3', '/spec/steel/v0.0.3/context.jsonld', '/spec/steel', '/catalog', '/ns']) {
+    for (const accept of ['*/*', 'text/html', 'text/turtle']) assert.ok(!decide(p, accept).originPath.includes('/.'));
+  }
+});
+
+test('worker fetch handler serves a spec as JSON-LD from its origin file (stubbed origin)', async () => {
+  const seen: string[] = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    seen.push(String(input));
+    return new Response('{"@id":"x"}', { status: 200, headers: { 'content-type': 'application/octet-stream' } });
+  }) as typeof fetch;
+  try {
+    const res = await worker.fetch(new Request('https://material-identity.eu/spec/steel/v0.0.3'), { ORIGIN: 'https://origin.example/dictionary' });
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('content-type'), 'application/ld+json'); // the origin's guess is overridden
+    assert.equal(res.headers.get('vary'), 'Accept');
+    assert.deepEqual(seen, ['https://origin.example/dictionary/spec/steel/v0.0.3/index.jsonld']);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

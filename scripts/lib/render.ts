@@ -7,6 +7,7 @@
 import { CANONICAL_BASE, DEF_PREFIX, type RepoFile, type RepoModel } from './repo.ts';
 import { citation } from './cite.ts';
 import { graphFigure } from './graph.ts';
+import type { HostedSpec, SpecRole, SpecSummary } from './spec.ts';
 
 export function esc(s: unknown): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -150,10 +151,12 @@ function pageShell(
   title: string,
   canonicalPath: string,
   body: string,
-  options: { alternateJson?: string; alternateCsl?: string; rssFeed?: boolean; nav?: string; description?: string } = {},
+  options: { alternateJson?: string; alternateCsl?: string; alternateLd?: string; rssFeed?: boolean; nav?: string; description?: string } = {},
 ): string {
   const canonicalUrl = `${CANONICAL_BASE}${canonicalPath}`;
-  const alternate = (options.alternateJson === undefined
+  const alternate = (options.alternateLd === undefined
+    ? ''
+    : `\n<link rel="alternate" type="application/ld+json" href="${esc(options.alternateLd)}">`) + (options.alternateJson === undefined
     ? ''
     : `\n<link rel="alternate" type="application/json" href="${esc(options.alternateJson)}">`) + (options.alternateCsl === undefined
     ? ''
@@ -185,7 +188,7 @@ ${body}
 </main>
 <footer><div class="wrap">
 <span>Content CC0 1.0 · <a href="https://material-identity.eu/">material-identity.eu</a></span>
-<span><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/tree">Tree view</a> · <a href="/schema">JSON Schema reference</a> · <a href="/dictionary.ttl">RDF (Turtle)</a> · <a href="/examples/">Examples</a></span>
+<span><a href="https://github.com/material-identity/dictionary/issues/new?template=dictionary-request.yml">Request a new entry</a> · <a href="https://github.com/material-identity/dictionary">View source / contribute on GitHub</a> · <a href="/feed.xml">RSS feed</a> · <a href="/tree">Tree view</a> · <a href="/schema">JSON Schema reference</a> · <a href="/dictionary.ttl">RDF (Turtle)</a> · <a href="/examples/">Examples</a> · <a href="/catalog">Catalogue (DCAT)</a> · <a href="/ns">Vocabulary</a></span>
 </div></footer>
 </body>
 </html>
@@ -711,5 +714,196 @@ ${sections || '<p>No examples in this build.</p>'}`;
 
   return pageShell('Examples', '/examples/', body, {
     description: 'Content specifications that use the material-identity dictionary, shown as reference examples. They are not part of the dictionary.',
+  });
+}
+
+// ------------------------------------------------------------------ hosted specs, catalogue, vocabulary (#135)
+
+/**
+ * The proof-of-concept banner on every page about a hosted specification, the catalogue and the
+ * vocabulary. In both languages the specifications themselves carry, and never dismissible.
+ */
+export function pocBanner(): string {
+  return `<div class="banner poc" role="note">
+<p><strong>Proof of concept.</strong> Not a content specification of the European Union and not adopted under Regulation (EU) 2024/1781. Nothing here is normative; do not use it for passports placed on the market.</p>
+<p lang="de"><strong>Proof of Concept.</strong> Keine Inhaltsspezifikation der Europäischen Union und nicht nach Verordnung (EU) 2024/1781 erlassen. Nichts hier ist normativ; nicht für Pässe zu Produkten verwenden, die in Verkehr gebracht werden.</p>
+</div>`;
+}
+
+const localPath = (iri: string | undefined): string | undefined =>
+  iri !== undefined && iri.startsWith(`${CANONICAL_BASE}/`) ? iri.slice(CANONICAL_BASE.length) : undefined;
+
+/** A link to an IRI: site-relative when it is ours, external otherwise; entries get their label. */
+function iriLink(iri: string | undefined, refs: RefIndex, label?: string): string {
+  if (iri === undefined) return '';
+  if (iri.startsWith(DEF_PREFIX)) return refs.link(iri);
+  const local = localPath(iri);
+  return local === undefined ? externalLink(iri) : `<a href="${esc(local)}">${esc(label ?? iri)}</a>`;
+}
+
+const LICENCE_LABEL: Record<string, string> = { 'http://creativecommons.org/publicdomain/zero/1.0/': 'CC0 1.0' };
+
+/** One hosted specification's page: the human representation of `/spec/<act>/<version>`. */
+export function renderSpecPage(spec: HostedSpec, summary: SpecSummary, refs: RefIndex): string {
+  const path = `/spec/${spec.act}/${spec.version}`;
+  const title = summary.title.en ?? `${spec.act} ${spec.version}`;
+  const otherTitles = Object.entries(summary.title).filter(([code]) => code !== 'en' && code !== '')
+    .sort(([a], [b]) => a.localeCompare(b, 'en'))
+    .map(([code, t]) => `<p class="lede" lang="${esc(code)}">${esc(t)}</p>`).join('\n');
+  const licence = summary.license === undefined ? '' : `<a href="${esc(summary.license)}" rel="external license">${esc(LICENCE_LABEL[summary.license] ?? summary.license)}</a>`;
+  const status = summary.status === undefined ? '' : `${iriLink(summary.status, refs, summary.status.replace(/^.*#/, 'mi:'))}`;
+
+  const files = spec.files.map((f) => `<tr>
+<td>${esc(f.role === 'dcat' ? 'DCAT record (merged into the catalogue)' : FILE_LABEL[f.role])}</td>
+<td><a href="${esc(localPath(f.url) ?? f.url)}"><code>${esc(localPath(f.url) ?? f.url)}</code></a></td>
+<td><code>${esc(f.mediaType)}</code></td>
+<td><code>${esc(f.sha256)}</code></td>
+</tr>`).join('\n');
+
+  const pins = summary.pins.map((p) => `<tr><td>${refs.link(p.url)}</td><td><code>${esc(p.url)}</code></td><td><code>${esc(p.sha256 ?? '')}</code></td></tr>`).join('\n');
+  const members = summary.memberships.map((m) => `<tr>
+<td><code>${m.path.map(esc).join('.')}</code></td>
+<td>${m.entry === undefined ? '' : iriLink(m.entry, refs)}</td>
+<td>${m.mandatory ? 'mandatory' : 'optional'}${m.condition === undefined ? '' : `<br><span class="meta">${esc(m.condition)}</span>`}</td>
+<td>${m.accessCategory === undefined ? '' : iriLink(m.accessCategory, refs)}</td>
+</tr>`).join('\n');
+
+  const body = `${pocBanner()}
+<h1>${esc(title)}</h1>
+${otherTitles}
+<table class="fields">
+${row('Specification IRI', `<code>${esc(spec.iri)}</code>`)}
+${row('Act', `<code>${esc(spec.act)}</code>`)}
+${row('Version', `<code>${esc(summary.version ?? spec.version)}</code>`)}
+${row('Issued', esc(summary.issued ?? ''))}
+${row('Status', status)}
+${row('Licence', licence)}
+${row('Version series', iriLink(summary.series, refs))}
+${row('Conforms to', esc(summary.conformsTo ?? ''))}
+${row('DPP schema version', summary.dppSchemaVersion === undefined ? '' : `<code>${esc(summary.dppSchemaVersion)}</code>`)}
+${row('Dictionary release', summary.releases.map((r) => `<code>${esc(r.version ?? r.iri)}</code>`).join(', '))}
+</table>
+${Object.keys(summary.description).length === 0 ? '' : `<section><h2>Description</h2>${langMapHtml(summary.description)}</section>`}
+
+<section><h2>Files</h2>
+<p>Hosted byte for byte as <a href="https://github.com/material-identity/schema" rel="external">material-identity/schema</a> generated them, and never changed: a change is a new version at a new IRI. The SHA-256 is over the served bytes.</p>
+<div class="table-scroll"><table class="versions">
+<thead><tr><th>Representation</th><th>URL</th><th>Media type</th><th>SHA-256</th></tr></thead>
+<tbody>
+${files}
+</tbody>
+</table></div></section>
+
+<section><h2>Pinned dictionary entries</h2>
+<p>Each pin names the bytes of one entry by digest. The build of this site checks that every pinned entry is published here and still serves exactly those bytes.</p>
+<div class="table-scroll"><table class="versions">
+<thead><tr><th>Entry</th><th>IRI</th><th>SHA-256</th></tr></thead>
+<tbody>
+${pins}
+</tbody>
+</table></div></section>
+
+<section><h2>Memberships</h2>
+<div class="table-scroll"><table class="versions">
+<thead><tr><th>Element</th><th>Dictionary entry</th><th>Mandatory</th><th>Access</th></tr></thead>
+<tbody>
+${members}
+</tbody>
+</table></div></section>`;
+
+  return pageShell(`${title} — ${spec.version}`, path, body, {
+    alternateLd: `${path}/index.jsonld`,
+    description: `Proof of concept: DPP content specification ${spec.act} ${spec.version}, hosted by the material-identity dictionary. Not a content specification of the European Union.`,
+  });
+}
+
+const FILE_LABEL: Record<Exclude<SpecRole, 'dcat'>, string> = {
+  spec: 'Specification (JSON-LD, SHACL)',
+  context: 'Passport @context',
+  compressed: 'JSON Schema, compressed form',
+  full: 'JSON Schema, full form',
+};
+
+/** `/spec/<act>`: every hosted version of one act. */
+export function renderSeriesPage(act: string, versions: Array<{ spec: HostedSpec; summary: SpecSummary }>): string {
+  const rows = versions.map(({ spec, summary }) => `<tr>
+<td><a href="/spec/${esc(act)}/${esc(spec.version)}"><code>${esc(spec.version)}</code></a></td>
+<td>${esc(summary.title.en ?? '')}</td>
+<td>${esc(summary.issued ?? '')}</td>
+</tr>`).join('\n');
+  const body = `${pocBanner()}
+<h1>${esc(act)} — content specifications</h1>
+<p class="lede">Every hosted version of the <code>${esc(act)}</code> content specification. A passport always names one exact version; there is no "latest" alias to pin.</p>
+<div class="table-scroll"><table class="versions">
+<thead><tr><th>Version</th><th>Title</th><th>Issued</th></tr></thead>
+<tbody>
+${rows}
+</tbody>
+</table></div>
+<p>Machine-readable: <a href="/spec/${esc(act)}/index.jsonld">JSON-LD (DCAT dataset series)</a> · all specifications and dictionary releases in the <a href="/catalog">catalogue</a>.</p>`;
+  return pageShell(`${act} — content specifications`, `/spec/${act}`, body, {
+    alternateLd: `/spec/${act}/index.jsonld`,
+    description: `Proof of concept: all hosted versions of the ${act} DPP content specification.`,
+  });
+}
+
+/** `/catalog`: the DCAT catalogue as a page. */
+export function renderCatalogPage(releases: Array<{ tag: string; date: string }>, specs: Array<{ spec: HostedSpec; summary: SpecSummary }>): string {
+  const releaseRows = [...releases].sort((a, b) => a.tag.localeCompare(b.tag, 'en')).map((r) => `<tr>
+<td><a href="https://github.com/material-identity/dictionary/releases/tag/${esc(r.tag)}" rel="external"><code>${esc(r.tag)}</code></a></td>
+<td>${esc(r.date)}</td>
+</tr>`).join('\n');
+  const specRows = specs.map(({ spec, summary }) => `<tr>
+<td><a href="/spec/${esc(spec.act)}/${esc(spec.version)}">${esc(summary.title.en ?? spec.iri)}</a></td>
+<td><a href="/spec/${esc(spec.act)}"><code>${esc(spec.act)}</code></a></td>
+<td><code>${esc(spec.version)}</code></td>
+<td>${esc(summary.issued ?? '')}</td>
+</tr>`).join('\n');
+  const body = `${pocBanner()}
+<h1>Catalogue</h1>
+<p class="lede">The dictionary releases and the DPP content specifications this site hosts, as a <a href="https://www.w3.org/TR/vocab-dcat-3/" rel="external">DCAT</a> catalogue. Machine-readable: <a href="/catalog/index.jsonld">JSON-LD</a>.</p>
+<section><h2>Content specifications</h2>
+${specRows === '' ? '<p>No content specification is hosted yet.</p>' : `<div class="table-scroll"><table class="versions">
+<thead><tr><th>Specification</th><th>Act</th><th>Version</th><th>Issued</th></tr></thead>
+<tbody>
+${specRows}
+</tbody>
+</table></div>`}
+</section>
+<section><h2>Dictionary releases</h2>
+${releaseRows === '' ? '<p>No release in this build.</p>' : `<div class="table-scroll"><table class="versions">
+<thead><tr><th>Release</th><th>Date</th></tr></thead>
+<tbody>
+${releaseRows}
+</tbody>
+</table></div>`}
+</section>`;
+  return pageShell('Catalogue', '/catalog', body, {
+    alternateLd: '/catalog/index.jsonld',
+    description: 'Proof of concept: DCAT catalogue of the material-identity dictionary releases and hosted DPP content specifications.',
+  });
+}
+
+/** `/ns`: the mi: vocabulary, one anchor per term so `…/ns#<term>` lands on its definition. */
+export function renderVocabularyPage(terms: ReadonlyArray<readonly [term: string, kind: string, label: string, comment: string]>): string {
+  const rows = terms.map(([term, kind, label, comment]) => `<tr id="${esc(term)}">
+<td><code>mi:${esc(term)}</code></td>
+<td>${esc(kind)}</td>
+<td>${esc(label)}</td>
+<td>${esc(comment)}</td>
+</tr>`).join('\n');
+  const body = `${pocBanner()}
+<h1>Vocabulary</h1>
+<p class="lede">The local terms of this dictionary and of the content specifications it hosts, in the namespace <code>https://material-identity.eu/ns#</code>. Standard vocabularies (SKOS, DCTerms, DCAT, SHACL, QUDT) are used wherever one fits; a term is defined here only when none does.</p>
+<p>Machine-readable: <a href="/ns/index.ttl">Turtle</a> · <a href="/ns/index.jsonld">JSON-LD</a>. Both are also served at <code>/ns</code> itself, by content negotiation.</p>
+<div class="table-scroll"><table class="versions">
+<thead><tr><th>Term</th><th>Kind</th><th>Label</th><th>Definition</th></tr></thead>
+<tbody>
+${rows}
+</tbody>
+</table></div>`;
+  return pageShell('Vocabulary', '/ns', body, {
+    alternateLd: '/ns/index.jsonld',
+    description: 'Proof of concept: the mi: vocabulary of the material-identity dictionary and its DPP content specifications.',
   });
 }
