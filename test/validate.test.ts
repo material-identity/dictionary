@@ -11,9 +11,9 @@ test('runValidation reports OK for the green tree', () => {
   assert.equal(ok, true);
   assert.equal(lines.filter((l) => l.startsWith('FAIL')).length, 0);
   // load + checks 2–5 + the hosted-spec, security.txt and PGP key guards pass (a fixture tree carries none, which is
-  // green); checks 1 and 6 are skipped (fixture trees have no git context)
+  // green); checks 1 and 6 and the pinned-release check are skipped (fixture trees have no git context)
   assert.equal(lines.filter((l) => l.startsWith('ok')).length, 8);
-  assert.equal(lines.filter((l) => l.startsWith('skip')).length, 2);
+  assert.deepEqual(lines.filter((l) => l.startsWith('skip')).map((l) => l.replace(/ — .*$/, '')), ['skip    check 1', 'skip    spec', 'skip    check 6']);
 });
 
 test('runValidation reports failure with file and message for a red tree', () => {

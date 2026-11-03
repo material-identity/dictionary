@@ -26,8 +26,29 @@ export interface GitContext {
   readBaseFile: (relPath: string) => string | undefined;
 }
 
+/**
+ * Git's repository-local environment variables (`git rev-parse --local-env-vars`: GIT_DIR,
+ * GIT_WORK_TREE, GIT_INDEX_FILE, GIT_CONFIG_PARAMETERS, GIT_ALTERNATE_OBJECT_DIRECTORIES…), asked
+ * of git itself once rather than kept as a list here. Git exports them to hooks and to anything it
+ * spawns (`rebase --exec`, aliases), and each one overrides `-C <dir>`: inherited, they would point
+ * every git call at the repository that spawned us instead of the one named (code review of #136).
+ */
+let localEnvVars: string[] | undefined;
+function gitLocalEnvVars(): string[] {
+  localEnvVars ??= execFileSync('git', ['rev-parse', '--local-env-vars'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+    .split('\n').map((name) => name.trim()).filter((name) => name !== '');
+  return localEnvVars;
+}
+
+/** The current environment minus git's repository-local variables: what every git child gets. */
+export function gitEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const name of gitLocalEnvVars()) delete env[name];
+  return env;
+}
+
 function git(root: string, args: string[]): string {
-  return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: gitEnv() });
 }
 
 /**
@@ -188,13 +209,11 @@ export function getReleases(root: string): Map<string, Release> {
     if (!firstReleaseOf.has(sha)) {
       let release: Release | undefined;
       try {
-        // Earliest tag whose history contains the add-commit = the release that first shipped it.
-        const line = git(root, ['tag', '--contains', sha, '--sort=creatordate', '--format=%(refname:short) %(creatordate:short)'])
-          .split('\n')[0].trim();
-        if (line !== '') {
-          const [tag, date] = line.split(' ');
-          release = { tag, date };
-        }
+        // Earliest release tag whose history contains the add-commit = the release that first
+        // shipped it. Other tags (e.g. `draft-base`) are not releases and are skipped.
+        const hit = git(root, ['tag', '--contains', sha, '--sort=creatordate', '--format=%(refname:short) %(creatordate:short)'])
+          .split('\n').map((line) => line.trim().split(' ')).find(([tag, date]) => RELEASE_TAG.test(tag ?? '') && date !== undefined);
+        if (hit !== undefined) release = { tag: hit[0], date: hit[1] };
       } catch { /* no tags, or unreachable history — treated as not yet released */ }
       firstReleaseOf.set(sha, release);
     }

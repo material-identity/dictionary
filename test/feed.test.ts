@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DEF_PREFIX, type RepoModel } from '../scripts/lib/repo.ts';
 import { renderFeed } from '../scripts/lib/feed.ts';
-import { getAddedDates } from '../scripts/lib/git.ts';
+import { getAddedDates, gitEnv } from '../scripts/lib/git.ts';
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 
@@ -96,7 +96,7 @@ test('renderFeed: title/description text is XML-escaped', () => {
 // ------------------------------------------------------------------ getAddedDates (#56)
 
 const gitc = (cwd: string, ...args: string[]) =>
-  execFileSync('git', ['-C', cwd, '-c', 'user.email=test@test', '-c', 'user.name=test', '-c', 'commit.gpgsign=false', ...args], { stdio: 'pipe' });
+  execFileSync('git', ['-C', cwd, '-c', 'user.email=test@test', '-c', 'user.name=test', '-c', 'commit.gpgsign=false', ...args], { stdio: 'pipe', env: gitEnv() });
 
 test('getAddedDates: finds the real add-date, and specifically the *original* one across a draft -> published rename', () => {
   const root = mkdtempSync(join(tmpdir(), 'dict-feed-'));
@@ -108,7 +108,7 @@ test('getAddedDates: finds the real add-date, and specifically the *original* on
     gitc(root, 'commit', '-m', 'draft', '--date=2026-01-01T00:00:00');
 
     mkdirSync(join(root, 'published'));
-    execFileSync('git', ['-C', root, 'mv', 'drafts/x.yaml', 'published/x.yaml']);
+    execFileSync('git', ['-C', root, 'mv', 'drafts/x.yaml', 'published/x.yaml'], { env: gitEnv() });
     gitc(root, 'commit', '-m', 'publish (git sees this as a rename, not an add)', '--date=2026-06-01T00:00:00');
 
     // a later, unrelated modification must not shift the recorded add-date

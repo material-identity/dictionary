@@ -13,7 +13,7 @@
  */
 import { CANONICAL_BASE } from './repo.ts';
 import { ADMS, CC0, VOCABULARY } from './rdf.ts';
-import { type HostedSpec, summarize } from './spec.ts';
+import type { HostedSpec, SpecSummary } from './spec.ts';
 
 export const CATALOG_IRI = `${CANONICAL_BASE}/catalog`;
 export const releaseIri = (tag: string): string => `${CANONICAL_BASE}/release/${tag}`;
@@ -92,8 +92,14 @@ export function byAct(specs: HostedSpec[]): Map<string, HostedSpec[]> {
   return acts;
 }
 
+/** A hosted spec with its summary, read once per build (code review of #136: summarize runs SPARQL). */
+export interface SummarizedSpec {
+  spec: HostedSpec;
+  summary: SpecSummary;
+}
+
 /** /spec/<act>: every hosted version of one act, as a DCAT dataset series. */
-export function buildSeries(act: string, versions: HostedSpec[]): Record<string, unknown> {
+export function buildSeries(act: string, versions: SummarizedSpec[]): Record<string, unknown> {
   return {
     '@context': CONTEXT,
     '@id': seriesIri(act),
@@ -102,8 +108,7 @@ export function buildSeries(act: string, versions: HostedSpec[]): Record<string,
     'dcterms:description': langLiterals(POC_DESCRIPTION),
     ...POC,
     'mi:act': act,
-    'dcat:seriesMember': versions.map((spec) => {
-      const s = summarize(spec);
+    'dcat:seriesMember': versions.map(({ spec, summary: s }) => {
       const member: Record<string, unknown> = { '@id': spec.iri, 'dcat:version': spec.version };
       if (s.issued !== undefined) member['dcterms:issued'] = { '@value': s.issued, '@type': 'xsd:date' };
       const title = langLiterals(s.title);
@@ -111,7 +116,7 @@ export function buildSeries(act: string, versions: HostedSpec[]): Record<string,
       return member;
     }),
     // DCAT 3 versioning: the inverse of each spec's own dcat:isVersionOf.
-    'dcat:hasVersion': versions.map((spec) => ({ '@id': spec.iri })),
+    'dcat:hasVersion': versions.map(({ spec }) => ({ '@id': spec.iri })),
   };
 }
 

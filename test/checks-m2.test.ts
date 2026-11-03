@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadRepo } from '../scripts/lib/repo.ts';
 import { checkImmutability, checkMovePurity } from '../scripts/lib/checks.ts';
-import type { GitContext } from '../scripts/lib/git.ts';
+import { type GitContext, gitEnv } from '../scripts/lib/git.ts';
 import { runValidation } from '../scripts/validate.ts';
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
@@ -65,7 +65,7 @@ test('check 6 — pure move (only id differs) passes; edited move fails; withdra
 // ---------------------------------------------------------------- integration: real git repo
 
 const gitc = (cwd: string, ...args: string[]) =>
-  execFileSync('git', ['-C', cwd, '-c', 'user.email=test@test', '-c', 'user.name=test', '-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', ...args], { stdio: 'pipe' });
+  execFileSync('git', ['-C', cwd, '-c', 'user.email=test@test', '-c', 'user.name=test', '-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', ...args], { stdio: 'pipe', env: gitEnv() });
 
 test('integration — temp git repo: pure publish move green; edited move, tamper, delete red', () => {
   const root = mkdtempSync(join(tmpdir(), 'dict-validate-'));

@@ -820,7 +820,8 @@ ${members}
 </table></div></section>`;
 
   return pageShell(`${title} — ${spec.version}`, path, body, {
-    alternateLd: `${path}/index.jsonld`,
+    // The canonical IRI, which serves JSON-LD by default: index.jsonld is an origin detail (code review of #136).
+    alternateLd: path,
     description: `Proof of concept: DPP content specification ${spec.act} ${spec.version}, hosted by the material-identity dictionary. Not a content specification of the European Union.`,
   });
 }
@@ -850,7 +851,7 @@ ${rows}
 </table></div>
 <p>Machine-readable: <a href="/spec/${esc(act)}/index.jsonld">JSON-LD (DCAT dataset series)</a> · all specifications and dictionary releases in the <a href="/catalog">catalogue</a>.</p>`;
   return pageShell(`${act} — content specifications`, `/spec/${act}`, body, {
-    alternateLd: `/spec/${act}/index.jsonld`,
+    alternateLd: `/spec/${act}`,
     description: `Proof of concept: all hosted versions of the ${act} DPP content specification.`,
   });
 }
@@ -887,7 +888,7 @@ ${releaseRows}
 </table></div>`}
 </section>`;
   return pageShell('Catalogue', '/catalog', body, {
-    alternateLd: '/catalog/index.jsonld',
+    alternateLd: '/catalog',
     description: 'Proof of concept: DCAT catalogue of the material-identity dictionary releases and hosted DPP content specifications.',
   });
 }
@@ -911,7 +912,7 @@ ${rows}
 </tbody>
 </table></div>`;
   return pageShell('Vocabulary', '/ns', body, {
-    alternateLd: '/ns/index.jsonld',
+    alternateLd: '/ns',
     description: 'Proof of concept: the mi: vocabulary of the material-identity dictionary and its DPP content specifications.',
   });
 }

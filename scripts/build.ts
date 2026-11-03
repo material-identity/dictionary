@@ -13,8 +13,8 @@ import { renderFeed } from './lib/feed.ts';
 import { citation } from './lib/cite.ts';
 import { renderTurtle, renderVocabularyJsonLd, renderVocabularyTurtle, vocabularyTerms } from './lib/rdf.ts';
 import { getAddedDates, getReleases, getReleaseTags } from './lib/git.ts';
-import { buildCatalog, buildSeries, byAct, jsonLd } from './lib/dcat.ts';
-import { type HostedSpec, loadSpecs, summarize } from './lib/spec.ts';
+import { buildCatalog, buildSeries, byAct, jsonLd, type SummarizedSpec } from './lib/dcat.ts';
+import { loadSpecs, summarize } from './lib/spec.ts';
 
 const LIB_DIR = dirname(fileURLToPath(import.meta.url));
 // The schema is one canonical file for the whole site, independent of which content tree
@@ -101,8 +101,8 @@ export function build(root: string, out: string): BuildResult {
   const specs = emitSpecs(root, out, refs);
   const tags = getReleaseTags(root);
   mkdirSync(join(out, 'catalog'), { recursive: true });
-  writeFileSync(join(out, 'catalog', 'index.jsonld'), jsonLd(buildCatalog(tags, specs)));
-  writeFileSync(join(out, 'catalog', 'index.html'), renderCatalogPage(tags, specs.map((spec) => ({ spec, summary: summarize(spec) }))));
+  writeFileSync(join(out, 'catalog', 'index.jsonld'), jsonLd(buildCatalog(tags, specs.map(({ spec }) => spec))));
+  writeFileSync(join(out, 'catalog', 'index.html'), renderCatalogPage(tags, specs));
   return { entries, out };
 }
 
@@ -110,24 +110,28 @@ export function build(root: string, out: string): BuildResult {
  * Hosted content specifications (#135): `spec/<act>/<version>/` → `site/spec/<act>/<version>/`,
  * every served file byte-identical under the name the Worker maps its IRI onto, plus an HTML page
  * per spec and a JSON-LD + HTML series index per act. Refuses a spec tree that does not load.
+ * Each spec is summarized once here and the summary passed on to every page that shows it.
  */
-export function emitSpecs(root: string, out: string, refs: RefIndex): HostedSpec[] {
+export function emitSpecs(root: string, out: string, refs: RefIndex): SummarizedSpec[] {
   const { specs, issues } = loadSpecs(root);
   if (issues.length > 0) {
     throw new Error(`refusing to build from an unloadable spec/ tree:\n${issues.map((i) => `${i.file}: ${i.message}`).join('\n')}`);
   }
+  const summaries = new Map(specs.map((spec) => [spec, summarize(spec)]));
+  const summarized = (spec: (typeof specs)[number]): SummarizedSpec => ({ spec, summary: summaries.get(spec)! });
   for (const spec of specs) {
     const dir = join(out, spec.relDir);
     mkdirSync(dir, { recursive: true });
     for (const file of spec.files) if (file.served !== undefined) writeFileSync(join(dir, file.served), file.bytes);
-    writeFileSync(join(dir, 'index.html'), renderSpecPage(spec, summarize(spec), refs));
+    writeFileSync(join(dir, 'index.html'), renderSpecPage(spec, summaries.get(spec)!, refs));
   }
   for (const [act, versions] of byAct(specs)) {
     const dir = join(out, 'spec', act);
-    writeFileSync(join(dir, 'index.jsonld'), jsonLd(buildSeries(act, versions)));
-    writeFileSync(join(dir, 'index.html'), renderSeriesPage(act, versions.map((spec) => ({ spec, summary: summarize(spec) }))));
+    const members = versions.map(summarized);
+    writeFileSync(join(dir, 'index.jsonld'), jsonLd(buildSeries(act, members)));
+    writeFileSync(join(dir, 'index.html'), renderSeriesPage(act, members));
   }
-  return specs;
+  return specs.map(summarized);
 }
 
 /** Every examples/content-specifications/*.json, sorted, with the SHA-256 of its exact bytes. */

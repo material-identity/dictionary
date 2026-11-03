@@ -8,13 +8,14 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import oxigraph from 'oxigraph';
 import { build, emitSpecs } from '../scripts/build.ts';
-import { checkImmutability, checkSpecs, foreignSubjects, runChecks } from '../scripts/lib/checks.ts';
+import { catalogStatements, checkImmutability, checkSpecReleases, checkSpecs, foreignSubjects, runChecks } from '../scripts/lib/checks.ts';
 import { buildCatalog, buildSeries, embeddedDataset, findDatasetNode } from '../scripts/lib/dcat.ts';
-import { createGitContext, getReleaseTags, isGitContext, parseRawDiff } from '../scripts/lib/git.ts';
+import { createGitContext, getReleases, getReleaseTags, gitEnv, isGitContext, parseRawDiff } from '../scripts/lib/git.ts';
 import { renderVocabularyJsonLd, renderVocabularyTurtle, vocabularyTerms } from '../scripts/lib/rdf.ts';
 import { loadRepo } from '../scripts/lib/repo.ts';
 import { isWebIri, pocBanner, RefIndex, renderCatalogPage, renderSpecPage, renderVocabularyPage } from '../scripts/lib/render.ts';
-import { compareVersions, loadSpecs, parseJsonLd, summarize } from '../scripts/lib/spec.ts';
+import { compareVersions, distributionPins, loadSpecs, membershipReferences, parseJsonLd, summarize } from '../scripts/lib/spec.ts';
+import { runValidation } from '../scripts/validate.ts';
 
 // Hosted content specifications (#135). The fixture is a small spec authored for these tests
 // under test/fixtures/green/spec/ — never under the repo's own spec/, which only ever holds
@@ -164,10 +165,16 @@ test('spec check: every pin must be a published entry, carry a digest, and match
       'spec/demo/v0.0.1/demo.jsonld: pinned https://material-identity.eu/def/00000000-0000-4000-8000-000000000000 is not an entry in published/',
       'spec/demo/v0.0.1/demo.jsonld: pinned https://material-identity.eu/def/7a1e2c3d-4b5f-4a6e-9c8d-1f2e3d4c5b6a carries no spdx:checksum — a pin without a digest is never publishable',
       'spec/demo/v0.0.1/demo.jsonld: pinned https://material-identity.eu/def/c38a85eb-1a37-416d-ab21-7ddcc599754d has checksum 00, but /def/c38a85eb-1a37-416d-ab21-7ddcc599754d serves 51a28c90bcf24fc116251ef96216a331f278556bf92935dda49f345971cfe075',
+      // the re-pointed pin left steelmakingRoute unpinned, and pins nothing a membership uses
+      'spec/demo/v0.0.1/demo.jsonld: membership reference https://material-identity.eu/def/4eae703a-fa15-4118-8bc4-7926a22a12fb is not pinned in dcterms:requires — nothing holds that entry to a digest',
+      'spec/demo/v0.0.1/demo.jsonld: pinned https://material-identity.eu/def/00000000-0000-4000-8000-000000000000 is used by no membership (sh:path, mi:itemType, mi:accessCategory) — every pin is a reference, or it is not a pin',
     ]);
   });
   withTree((dir) => edit(dir, 'demo.jsonld', (t) => t.replace(/"pin": \[[\s\S]*?\n  \],/, '"pin": [],')), (root) => {
-    assert.deepEqual(specIssues(root), ['spec/demo/v0.0.1/demo.jsonld: pins no dictionary entry (dcterms:requires → dcat:Distribution with a dcat:downloadURL)']);
+    const [none, ...unpinned] = specIssues(root);
+    assert.equal(none, 'spec/demo/v0.0.1/demo.jsonld: pins no dictionary entry (dcterms:requires → dcat:Distribution with a dcat:downloadURL)');
+    assert.equal(unpinned.length, 4, 'and every membership reference is then unpinned');
+    assert.ok(unpinned.every((i) => / is not pinned in dcterms:requires /.test(i)));
   });
 });
 
@@ -281,7 +288,7 @@ test('git diff --raw is parsed with the new mode, and a real added symlink fails
 
   const root = mkdtempSync(join(tmpdir(), 'spec-git-'));
   const gitc = (...args: string[]): void => {
-    execFileSync('git', ['-C', root, '-c', 'user.email=test@test', '-c', 'user.name=test', '-c', 'commit.gpgsign=false', ...args], { stdio: 'pipe' });
+    execFileSync('git', ['-C', root, '-c', 'user.email=test@test', '-c', 'user.name=test', '-c', 'commit.gpgsign=false', ...args], { stdio: 'pipe', env: gitEnv() });
   };
   try {
     gitc('init', '-b', 'main');
@@ -387,7 +394,7 @@ test('the build serves every spec file byte-identical at the origin path the Wor
     const html = readFileSync(join(dst, 'index.html'), 'utf8');
     assert.ok(html.includes(pocBanner()), 'the spec page carries the PoC banner');
     assert.match(html, /<link rel="canonical" href="https:\/\/material-identity\.eu\/spec\/demo\/v0\.0\.1">/);
-    assert.match(html, /<link rel="alternate" type="application\/ld\+json" href="\/spec\/demo\/v0\.0\.1\/index\.jsonld">/);
+    assert.match(html, /<link rel="alternate" type="application\/ld\+json" href="\/spec\/demo\/v0\.0\.1">/, 'the JSON-LD alternate is the canonical IRI, never the origin file');
     assert.match(html, /<h1>Demo content specification — test fixture \(PoC\)<\/h1>/);
     assert.match(html, /<p class="lede" lang="de">Demo-Inhaltsspezifikation — Testdatensatz \(PoC\)<\/p>/);
     assert.match(html, /<a href="\/ns#ProofOfConcept">mi:ProofOfConcept<\/a>/);
@@ -490,7 +497,7 @@ test('the catalogue lists releases, series and specs; it parses, is PoC-marked a
 
 test('the series lists each version once, issued date and title from the spec itself', () => {
   const { specs } = loadSpecs(GREEN);
-  const doc = buildSeries('demo', specs);
+  const doc = buildSeries('demo', specs.map((spec) => ({ spec, summary: summarize(spec) })));
   const [member] = doc['dcat:seriesMember'] as Array<Record<string, unknown>>;
   assert.deepEqual(member['dcterms:issued'], { '@value': '2026-11-02', '@type': 'xsd:date' });
   assert.equal(member['dcat:version'], 'v0.0.1');
@@ -555,4 +562,204 @@ test('/ns as Turtle and as JSON-LD parse to the same graph, PoC-marked; the HTML
   assert.ok(html.includes(pocBanner()));
   for (const t of NEW_TERMS) assert.ok(html.includes(`<tr id="${t}">`), `/ns#${t} has an anchor`);
   assert.match(html, /<link rel="canonical" href="https:\/\/material-identity\.eu\/ns">/);
+});
+
+// ------------------------------------------------------------------ code review of #136
+
+const DEF = 'https://material-identity.eu/def';
+const ROUTE = `${DEF}/4eae703a-fa15-4118-8bc4-7926a22a12fb`;
+const PRESSURE = `${DEF}/c38a85eb-1a37-416d-ab21-7ddcc599754d`;
+const UNKNOWN = `${DEF}/00000000-0000-4000-8000-000000000000`;
+
+test('spec check: every membership reference is pinned, and every pin is used by a membership', () => {
+  assert.deepEqual(membershipReferences(loadSpecs(GREEN).specs[0].graph), [
+    `${DEF}/2f3de2bb-0588-4513-bfc3-41d021815a81`, ROUTE, `${DEF}/7a1e2c3d-4b5f-4a6e-9c8d-1f2e3d4c5b6a`, PRESSURE,
+  ], 'sh:path of every membership, nested ones included, and the access category');
+
+  // a membership re-pointed at an unpublished, unpinned entry, plus an unpinned item type: the
+  // page would link a /def/ that 404s, and nothing holds either to a digest
+  withTree((dir) => edit(dir, 'demo.jsonld', (t) => t.replace(
+    '"path": "def:4eae703a-fa15-4118-8bc4-7926a22a12fb", "nodeKind"',
+    '"path": "def:00000000-0000-4000-8000-000000000000", "mi:itemType": { "@id": "def:50e8081d-3319-4cd5-8edb-a26cb6bd8078" }, "nodeKind"')), (root) => {
+    assert.deepEqual(specIssues(root), [
+      `spec/demo/v0.0.1/demo.jsonld: membership reference ${UNKNOWN} is not pinned in dcterms:requires — nothing holds that entry to a digest`,
+      `spec/demo/v0.0.1/demo.jsonld: membership reference ${DEF}/50e8081d-3319-4cd5-8edb-a26cb6bd8078 is not pinned in dcterms:requires — nothing holds that entry to a digest`,
+      `spec/demo/v0.0.1/demo.jsonld: pinned ${ROUTE} is used by no membership (sh:path, mi:itemType, mi:accessCategory) — every pin is a reference, or it is not a pin`,
+    ]);
+  });
+});
+
+test('spec check: a second, conflicting checksum for the same pinned entry fails, whichever comes first', () => {
+  const wrong = `{ "@type": "dcat:Distribution", "entry": "def:c38a85eb-1a37-416d-ab21-7ddcc599754d", "checksum": { "sha256": "00" } }`;
+  const expected = [`spec/demo/v0.0.1/demo.jsonld: pinned ${PRESSURE} has checksum 00, but /def/c38a85eb-1a37-416d-ab21-7ddcc599754d serves 51a28c90bcf24fc116251ef96216a331f278556bf92935dda49f345971cfe075`];
+  for (const place of ['first', 'last'] as const) {
+    withTree((dir) => edit(dir, 'demo.jsonld', (t) => (place === 'first'
+      ? t.replace('"pin": [', `"pin": [\n    ${wrong},`)
+      : t.replace(/(\n {2}\],\n\n {2}"closed")/, `,\n    ${wrong}$1`))), (root) => {
+      assert.deepEqual(specIssues(root), expected, `conflicting pin placed ${place}`);
+      const pins = distributionPins(loadSpecs(root).specs[0].graph, IRI).filter((p) => p.url === PRESSURE);
+      assert.deepEqual(pins.map((p) => p.sha256), ['00', '51a28c90bcf24fc116251ef96216a331f278556bf92935dda49f345971cfe075']);
+    });
+  }
+});
+
+test('spec check: dcat:isVersionOf must be the act\'s series, in the spec and in its record', () => {
+  const other = (t: string): string => t.replace('"dcat:isVersionOf": { "@id": "https://material-identity.eu/spec/demo" }', '"dcat:isVersionOf": { "@id": "https://example.org/spec/other" }');
+  withTree((dir) => { edit(dir, 'demo.jsonld', other); edit(dir, 'demo.dcat.jsonld', other); }, (root) => {
+    assert.deepEqual(specIssues(root), [
+      'spec/demo/v0.0.1/demo.jsonld: dcat:isVersionOf is not exactly <https://material-identity.eu/spec/demo>, the series /spec/demo lists it in',
+      'spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record\'s dcat:isVersionOf is not exactly <https://material-identity.eu/spec/demo>',
+    ]);
+  });
+});
+
+test('the DCAT record is checked as /catalog serves it: a scoped context the embedding drops cannot vouch for it', () => {
+  const [green] = loadSpecs(GREEN).specs;
+  const own = catalogStatements(green);
+  assert.ok(ask(own, `<${IRI}> a <http://www.w3.org/ns/dcat#Dataset> ; <http://www.w3.org/ns/adms#status> <https://material-identity.eu/ns#ProofOfConcept> .`));
+  assert.ok(!ask(own, '<https://material-identity.eu/catalog> ?p ?o'), 'the catalogue\'s own statements are not the record\'s');
+
+  // `st` means adms:status only inside the property-scoped context of `dataset`; /catalog embeds the
+  // node with the record's top-level context, where `st` is something else entirely
+  withTree((dir) => edit(dir, 'demo.dcat.jsonld', (t) => t
+    .replace('"mi": "https://material-identity.eu/ns#"', '"mi": "https://material-identity.eu/ns#",\n    "st": "https://example.org/notStatus",\n    "dataset": { "@id": "dcat:dataset", "@context": { "st": "adms:status" } }')
+    .replace('"dcat:dataset": {', '"dataset": {')
+    .replace('"adms:status": { "@id": "mi:ProofOfConcept" }', '"st": { "@id": "mi:ProofOfConcept" }')), (root) => {
+    const [spec] = loadSpecs(root).specs;
+    assert.ok(ask(spec.dcatGraph, `<${IRI}> <http://www.w3.org/ns/adms#status> <https://material-identity.eu/ns#ProofOfConcept>`), 'the record read on its own says PoC');
+    assert.deepEqual(specIssues(root), ['spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record does not mark the spec exactly mi:ProofOfConcept']);
+  });
+});
+
+test('checkSpecReleases: the pinned release is an existing tag that already ships every pinned entry', () => {
+  const load = loadSpecs(GREEN);
+  const repo = loadRepo(GREEN);
+  const tag = (t: string): { tag: string; date: string } => ({ tag: t, date: `${t.slice(1).replaceAll('.', '-')}` });
+  const tags = [tag('v2026.08.28'), tag('v2026.09.30')];
+  const all = (t: string): Map<string, { tag: string; date: string }> => new Map(repo.published.map((f) => [f.relPath, tag(t)]));
+  assert.deepEqual(checkSpecReleases(load, repo, tags, all('v2026.08.28')), []);
+
+  const file = 'spec/demo/v0.0.1/demo.jsonld';
+  assert.deepEqual(checkSpecReleases(load, repo, [tag('v2026.09.30')], all('v2026.08.28')).map((i) => `${i.file}: ${i.message}`),
+    [`${file}: pinned release v2026.08.28 is not a release tag of this repository`]);
+
+  const later = all('v2026.08.28');
+  later.set('published/c38a85eb-1a37-416d-ab21-7ddcc599754d.yaml', tag('v2026.09.30'));
+  later.delete('published/4eae703a-fa15-4118-8bc4-7926a22a12fb.yaml');
+  assert.deepEqual(checkSpecReleases(load, repo, tags, later).map((i) => i.message), [
+    `pinned ${ROUTE} is not in release v2026.08.28 (not released yet) — a spec pins entries of the release it names`,
+    `pinned ${PRESSURE} is not in release v2026.08.28 (first shipped in v2026.09.30) — a spec pins entries of the release it names`,
+  ]);
+
+  const release = (change: (t: string) => string): string[] => {
+    let messages: string[] = [];
+    withTree((dir) => edit(dir, 'demo.jsonld', change), (root) => {
+      messages = checkSpecReleases(loadSpecs(root), loadRepo(root), tags, all('v2026.08.28')).map((i) => i.message);
+    });
+    return messages;
+  };
+  const pinLine = '{ "@id": "https://material-identity.eu/release/v2026.08.28", "@type": "dcat:Dataset", "dcat:version": "v2026.08.28" },';
+  assert.deepEqual(release((t) => t.replace(pinLine, '')), ['pins 0 dictionary releases — exactly one dcterms:requires dcat:Dataset with a dcat:version is required']);
+  assert.deepEqual(release((t) => t.replace(pinLine, `${pinLine} { "@id": "https://material-identity.eu/release/v2026.09.30", "@type": "dcat:Dataset", "dcat:version": "v2026.09.30" },`)),
+    ['pins 2 dictionary releases — exactly one dcterms:requires dcat:Dataset with a dcat:version is required']);
+  assert.deepEqual(release((t) => t.replace('"dcat:version": "v2026.08.28" }', '"dcat:version": "v2099.01.01" }')),
+    ['pinned release https://material-identity.eu/release/v2026.08.28 (dcat:version v2099.01.01) is not a vYYYY.MM.DD release at https://material-identity.eu/release/v2099.01.01']);
+  assert.deepEqual(release((t) => t.replace('"dcat:version": "v2026.08.28" }', '"dcat:version": "latest" }')),
+    ['pinned release https://material-identity.eu/release/v2026.08.28 (dcat:version latest) is not a vYYYY.MM.DD release at https://material-identity.eu/release/latest']);
+});
+
+test('validate checks the pinned release against real tags; skipped with a notice without git or without tags', () => {
+  const root = mkdtempSync(join(tmpdir(), 'spec-release-'));
+  const gitc = (...args: string[]): void => {
+    execFileSync('git', ['-C', root, '-c', 'user.email=test@test', '-c', 'user.name=test', '-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', ...args], { stdio: 'pipe', env: gitEnv() });
+  };
+  const releaseLine = (): string => runValidation(root, { base: 'main' }).lines.find((l) => l.includes('spec — pinned dictionary release'))!;
+  try {
+    cpSync(GREEN, root, { recursive: true });
+    // the maximum-pressure entry ships only after the release the spec pins
+    const late = 'published/c38a85eb-1a37-416d-ab21-7ddcc599754d.yaml';
+    renameSync(join(root, late), join(root, 'late.yaml'));
+    gitc('init', '-b', 'main');
+    gitc('add', '-A');
+    gitc('commit', '-m', 'base');
+    assert.match(releaseLine(), /^skip {4}spec — pinned dictionary release — no vYYYY\.MM\.DD release tag in this clone/);
+
+    gitc('tag', 'v2026.08.28');
+    gitc('tag', 'draft-base'); // not a release: never counted as one
+    renameSync(join(root, 'late.yaml'), join(root, late));
+    gitc('add', '-A');
+    gitc('commit', '-m', 'late entry');
+    const run = runValidation(root, { base: 'main' });
+    assert.equal(run.ok, false);
+    assert.ok(run.lines.includes(`        spec/demo/v0.0.1/demo.jsonld: pinned ${PRESSURE} is not in release v2026.08.28 (not released yet) — a spec pins entries of the release it names`), run.lines.join('\n'));
+    assert.equal(getReleases(root).get(late), undefined);
+
+    gitc('tag', 'v2026.09.30');
+    assert.equal(getReleases(root).get(late)?.tag, 'v2026.09.30');
+    assert.match(releaseLine(), /^FAIL {4}spec — pinned dictionary release/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+  // a fixture tree has no git context: skipped, never silently passed
+  assert.match(runValidation(GREEN).lines.find((l) => l.includes('pinned dictionary release'))!, /^skip {4}.*no git context/);
+});
+
+test('git children never inherit GIT_DIR and friends: the -C repository is the one used', () => {
+  const root = mkdtempSync(join(tmpdir(), 'spec-gitenv-'));
+  const bogus = join(root, 'not-a-repo');
+  const saved = { GIT_DIR: process.env.GIT_DIR, GIT_WORK_TREE: process.env.GIT_WORK_TREE };
+  const gitc = (...args: string[]): string => execFileSync('git', ['-C', root, '-c', 'user.email=test@test', '-c', 'user.name=test', '-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', ...args], { encoding: 'utf8', stdio: 'pipe', env: gitEnv() });
+  try {
+    process.env.GIT_DIR = bogus;
+    process.env.GIT_WORK_TREE = bogus;
+    // git's own list, not a hand-kept one: it includes the variables the hook used to miss
+    for (const v of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_CONFIG_PARAMETERS', 'GIT_ALTERNATE_OBJECT_DIRECTORIES']) assert.ok(!(v in gitEnv()), v);
+    // what an unscrubbed child would do: git goes to GIT_DIR, not to -C
+    assert.throws(() => execFileSync('git', ['-C', root, 'rev-parse', '--git-dir'], { stdio: 'pipe' }));
+
+    gitc('init', '-b', 'main');
+    writeFileSync(join(root, 'README.md'), 'x\n');
+    gitc('add', '-A');
+    gitc('commit', '-m', 'base');
+    gitc('tag', 'v2026.01.02');
+    assert.equal(gitc('rev-parse', '--git-dir').trim(), '.git', 'the test helper used the temp repo');
+    assert.deepEqual(getReleaseTags(root).map((t) => t.tag), ['v2026.01.02'], 'and so did scripts/lib/git.ts');
+  } finally {
+    for (const [k, v] of Object.entries(saved)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('each spec is summarized once and the summary is what every page shows', () => {
+  const [spec] = loadSpecs(GREEN).specs;
+  const summary = { ...summarize(spec), title: { en: 'Passed on' }, issued: '2000-01-01' };
+  const [member] = buildSeries('demo', [{ spec, summary }])['dcat:seriesMember'] as Array<Record<string, unknown>>;
+  assert.deepEqual(member['dcterms:issued'], { '@value': '2000-01-01', '@type': 'xsd:date' });
+  assert.deepEqual(member['dcterms:title'], [{ '@value': 'Passed on', '@language': 'en' }]);
+
+  const out = mkdtempSync(join(tmpdir(), 'dict-site-'));
+  try {
+    const emitted = emitSpecs(GREEN, out, new RefIndex(loadRepo(GREEN)));
+    assert.deepEqual(emitted.map(({ spec: s }) => s.iri), [IRI]);
+    assert.deepEqual(emitted[0].summary, summarize(spec));
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+});
+
+test('rel=alternate JSON-LD links name the canonical IRIs, never the origin index.jsonld', () => {
+  const out = mkdtempSync(join(tmpdir(), 'dict-site-'));
+  try {
+    build(GREEN, out);
+    for (const [page, iri] of [['spec/demo/v0.0.1', '/spec/demo/v0.0.1'], ['spec/demo', '/spec/demo'], ['catalog', '/catalog'], ['ns', '/ns']]) {
+      const html = readFileSync(join(out, page, 'index.html'), 'utf8');
+      assert.ok(html.includes(`<link rel="alternate" type="application/ld+json" href="${iri}">`), `${page} alternate`);
+      assert.ok(!/rel="alternate"[^>]*index\.jsonld/.test(html), `${page} advertises no origin file`);
+    }
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
 });

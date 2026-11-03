@@ -230,16 +230,32 @@ export interface Pin {
   sha256?: string;
 }
 
-/** `dcterms:requires` → distributions (pinned entries) of the subject. */
+/**
+ * `dcterms:requires` → distributions (pinned entries) of the subject: one Pin per distinct
+ * (entry, checksum) pair, sorted by entry then checksum. Every checksum stated for an entry is kept,
+ * so a second, conflicting digest is checked like the first instead of whichever SPARQL returned
+ * first (code review of #136); a distribution without one appears with `sha256` undefined.
+ */
 export function distributionPins(store: oxigraph.Store, subject: string, predicate = 'dcterms:requires'): Pin[] {
   const rows = select(store, `<${subject}> ${predicate} ?d . ?d dcat:downloadURL ?u . OPTIONAL { ?d spdx:checksum ?c . ?c spdx:checksumValue ?sum }`);
   const pins = new Map<string, Pin>();
   for (const row of rows) {
     const url = row.get('u')!.value;
     const sha256 = row.get('sum')?.value;
-    if (!pins.has(url) || (sha256 !== undefined && pins.get(url)!.sha256 === undefined)) pins.set(url, { url, sha256 });
+    pins.set(`${url} ${sha256 ?? ''}`, { url, sha256 });
   }
-  return [...pins.values()].sort((a, b) => a.url.localeCompare(b.url, 'en'));
+  return [...pins.values()].sort((a, b) => a.url.localeCompare(b.url, 'en') || (a.sha256 ?? '').localeCompare(b.sha256 ?? '', 'en'));
+}
+
+/**
+ * Every dictionary reference the spec's memberships make — `sh:path` (when an IRI), `mi:itemType`
+ * and `mi:accessCategory` of each shape carrying an `mi:elementId` — sorted and distinct. The same
+ * set the schema repo's publication gate requires to equal the pins (JsonLdGates: "every reference
+ * is pinned, every pin is used").
+ */
+export function membershipReferences(store: oxigraph.Store): string[] {
+  const rows = select(store, `?p mi:elementId ?id . { ?p sh:path ?r } UNION { ?p mi:itemType ?r } UNION { ?p mi:accessCategory ?r } FILTER(isIRI(?r))`);
+  return [...new Set(rows.map((r) => r.get('r')!.value))].sort();
 }
 
 export interface Membership {

@@ -143,11 +143,16 @@ section for the full explanation).
   dictionary releases from git tags + each spec's own DCAT record, embedded with its context so its
   checksums stay as generated) and the `/spec/<act>` series. The unnumbered `spec` check refuses bad
   layout, a symlink anywhere under `spec/` (lstat; check 1 also refuses git mode 120000/160000 additions),
-  unparseable JSON-LD, a spec whose status/licence is not exactly PoC/CC0, an `@id`/version/act that
-  disagrees with its path, a pin that is not in `published/` or whose digest differs from the served
-  `/def/<uuid>.json`, a served file without a checksummed DCAT distribution or a checksum that differs
-  from the hosted bytes, and a DCAT record that states anything about a subject other than its spec
-  (or the spec's `#fragments`). The spec page links only http(s) IRIs; anything else renders as text. The test fixture lives in
+  unparseable JSON-LD, a spec whose status/licence is not exactly PoC/CC0, an `@id`/version/act/`dcat:isVersionOf`
+  that disagrees with its path, a membership reference (`sh:path`, `mi:itemType`, `mi:accessCategory`) that
+  is not pinned or a pin no membership uses, a pin that is not in `published/` or any of whose digests differs
+  from the served `/def/<uuid>.json`, a served file without a checksummed DCAT distribution or a checksum that
+  differs from the hosted bytes, and a DCAT record that states anything about a subject other than its spec
+  (or the spec's `#fragments`) — the record checked as `/catalog` serves it, not as parsed on its own. A
+  sibling `spec release` check (git + release tags; skipped without either) requires the one pinned release
+  to be an existing `vYYYY.MM.DD` tag that already ships every pinned entry. Every git child process drops
+  git's `--local-env-vars` (`gitEnv()` in `lib/git.ts`; test helpers too), so a hook's `GIT_DIR` never
+  redirects a test's throwaway repo onto this one. The spec page links only http(s) IRIs; anything else renders as text. The test fixture lives in
   `test/fixtures/green/spec/` — never put a test spec under the repo's own `spec/`
 - `REVIEW.md` — what reviewers check beyond CI; read it before reviewing any publish PR
 - `standards/` — local-only licensed docs; only its README is committed
