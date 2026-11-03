@@ -10,9 +10,10 @@ import { validate as uuidValidate, version as uuidVersion } from 'uuid';
 import { DEF_PREFIX, type RepoFile, type RepoModel, type ValidationIssue } from './repo.ts';
 import type { DiffEntry, GitContext } from './git.ts';
 import { canonicalJson } from './emit.ts';
-import { embeddedDataset } from './dcat.ts';
-import { CC0 } from './rdf.ts';
-import { ask, distributionPins, loadSpecs, type SpecLoad } from './spec.ts';
+import { CATALOG_IRI, embeddedDataset } from './dcat.ts';
+import { CC0, VOCABULARY } from './rdf.ts';
+import type oxigraph from 'oxigraph';
+import { ask, distributionPins, loadSpecs, parseJsonLd, select, type HostedSpec, type SpecLoad } from './spec.ts';
 
 // ajv/ajv-formats ship CJS; under native ESM the class may sit on .default or be the export itself.
 const Ajv2019 = (Ajv2019Module as unknown as { default?: typeof Ajv2019Module }).default ?? Ajv2019Module;
@@ -291,6 +292,10 @@ export function checkPgpKey(root: string, now: Date = new Date(), horizonDays = 
   return pgpKeyExpiryIssues(colons, now, horizonDays).map((message) => ({ check, file, message }));
 }
 
+const POC = `${VOCABULARY}#ProofOfConcept`;
+const REGULAR_FILE = '100644';
+const EXECUTABLE_FILE = '100755';
+
 /**
  * Check 1 — immutability (R6): only additions are allowed under published/, and under spec/ — a
  * hosted content specification is served immutable, so a change is a new contract version (#135).
@@ -300,6 +305,16 @@ export function checkImmutability(diff: DiffEntry[]): ValidationIssue[] {
   for (const entry of diff) {
     const spec = entry.path.startsWith('spec/');
     if (!spec && !entry.path.startsWith('published/')) continue;
+    if (entry.status === 'A' && entry.mode !== undefined && entry.mode !== REGULAR_FILE && entry.mode !== EXECUTABLE_FILE) {
+      // A symlink (120000) or submodule (160000) is "added" once and then changes whatever it
+      // points at without touching this path again — add-only would hold in name only.
+      issues.push({
+        check: '1 immutability',
+        file: entry.path,
+        message: `added with git mode ${entry.mode}, not as a regular file — a symlink or submodule under ${spec ? 'spec/' : 'published/'} would let its content change without a diff here`,
+      });
+      continue;
+    }
     if (entry.status === 'A') continue;
     const verb = entry.status === 'D' ? 'deleted' : entry.status === 'M' ? 'modified' : `changed (${entry.status})`;
     issues.push({
@@ -367,12 +382,44 @@ export function checkMovePurity(repo: RepoModel, git: GitContext): ValidationIss
 }
 
 /**
+ * The values of `predicate` on `subject` are exactly `[expected]`. A bare ASK would only prove the
+ * expected value is among them, and the page then shows whichever one sorts first — a second
+ * licence or status (say a `JAVASCRIPT:` IRI) would ride along unchecked (security review of #136).
+ */
+function exactly(store: oxigraph.Store, subject: string, predicate: string, expected: string): boolean {
+  const values = new Set(select(store, `<${subject}> ${predicate} ?v`).map((r) => `${r.get('v')!.termType}:${r.get('v')!.value}`));
+  return values.size === 1 && values.has(`NamedNode:${expected}`);
+}
+
+/** The spec itself, or one of its `#fragment` nodes (the record's distributions). */
+const aboutSpec = (spec: HostedSpec, iri: string): boolean => iri === spec.iri || iri.startsWith(`${spec.iri}#`);
+
+/**
+ * Subjects other than the spec (or its #fragments) that the record's embedded dataset node makes
+ * statements about. /catalog merges that node as written, so a nested node, an `@reverse` or an
+ * `@included` could otherwise put triples about entries, releases or other specs into the catalogue.
+ * Blank nodes are local to the record and pass; anything in a named graph is reported too.
+ */
+export function foreignSubjects(spec: HostedSpec): string[] {
+  const node = embeddedDataset(spec);
+  if (node === undefined) return [];
+  const store = parseJsonLd(JSON.stringify(node), CATALOG_IRI);
+  const foreign = new Set<string>();
+  for (const q of store.match(null, null, null, null)) {
+    if (q.graph.termType !== 'DefaultGraph') foreign.add(`graph ${q.graph.value}`);
+    else if (q.subject.termType === 'NamedNode' && !aboutSpec(spec, q.subject.value)) foreign.add(q.subject.value);
+  }
+  return [...foreign].sort();
+}
+
+/**
  * Hosted content specifications (#135). This repo hosts what material-identity/schema generated
  * and does not re-validate content (design §7.2 step 4) — but it refuses to serve, as immutable,
  * a file that is not what it claims to be: JSON-LD that does not parse with an inline context, a
  * spec that is not marked as a proof of concept or not CC0, an id that disagrees with where it is
  * served, a pin to an entry this dictionary has not published (or whose served bytes differ from
- * the pinned digest), or a DCAT record whose checksums do not match the bytes served here.
+ * the pinned digest), or a DCAT record that leaves a served file without a matching checksum or
+ * states anything about a subject other than its spec.
  */
 export function checkSpecs(load: SpecLoad, repo: RepoModel): ValidationIssue[] {
   const issues: ValidationIssue[] = [...load.issues];
@@ -386,8 +433,8 @@ export function checkSpecs(load: SpecLoad, repo: RepoModel): ValidationIssue[] {
     const s = `<${spec.iri}>`;
 
     if (!ask(g, `${s} a mi:ContentSpecification`)) add(`no node ${spec.iri} typed mi:ContentSpecification — the @id must be the IRI the spec is served at`);
-    if (!ask(g, `${s} adms:status mi:ProofOfConcept`)) add('adms:status is not mi:ProofOfConcept — every hosted specification is a proof of concept and must say so in-band');
-    if (!ask(g, `${s} dcterms:license <${CC0}>`)) add(`dcterms:license is not CC0 (<${CC0}>)`);
+    if (!exactly(g, spec.iri, 'adms:status', POC)) add('adms:status is not exactly mi:ProofOfConcept — every hosted specification is a proof of concept and must say so in-band');
+    if (!exactly(g, spec.iri, 'dcterms:license', CC0)) add(`dcterms:license is not exactly CC0 (<${CC0}>)`);
     if (!ask(g, `${s} dcat:version "${spec.version}"`)) add(`dcat:version is not "${spec.version}", the version directory it is served from`);
     if (!ask(g, `${s} mi:act "${spec.act}"`)) add(`mi:act is not "${spec.act}", the act directory it is served from`);
 
@@ -410,15 +457,30 @@ export function checkSpecs(load: SpecLoad, repo: RepoModel): ValidationIssue[] {
     const d = spec.dcatGraph;
     if (embeddedDataset(spec) === undefined) add(`the DCAT record has no node for ${spec.iri}`, dcatFile);
     if (!ask(d, `${s} a dcat:Dataset`)) add(`the DCAT record does not describe ${spec.iri} as a dcat:Dataset`, dcatFile);
-    if (!ask(d, `${s} adms:status mi:ProofOfConcept`)) add('the DCAT record does not mark the spec mi:ProofOfConcept', dcatFile);
-    if (!ask(d, `${s} dcterms:license <${CC0}>`)) add(`the DCAT record's dcterms:license is not CC0 (<${CC0}>)`, dcatFile);
-    const served = new Map(spec.files.filter((f) => f.served !== undefined).map((f) => [f.url, f]));
-    const distributions = distributionPins(d, spec.iri, 'dcat:distribution');
-    if (!distributions.some((dist) => dist.url === spec.iri)) add(`the DCAT record lists no distribution of the spec itself (dcat:downloadURL <${spec.iri}>)`, dcatFile);
-    for (const dist of distributions) {
-      const hosted = served.get(dist.url);
-      if (hosted === undefined) add(`distribution ${dist.url} is not a file hosted for this spec`, dcatFile);
-      else if (dist.sha256 !== hosted.sha256) add(`distribution ${dist.url} has checksum ${dist.sha256 ?? '(none)'}, but the hosted ${hosted.source} hashes to ${hosted.sha256}`, dcatFile);
+    if (!exactly(d, spec.iri, 'adms:status', POC)) add('the DCAT record does not mark the spec exactly mi:ProofOfConcept', dcatFile);
+    if (!exactly(d, spec.iri, 'dcterms:license', CC0)) add(`the DCAT record's dcterms:license is not exactly CC0 (<${CC0}>)`, dcatFile);
+    // Every served file is a checksummed distribution, and every checksum stated for a distribution
+    // matches the hosted bytes — not just one of them: the record is the only digest of the context
+    // and the schemas, so a file it leaves out would be hosted with nothing holding it fixed.
+    const served = spec.files.filter((f) => f.served !== undefined);
+    const rows = select(d, `<${spec.iri}> dcat:distribution ?d . ?d dcat:downloadURL ?u . OPTIONAL { ?d spdx:checksum ?c . ?c spdx:checksumValue ?sum }`);
+    const sums = new Map<string, Set<string | undefined>>();
+    for (const r of rows) {
+      const url = r.get('u')!.value;
+      sums.set(url, (sums.get(url) ?? new Set()).add(r.get('sum')?.value));
+    }
+    for (const f of served) {
+      if (!sums.has(f.url)) add(`the DCAT record lists no distribution of the hosted ${f.source} (dcat:downloadURL <${f.url}>)`, dcatFile);
+    }
+    for (const [url, values] of [...sums].sort(([a], [b]) => a.localeCompare(b, 'en'))) {
+      const hosted = served.find((f) => f.url === url);
+      if (hosted === undefined) { add(`distribution ${url} is not a file hosted for this spec`, dcatFile); continue; }
+      for (const sum of [...values].sort()) {
+        if (sum !== hosted.sha256) add(`distribution ${url} has checksum ${sum ?? '(none)'}, but the hosted ${hosted.source} hashes to ${hosted.sha256}`, dcatFile);
+      }
+    }
+    for (const subject of foreignSubjects(spec)) {
+      add(`the DCAT record states something about ${subject}, which is not this spec or one of its #fragments — /catalog takes only statements about the spec`, dcatFile);
     }
   }
   return issues;

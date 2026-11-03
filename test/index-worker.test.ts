@@ -176,7 +176,7 @@ test('worker fetch handler maps to the origin and stamps headers (stubbed origin
 
 // ------------------------------------------------------------------ content specifications, catalogue, vocabulary (#135)
 
-test('decide: a spec IRI is JSON-LD by default, HTML for browsers, immutable, cite-as itself', () => {
+test('decide: a spec IRI is JSON-LD by default (immutable), HTML for browsers (short cache), cite-as itself', () => {
   const ld = decide('/spec/steel/v0.0.3', 'application/ld+json');
   assert.deepEqual(ld, {
     originPath: '/spec/steel/v0.0.3/index.jsonld',
@@ -193,7 +193,10 @@ test('decide: a spec IRI is JSON-LD by default, HTML for browsers, immutable, ci
   const html = decide('/spec/steel/v0.0.3', 'text/html,application/xhtml+xml,*/*;q=0.8');
   assert.equal(html.originPath, '/spec/steel/v0.0.3/index.html');
   assert.equal(html.headers['content-type'], 'text/html; charset=utf-8');
-  assert.equal(html.headers['cache-control'], 'public, max-age=31536000, immutable');
+  // the HTML is this site's rendering, not the hand-over: banner or footer changes must reach readers
+  assert.equal(html.headers['cache-control'], 'public, max-age=300');
+  assert.equal(html.headers.vary, 'Accept');
+  assert.equal(decide('/spec/steel/v0.0.3', '*/*').headers['cache-control'], 'public, max-age=31536000, immutable');
   assert.equal(html.headers.link, '</spec/steel/v0.0.3>; rel="canonical", <https://material-identity.eu/spec/steel/v0.0.3>; rel="cite-as"');
   // multi-digit versions and hyphenated acts are legitimate
   assert.equal(decide('/spec/construction-products/v10.20.300', '*/*').originPath, '/spec/construction-products/v10.20.300/index.jsonld');

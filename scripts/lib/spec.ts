@@ -11,7 +11,7 @@
  * context is inline (§2.3), so the digest covers its complete meaning.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import oxigraph from 'oxigraph';
 import { CANONICAL_BASE, type ValidationIssue } from './repo.ts';
@@ -86,7 +86,23 @@ export function parseJsonLd(text: string, base: string): oxigraph.Store {
 }
 
 const dirs = (abs: string): string[] => readdirSync(abs).sort();
-const isDir = (abs: string): boolean => statSync(abs).isDirectory();
+
+/**
+ * What an entry under spec/ is, WITHOUT following links. A symlink is refused outright: spec/ is
+ * add-only (check 1), and a link would let a later change outside spec/ alter what an immutable
+ * IRI serves — or, absolute, publish a file of the build machine (security review of #136).
+ */
+type EntryKind = 'dir' | 'file' | 'missing' | 'other';
+function entryKind(abs: string): EntryKind {
+  let st;
+  try {
+    st = lstatSync(abs);
+  } catch {
+    return 'missing';
+  }
+  return st.isDirectory() ? 'dir' : st.isFile() ? 'file' : 'other';
+}
+const NOT_REGULAR = 'is a symlink or other special file — everything under spec/ must be a regular file or directory';
 
 /**
  * Every `spec/<act>/<version>/`, sorted by act then version. Structural problems (names, missing or
@@ -97,18 +113,30 @@ export function loadSpecs(root: string): SpecLoad {
   const issues: ValidationIssue[] = [];
   const check = 'spec layout';
   const base = join(root, SPEC_ROOT);
-  if (!existsSync(base)) return { specs, issues };
+  const baseKind = entryKind(base);
+  if (baseKind === 'missing') return { specs, issues };
+  if (baseKind !== 'dir') return { specs, issues: [{ check, file: SPEC_ROOT, message: NOT_REGULAR }] };
 
   for (const act of dirs(base)) {
     const actAbs = join(base, act);
-    if (!isDir(actAbs) || !ACT_PATTERN.test(act)) {
+    const actKind = entryKind(actAbs);
+    if (actKind === 'other') {
+      issues.push({ check, file: `${SPEC_ROOT}/${act}`, message: NOT_REGULAR });
+      continue;
+    }
+    if (actKind !== 'dir' || !ACT_PATTERN.test(act)) {
       issues.push({ check, file: `${SPEC_ROOT}/${act}`, message: `not an act directory (expected ${ACT_PATTERN})` });
       continue;
     }
     for (const version of dirs(actAbs).sort(compareVersions)) {
       const relDir = `${SPEC_ROOT}/${act}/${version}`;
       const abs = join(actAbs, version);
-      if (!isDir(abs) || !VERSION_PATTERN.test(version)) {
+      const versionKind = entryKind(abs);
+      if (versionKind === 'other') {
+        issues.push({ check, file: relDir, message: NOT_REGULAR });
+        continue;
+      }
+      if (versionKind !== 'dir' || !VERSION_PATTERN.test(version)) {
         issues.push({ check, file: relDir, message: `not a version directory (expected ${VERSION_PATTERN})` });
         continue;
       }
@@ -120,7 +148,9 @@ export function loadSpecs(root: string): SpecLoad {
         if (!present.has(f.source)) issues.push({ check, file: `${relDir}/${f.source}`, message: 'missing from the hand-over' });
       }
       for (const name of present) {
-        if (!expected.some((f) => f.source === name)) issues.push({ check, file: `${relDir}/${name}`, message: 'not part of a content-specification hand-over' });
+        const kind = entryKind(join(abs, name));
+        if (kind === 'other') issues.push({ check, file: `${relDir}/${name}`, message: NOT_REGULAR });
+        else if (kind !== 'file' || !expected.some((f) => f.source === name)) issues.push({ check, file: `${relDir}/${name}`, message: 'not part of a content-specification hand-over' });
       }
       if (issues.length > before) continue;
 

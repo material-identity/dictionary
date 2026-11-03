@@ -62,7 +62,11 @@ jobs:
             // A hosted content specification (spec/, #135) is served immutable like an entry, so its
             // hand-over gets the same two yeses as a publish.
             const gated = ['published/', 'spec/'];
-            const added = files.filter(f => f.status === 'added' && gated.some(dir => f.filename.startsWith(dir)));
+            // The files API reports a high-similarity move as renamed (or copied), not added, while
+            // check 1 diffs with --no-renames and sees an addition — so a tree moved INTO a gated
+            // directory (filename is the new path) counts as added here too (security review of #136).
+            const arriving = ['added', 'renamed', 'copied'];
+            const added = files.filter(f => arriving.includes(f.status) && gated.some(dir => f.filename.startsWith(dir)));
             if (added.length === 0) {
               core.info('No additions under published/ or spec/ — two-yes gate not applicable.');
               return;

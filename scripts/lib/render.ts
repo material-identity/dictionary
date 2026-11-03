@@ -41,7 +41,7 @@ export class RefIndex {
       const label = en(target?.preferredName) ?? (target?.shortName as string | undefined) ?? uuid;
       return `<a href="/def/${esc(uuid)}">${esc(label)}</a>`;
     }
-    return `<a href="${esc(s)}" rel="external">${esc(s)}</a>`;
+    return externalLink(s);
   }
 
   /** The entry that replaces this one, if any — derived, never stored. */
@@ -226,8 +226,15 @@ function refHtml(uri: unknown, refs: RefIndex): string {
   return `<span class="ref">${refs.link(uri)}${symbol} ${kindChip(target.objectType)}</span>`;
 }
 
-function externalLink(uri: unknown): string {
-  return `<a href="${esc(uri)}" rel="external">${esc(uri)}</a>`;
+/**
+ * Only an http(s) IRI becomes a link; anything else (`urn:`, `mailto:`, a `javascript:` in any
+ * case) is shown as escaped text. Escaping alone does not make an href safe: a spec's RDF is
+ * hosted, not authored, and a script IRI would run on the canonical origin (security review of #136).
+ */
+export const isWebIri = (uri: unknown): boolean => /^https?:\/\//i.test(String(uri));
+
+function externalLink(uri: unknown, rel = 'external', label: unknown = uri): string {
+  return isWebIri(uri) ? `<a href="${esc(uri)}" rel="${rel}">${esc(label)}</a>` : `<code>${esc(label)}</code>`;
 }
 
 /**
@@ -750,7 +757,8 @@ export function renderSpecPage(spec: HostedSpec, summary: SpecSummary, refs: Ref
   const otherTitles = Object.entries(summary.title).filter(([code]) => code !== 'en' && code !== '')
     .sort(([a], [b]) => a.localeCompare(b, 'en'))
     .map(([code, t]) => `<p class="lede" lang="${esc(code)}">${esc(t)}</p>`).join('\n');
-  const licence = summary.license === undefined ? '' : `<a href="${esc(summary.license)}" rel="external license">${esc(LICENCE_LABEL[summary.license] ?? summary.license)}</a>`;
+  // The spec check admits exactly one licence, CC0, so this shows the value it verified.
+  const licence = summary.license === undefined ? '' : externalLink(summary.license, 'external license', LICENCE_LABEL[summary.license] ?? summary.license);
   const status = summary.status === undefined ? '' : `${iriLink(summary.status, refs, summary.status.replace(/^.*#/, 'mi:'))}`;
 
   const files = spec.files.map((f) => `<tr>

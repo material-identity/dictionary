@@ -114,7 +114,7 @@ section for the full explanation).
   issue forms, CODEOWNERS, dependabot
 - `worker/index.ts` — the canonical interface (content negotiation + cache headers, plus
   `Link: …; rel="cite-as"` on both representations): `/def/<uuid>`, and since #135
-  `/spec/<act>/<version>` (JSON-LD default, HTML; immutable) with `/context.jsonld`,
+  `/spec/<act>/<version>` (JSON-LD default, immutable; HTML, short cache — it is our rendering) with `/context.jsonld`,
   `/compressed.schema.json`, `/full.schema.json` (immutable), `/spec/<act>` and `/catalog` (JSON-LD
   or HTML, short cache), `/ns` (JSON-LD, Turtle, HTML; short cache). Strict act/version shapes;
   anything else passes through. No `/concept/` route; `worker/wrangler.toml` — route
@@ -142,9 +142,12 @@ section for the full explanation).
   them (oxigraph, no document loader: a remote `@context` fails), `lib/dcat.ts` builds `/catalog` (the
   dictionary releases from git tags + each spec's own DCAT record, embedded with its context so its
   checksums stay as generated) and the `/spec/<act>` series. The unnumbered `spec` check refuses bad
-  layout, unparseable JSON-LD, a spec not PoC or not CC0, an `@id`/version/act that disagrees with its
-  path, a pin that is not in `published/` or whose digest differs from the served `/def/<uuid>.json`,
-  and a DCAT checksum that differs from the hosted bytes. The test fixture lives in
+  layout, a symlink anywhere under `spec/` (lstat; check 1 also refuses git mode 120000/160000 additions),
+  unparseable JSON-LD, a spec whose status/licence is not exactly PoC/CC0, an `@id`/version/act that
+  disagrees with its path, a pin that is not in `published/` or whose digest differs from the served
+  `/def/<uuid>.json`, a served file without a checksummed DCAT distribution or a checksum that differs
+  from the hosted bytes, and a DCAT record that states anything about a subject other than its spec
+  (or the spec's `#fragments`). The spec page links only http(s) IRIs; anything else renders as text. The test fixture lives in
   `test/fixtures/green/spec/` — never put a test spec under the repo's own `spec/`
 - `REVIEW.md` — what reviewers check beyond CI; read it before reviewing any publish PR
 - `standards/` — local-only licensed docs; only its README is committed

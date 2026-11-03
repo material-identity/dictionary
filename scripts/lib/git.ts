@@ -12,6 +12,11 @@ export interface DiffEntry {
   status: string;
   /** Path relative to the repo root. */
   path: string;
+  /**
+   * Git file mode after the change (`100644`, `120000` symlink, `160000` submodule…); `000000` for
+   * a deletion. Absent where a caller builds entries by hand.
+   */
+  mode?: string;
 }
 
 export interface GitContext {
@@ -58,13 +63,7 @@ export function createGitContext(root: string, base: string): GitContext | { una
     return { unavailable: `cannot resolve merge-base of "${base}" and HEAD` };
   }
 
-  const diff: DiffEntry[] = git(root, ['diff', '--name-status', '--no-renames', `${mergeBase}...HEAD`])
-    .split('\n')
-    .filter((line) => line.trim() !== '')
-    .map((line) => {
-      const [status, ...rest] = line.split('\t');
-      return { status: status.trim(), path: rest.join('\t') };
-    });
+  const diff = parseRawDiff(git(root, ['diff', '--raw', '--no-renames', `${mergeBase}...HEAD`]));
 
   const readBaseFile = (relPath: string): string | undefined => {
     try {
@@ -75,6 +74,21 @@ export function createGitContext(root: string, base: string): GitContext | { una
   };
 
   return { base, diff, readBaseFile };
+}
+
+/**
+ * `git diff --raw` lines — `:<old mode> <new mode> <old sha> <new sha> <status>\t<path>` — as entries.
+ * Raw rather than --name-status because the mode is what tells an added symlink from an added file.
+ */
+export function parseRawDiff(output: string): DiffEntry[] {
+  return output
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+    .map((line) => {
+      const [meta, ...rest] = line.split('\t');
+      const [, mode, , , status] = meta.split(' ');
+      return { status: status.trim(), path: rest.join('\t'), mode };
+    });
 }
 
 export function isGitContext(ctx: GitContext | { unavailable: string }): ctx is GitContext {

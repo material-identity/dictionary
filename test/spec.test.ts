@@ -1,19 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import oxigraph from 'oxigraph';
 import { build, emitSpecs } from '../scripts/build.ts';
-import { checkImmutability, checkSpecs, runChecks } from '../scripts/lib/checks.ts';
+import { checkImmutability, checkSpecs, foreignSubjects, runChecks } from '../scripts/lib/checks.ts';
 import { buildCatalog, buildSeries, embeddedDataset, findDatasetNode } from '../scripts/lib/dcat.ts';
-import { getReleaseTags } from '../scripts/lib/git.ts';
+import { createGitContext, getReleaseTags, isGitContext, parseRawDiff } from '../scripts/lib/git.ts';
 import { renderVocabularyJsonLd, renderVocabularyTurtle, vocabularyTerms } from '../scripts/lib/rdf.ts';
 import { loadRepo } from '../scripts/lib/repo.ts';
-import { pocBanner, RefIndex, renderCatalogPage, renderVocabularyPage } from '../scripts/lib/render.ts';
-import { compareVersions, loadSpecs, parseJsonLd } from '../scripts/lib/spec.ts';
+import { isWebIri, pocBanner, RefIndex, renderCatalogPage, renderSpecPage, renderVocabularyPage } from '../scripts/lib/render.ts';
+import { compareVersions, loadSpecs, parseJsonLd, summarize } from '../scripts/lib/spec.ts';
 
 // Hosted content specifications (#135). The fixture is a small spec authored for these tests
 // under test/fixtures/green/spec/ — never under the repo's own spec/, which only ever holds
@@ -134,10 +135,10 @@ test('the green fixture passes the spec check, and runChecks runs it', () => {
 
 test('spec check: a spec not marked proof of concept, or not CC0, is refused', () => {
   withTree((dir) => edit(dir, 'demo.jsonld', (t) => t.replace('"adms:status": { "@id": "mi:ProofOfConcept" }', '"adms:status": { "@id": "http://purl.org/adms/status/Completed" }')), (root) => {
-    assert.deepEqual(specIssues(root), ['spec/demo/v0.0.1/demo.jsonld: adms:status is not mi:ProofOfConcept — every hosted specification is a proof of concept and must say so in-band']);
+    assert.deepEqual(specIssues(root), ['spec/demo/v0.0.1/demo.jsonld: adms:status is not exactly mi:ProofOfConcept — every hosted specification is a proof of concept and must say so in-band']);
   });
   withTree((dir) => edit(dir, 'demo.jsonld', (t) => t.replace('"dcterms:license": { "@id": "http://creativecommons.org/publicdomain/zero/1.0/" }', '"dcterms:license": { "@id": "https://creativecommons.org/licenses/by/4.0/" }')), (root) => {
-    assert.deepEqual(specIssues(root), ['spec/demo/v0.0.1/demo.jsonld: dcterms:license is not CC0 (<http://creativecommons.org/publicdomain/zero/1.0/>)']);
+    assert.deepEqual(specIssues(root), ['spec/demo/v0.0.1/demo.jsonld: dcterms:license is not exactly CC0 (<http://creativecommons.org/publicdomain/zero/1.0/>)']);
   });
 });
 
@@ -183,9 +184,9 @@ test('spec check: the DCAT record must describe the spec as PoC + CC0, and its c
     .replace('"dcterms:license": { "@id": "http://creativecommons.org/publicdomain/zero/1.0/" }', '"dcterms:license": { "@id": "https://example.org/proprietary" }')
     .replace('"dcat:downloadURL": { "@id": "https://material-identity.eu/spec/demo/v0.0.1" }', '"dcat:downloadURL": { "@id": "https://material-identity.eu/spec/demo/v0.0.1/elsewhere.jsonld" }')), (root) => {
     assert.deepEqual(specIssues(root), [
-      'spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record does not mark the spec mi:ProofOfConcept',
-      'spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record\'s dcterms:license is not CC0 (<http://creativecommons.org/publicdomain/zero/1.0/>)',
-      'spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record lists no distribution of the spec itself (dcat:downloadURL <https://material-identity.eu/spec/demo/v0.0.1>)',
+      'spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record does not mark the spec exactly mi:ProofOfConcept',
+      'spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record\'s dcterms:license is not exactly CC0 (<http://creativecommons.org/publicdomain/zero/1.0/>)',
+      'spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record lists no distribution of the hosted demo.jsonld (dcat:downloadURL <https://material-identity.eu/spec/demo/v0.0.1>)',
       'spec/demo/v0.0.1/demo.dcat.jsonld: distribution https://material-identity.eu/spec/demo/v0.0.1/elsewhere.jsonld is not a file hosted for this spec',
     ]);
   }, false);
@@ -213,6 +214,161 @@ test('check 1 — spec/ is add-only like published/', () => {
   assert.deepEqual(issues.map((i) => i.file), ['spec/steel/v0.0.3/full.schema.json', 'spec/steel/v0.0.3/steel.context.jsonld']);
   assert.match(issues[0].message, /hosted specification file modified — spec\/ is add-only/);
   assert.match(issues[1].message, /deleted/);
+});
+
+// ------------------------------------------------------------------ security review of #136
+
+const NOT_REGULAR = 'is a symlink or other special file — everything under spec/ must be a regular file or directory';
+
+test('layout: a symlinked file, version directory, act directory or spec/ itself is refused, never followed', () => {
+  // a single served file pointing elsewhere: its target could change without a diff under spec/
+  withTree((dir, root) => {
+    writeFileSync(join(root, 'elsewhere.json'), readFileSync(join(dir, 'full.schema.json')));
+    rmSync(join(dir, 'full.schema.json'));
+    symlinkSync('../../../elsewhere.json', join(dir, 'full.schema.json'));
+  }, (root) => {
+    const { specs, issues } = loadSpecs(root);
+    assert.deepEqual(issues.map((i) => `${i.file}: ${i.message}`), [`spec/demo/v0.0.1/full.schema.json: ${NOT_REGULAR}`]);
+    assert.equal(specs.length, 0);
+  }, false);
+
+  // a whole version directory pointing at a self-consistent copy elsewhere
+  withTree((dir, root) => {
+    cpSync(dir, join(root, 'copy'), { recursive: true });
+    symlinkSync('../../copy', join(root, 'spec', 'demo', 'v0.0.2'));
+  }, (root) => {
+    const { specs, issues } = loadSpecs(root);
+    assert.deepEqual(issues.map((i) => `${i.file}: ${i.message}`), [`spec/demo/v0.0.2: ${NOT_REGULAR}`]);
+    assert.deepEqual(specs.map((s) => s.version), ['v0.0.1']);
+  }, false);
+
+  withTree((_dir, root) => symlinkSync('demo', join(root, 'spec', 'alias')), (root) => {
+    assert.deepEqual(loadSpecs(root).issues.map((i) => `${i.file}: ${i.message}`), [`spec/alias: ${NOT_REGULAR}`]);
+  }, false);
+
+  withTree((_dir, root) => {
+    renameSync(join(root, 'spec'), join(root, 'real-spec'));
+    symlinkSync('real-spec', join(root, 'spec'));
+  }, (root) => {
+    assert.deepEqual(loadSpecs(root), { specs: [], issues: [{ check: 'spec layout', file: 'spec', message: NOT_REGULAR }] });
+  }, false);
+
+  // a directory where a file belongs is simply not part of the hand-over
+  withTree((dir) => mkdirSync(join(dir, 'extra')), (root) => {
+    assert.deepEqual(loadSpecs(root).issues.map((i) => i.message), ['not part of a content-specification hand-over']);
+  }, false);
+});
+
+test('check 1 — a symlink or submodule added under spec/ or published/ is refused; regular files pass', () => {
+  const issues = checkImmutability([
+    { status: 'A', path: 'spec/steel/v0.0.3/steel.jsonld', mode: '100644' },
+    { status: 'A', path: 'spec/steel/v0.0.3/run.sh', mode: '100755' },
+    { status: 'A', path: 'spec/steel/v0.0.4', mode: '120000' },
+    { status: 'A', path: 'published/x.yaml', mode: '120000' },
+    { status: 'A', path: 'spec/vendor', mode: '160000' },
+    { status: 'A', path: 'drafts/link.yaml', mode: '120000' },
+  ]);
+  assert.deepEqual(issues.map((i) => i.file), ['spec/steel/v0.0.4', 'published/x.yaml', 'spec/vendor']);
+  assert.match(issues[0].message, /added with git mode 120000, not as a regular file — a symlink or submodule under spec\//);
+  assert.match(issues[1].message, /under published\//);
+});
+
+test('git diff --raw is parsed with the new mode, and a real added symlink fails check 1', () => {
+  assert.deepEqual(parseRawDiff(':000000 120000 0000000 1a2b3c4 A\tspec/demo/v0.0.2\n:100644 100644 1111111 2222222 M\tREADME.md\n'), [
+    { status: 'A', path: 'spec/demo/v0.0.2', mode: '120000' },
+    { status: 'M', path: 'README.md', mode: '100644' },
+  ]);
+
+  const root = mkdtempSync(join(tmpdir(), 'spec-git-'));
+  const gitc = (...args: string[]): void => {
+    execFileSync('git', ['-C', root, '-c', 'user.email=test@test', '-c', 'user.name=test', '-c', 'commit.gpgsign=false', ...args], { stdio: 'pipe' });
+  };
+  try {
+    gitc('init', '-b', 'main');
+    writeFileSync(join(root, 'README.md'), 'x\n');
+    gitc('add', '-A');
+    gitc('commit', '-m', 'base');
+    gitc('checkout', '-b', 'link');
+    mkdirSync(join(root, 'spec', 'demo'), { recursive: true });
+    symlinkSync('../../README.md', join(root, 'spec', 'demo', 'v0.0.2'));
+    gitc('add', '-A');
+    gitc('commit', '-m', 'link');
+    const ctx = createGitContext(root, 'main');
+    assert.ok(isGitContext(ctx));
+    assert.deepEqual(ctx.diff, [{ status: 'A', path: 'spec/demo/v0.0.2', mode: '120000' }]);
+    assert.equal(checkImmutability(ctx.diff).length, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('spec check: a second licence or status next to CC0 / mi:ProofOfConcept is refused, in the spec and in its record', () => {
+  const second = (t: string): string => t
+    .replace('"dcterms:license": { "@id": "http://creativecommons.org/publicdomain/zero/1.0/" }', '"dcterms:license": [{ "@id": "http://creativecommons.org/publicdomain/zero/1.0/" }, { "@id": "JAVASCRIPT:alert(document.domain)" }]')
+    .replace('"adms:status": { "@id": "mi:ProofOfConcept" }', '"adms:status": [{ "@id": "mi:ProofOfConcept" }, { "@id": "javascript:alert(1)" }]');
+  withTree((dir) => { edit(dir, 'demo.jsonld', second); edit(dir, 'demo.dcat.jsonld', second); }, (root) => {
+    assert.deepEqual(specIssues(root), [
+      'spec/demo/v0.0.1/demo.jsonld: adms:status is not exactly mi:ProofOfConcept — every hosted specification is a proof of concept and must say so in-band',
+      'spec/demo/v0.0.1/demo.jsonld: dcterms:license is not exactly CC0 (<http://creativecommons.org/publicdomain/zero/1.0/>)',
+      'spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record does not mark the spec exactly mi:ProofOfConcept',
+      'spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record\'s dcterms:license is not exactly CC0 (<http://creativecommons.org/publicdomain/zero/1.0/>)',
+    ]);
+  });
+});
+
+test('the spec page links only http(s) IRIs; javascript: in any case, urn: and the like render as text', () => {
+  assert.ok(isWebIri('https://x') && isWebIri('HTTP://x') && !isWebIri('javascript:alert(1)') && !isWebIri('urn:cen:en:18223:2026') && !isWebIri(undefined));
+  const [spec] = loadSpecs(GREEN).specs;
+  const summary = summarize(spec);
+  const evil = ['javascript:alert(1)', 'JAVASCRIPT:alert(document.domain)', 'JaVaScRiPt:alert(2)', 'data:text/html,x'];
+  const html = renderSpecPage(spec, {
+    ...summary,
+    license: evil[1],
+    status: evil[0],
+    series: evil[2],
+    memberships: [{ path: ['x'], entry: evil[3], mandatory: true, accessCategory: evil[0] }],
+  }, new RefIndex(loadRepo(GREEN)));
+  assert.ok(!/<a href="(?!https?:\/\/|\/|#)/i.test(html), 'every link is http(s), site-relative or a fragment');
+  for (const iri of evil) assert.ok(html.includes(`<code>${iri}</code>`), `${iri} is shown as text`);
+  // the verified licence is still a link
+  assert.match(renderSpecPage(spec, summary, new RefIndex(loadRepo(GREEN))), /<a href="http:\/\/creativecommons\.org\/publicdomain\/zero\/1\.0\/" rel="external license">CC0 1\.0<\/a>/);
+});
+
+test('spec check: every served file needs a checksummed distribution, and every stated checksum must match', () => {
+  // the context's distribution left out: nothing would hold that file fixed
+  withTree((dir) => edit(dir, 'demo.dcat.jsonld', (t) => t.replace(/,\n      \{\n        "@id": "https:\/\/material-identity\.eu\/spec\/demo\/v0\.0\.1#context"[\s\S]*?\n      \}(?=,\n      \{)/, '')), (root) => {
+    assert.deepEqual(specIssues(root), ['spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record lists no distribution of the hosted demo.context.jsonld (dcat:downloadURL <https://material-identity.eu/spec/demo/v0.0.1/context.jsonld>)']);
+  }, false);
+
+  // a distribution with no checksum, and a second distribution of the same file with a wrong one
+  withTree((dir) => edit(dir, 'demo.dcat.jsonld', (t) => t
+    .replace(/"spdx:checksum": \{[^\n]*"spdx:checksumValue": "eb16cf43[0-9a-f]+" \}/, '"dcat:byteSize": 1')
+    .replace('"dcat:distribution": [', `"dcat:distribution": [
+      { "@id": "${IRI}#again", "dcat:downloadURL": { "@id": "${IRI}/full.schema.json" }, "spdx:checksum": { "spdx:checksumValue": "00" } },`)), (root) => {
+    const issues = specIssues(root);
+    assert.equal(issues.length, 2, issues.join('\n'));
+    assert.match(issues[0], /distribution https:\/\/material-identity\.eu\/spec\/demo\/v0\.0\.1\/compressed\.schema\.json has checksum \(none\)/);
+    assert.match(issues[1], /distribution https:\/\/material-identity\.eu\/spec\/demo\/v0\.0\.1\/full\.schema\.json has checksum 00,/);
+  }, false);
+});
+
+test('spec check: the DCAT record may state things only about its spec and the spec\'s #fragments', () => {
+  const [spec] = loadSpecs(GREEN).specs;
+  assert.deepEqual(foreignSubjects(spec), [], 'references to the release and the series are fine; only statements count');
+
+  const entry = 'https://material-identity.eu/def/4eae703a-fa15-4118-8bc4-7926a22a12fb';
+  withTree((dir) => edit(dir, 'demo.dcat.jsonld', (t) => t
+    .replace('"dcterms:requires": { "@id": "https://material-identity.eu/release/v2026.08.28" }', '"dcterms:requires": { "@id": "https://material-identity.eu/release/v2026.08.28", "dcterms:title": "hijacked" }')
+    .replace('"dcat:version": "v0.0.1",', `"dcat:version": "v0.0.1", "@reverse": { "dcterms:replaces": { "@id": "${entry}" } }, "@included": [{ "@id": "https://material-identity.eu/spec/other/v1.0.0", "dcterms:title": "x" }],`)), (root) => {
+    const issues = specIssues(root);
+    const about = (s: string): string => `spec/demo/v0.0.1/demo.dcat.jsonld: the DCAT record states something about ${s}, which is not this spec or one of its #fragments — /catalog takes only statements about the spec`;
+    assert.deepEqual(issues, [entry, 'https://material-identity.eu/release/v2026.08.28', 'https://material-identity.eu/spec/other/v1.0.0'].map(about));
+  });
+
+  // a named graph inside the node is reported by its name
+  const graphed = { ...spec, dcatJson: { '@id': IRI, 'http://purl.org/dc/terms/title': 'x', '@graph': [{ '@id': 'https://x/y', 'http://purl.org/dc/terms/title': 'y' }] } };
+  assert.deepEqual(foreignSubjects(graphed), [`graph ${IRI}`]);
+  assert.deepEqual(foreignSubjects({ ...spec, dcatJson: {} }), []);
 });
 
 // ------------------------------------------------------------------ build

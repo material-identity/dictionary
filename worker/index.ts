@@ -31,22 +31,26 @@ const wantsHtml = (accept: string | null): boolean => (accept ?? '').includes('t
 /**
  * A negotiated JSON-LD resource stored as `<dir>/index.jsonld` + `<dir>/index.html` at the origin.
  * Vary: one URI, two representations, so no cache may hand a browser's HTML to a JSON-LD client.
+ * The cache policy may differ per representation, and follows the one actually served.
  */
-function negotiated(dir: string, accept: string | null, cache: string): RouteDecision {
+function negotiated(dir: string, accept: string | null, cache: string | { jsonLd: string; html: string }): RouteDecision {
   const html = wantsHtml(accept);
+  const policy = typeof cache === 'string' ? cache : html ? cache.html : cache.jsonLd;
   return {
     originPath: `${dir}/index.${html ? 'html' : 'jsonld'}`,
-    headers: { 'content-type': html ? HTML : JSON_LD, 'cache-control': cache, vary: 'Accept' },
+    headers: { 'content-type': html ? HTML : JSON_LD, 'cache-control': policy, vary: 'Accept' },
   };
 }
 
 /** Pure mapping, unit-tested. JSON is the default; HTML only when Accept names text/html (handover §8). */
 export function decide(pathname: string, accept: string | null): RouteDecision {
   // A published content specification never changes (design §2.3): a new contract version is a
-  // new IRI, so the spec and its sub-resources are as immutable as an entry.
+  // new IRI, so the spec's JSON-LD and its sub-resources are as immutable as an entry. Its HTML page
+  // is not the hand-over but this site's rendering of it (PoC banner, footer, entry labels), so it
+  // keeps the short cache: a change to that wording or a takedown must reach readers.
   const spec = SPEC.exec(pathname);
   if (spec) {
-    const decision = negotiated(pathname, accept, IMMUTABLE);
+    const decision = negotiated(pathname, accept, { jsonLd: IMMUTABLE, html: SHORT });
     const citeAs = `<https://material-identity.eu${pathname}>; rel="cite-as"`;
     decision.headers.link = wantsHtml(accept) ? `<${pathname}>; rel="canonical", ${citeAs}` : citeAs;
     return decision;
