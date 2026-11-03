@@ -1,5 +1,9 @@
 #!/bin/sh
 # Fast local feedback before CI; CI remains the authority (hooks are bypassable with --no-verify).
 set -e
+# Git exports its repository variables to hooks (from a worktree, GIT_DIR points at it). The tests
+# build throwaway repos with `git -C <tmp>`, which these variables override, so left set they make
+# the tests commit, tag and reconfigure this repository instead of their own.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY GIT_PREFIX
 npm run validate
 npm test
