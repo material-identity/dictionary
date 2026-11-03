@@ -8,12 +8,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadRepo } from './lib/repo.ts';
 import { canonicalJson } from './lib/emit.ts';
-import { type ExampleSpec, RefIndex, renderAboutPage, renderCatalogPage, renderEntryPage, renderExamplesPage, renderGraphPage, renderIndexPages, renderSchemaPage, renderSeriesPage, renderSpecPage, renderTreePage, renderVocabularyPage } from './lib/render.ts';
+import { type ExampleSpec, RefIndex, renderAboutPage, renderCatalogPage, renderEntryPage, renderExamplesPage, renderGraphPage, renderIndexPages, renderReleaseIndexPage, renderReleasePage, renderSchemaPage, renderSeriesPage, renderSpecPage, renderTreePage, renderVocabularyPage } from './lib/render.ts';
 import { renderFeed } from './lib/feed.ts';
 import { citation } from './lib/cite.ts';
 import { renderTurtle, renderVocabularyJsonLd, renderVocabularyTurtle, vocabularyTerms } from './lib/rdf.ts';
 import { getAddedDates, getReleases, getReleaseTags } from './lib/git.ts';
-import { buildCatalog, buildSeries, byAct, jsonLd, type SummarizedSpec } from './lib/dcat.ts';
+import { buildCatalog, buildRelease, buildReleaseIndex, buildSeries, byAct, jsonLd, releaseContents, type SummarizedSpec } from './lib/dcat.ts';
 import { loadSpecs, summarize } from './lib/spec.ts';
 
 const LIB_DIR = dirname(fileURLToPath(import.meta.url));
@@ -103,6 +103,19 @@ export function build(root: string, out: string): BuildResult {
   mkdirSync(join(out, 'catalog'), { recursive: true });
   writeFileSync(join(out, 'catalog', 'index.jsonld'), jsonLd(buildCatalog(tags, specs.map(({ spec }) => spec))));
   writeFileSync(join(out, 'catalog', 'index.html'), renderCatalogPage(tags, specs));
+
+  // Dictionary releases at /release/<tag> (#135): what each tag contains, derived from git like the
+  // citations above. The index is always written, so it exists (empty) in a build without tags.
+  const contents = releaseContents(tags, releases, repo);
+  mkdirSync(join(out, 'release'), { recursive: true });
+  writeFileSync(join(out, 'release', 'index.jsonld'), jsonLd(buildReleaseIndex(tags)));
+  writeFileSync(join(out, 'release', 'index.html'), renderReleaseIndexPage(contents));
+  for (const release of contents) {
+    const dir = join(out, 'release', release.tag);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'index.jsonld'), jsonLd(buildRelease(release)));
+    writeFileSync(join(dir, 'index.html'), renderReleasePage(release, refs));
+  }
   return { entries, out };
 }
 

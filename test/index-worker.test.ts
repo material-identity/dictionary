@@ -257,3 +257,64 @@ test('worker fetch handler serves a spec as JSON-LD from its origin file (stubbe
     globalThis.fetch = realFetch;
   }
 });
+
+// ------------------------------------------------------------------ dictionary releases (#135)
+
+test('decide: a release IRI is JSON-LD by default (immutable), HTML for browsers (short cache), cite-as itself', () => {
+  assert.deepEqual(decide('/release/v2026.10.01', 'application/ld+json'), {
+    originPath: '/release/v2026.10.01/index.jsonld',
+    headers: {
+      'content-type': 'application/ld+json',
+      'cache-control': 'public, max-age=31536000, immutable',
+      vary: 'Accept',
+      link: '<https://material-identity.eu/release/v2026.10.01>; rel="cite-as"',
+    },
+  });
+  assert.equal(decide('/release/v2026.10.01', null).originPath, '/release/v2026.10.01/index.jsonld');
+  assert.deepEqual(decide('/release/v2026.10.01', 'text/html,application/xhtml+xml,*/*;q=0.8'), {
+    originPath: '/release/v2026.10.01/index.html',
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      'cache-control': 'public, max-age=300',
+      vary: 'Accept',
+      link: '</release/v2026.10.01>; rel="canonical", <https://material-identity.eu/release/v2026.10.01>; rel="cite-as"',
+    },
+  });
+});
+
+test('decide: /release lists releases, negotiated, and gains members so it keeps the short cache', () => {
+  assert.deepEqual(decide('/release', '*/*'), { originPath: '/release/index.jsonld', headers: { 'content-type': 'application/ld+json', 'cache-control': 'public, max-age=300', vary: 'Accept' } });
+  assert.deepEqual(decide('/release', 'text/html'), { originPath: '/release/index.html', headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300', vary: 'Accept' } });
+});
+
+test('decide: anything that is not exactly a release tag falls through', () => {
+  for (const p of ['/release/', '/release/latest', '/release/2026.10.01', '/release/v2026.10', '/release/v2026.10.1', '/release/v2026.10.01/',
+    '/release/v2026.10.01/index.jsonld', '/release/v2026.10.01.tar.gz', '/release/draft-base', '/releases', '/release/v2026.10.01/x']) {
+    assert.deepEqual(decide(p, 'text/html'), { originPath: p, headers: { 'cache-control': 'public, max-age=300' } }, `${p} must pass through`);
+  }
+});
+
+test('worker fetch handler: an unknown release tag 404s with the short negative cache, a known one is typed', async () => {
+  const seen: string[] = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    const url = String(input);
+    seen.push(url);
+    return url.endsWith('/release/v2026.10.01/index.jsonld')
+      ? new Response('{"@id":"x"}', { status: 200, headers: { 'content-type': 'application/octet-stream' } })
+      : new Response('nope', { status: 404 });
+  }) as typeof fetch;
+  try {
+    const env = { ORIGIN: 'https://origin.example/dictionary' };
+    const known = await worker.fetch(new Request('https://material-identity.eu/release/v2026.10.01'), env);
+    assert.equal(known.status, 200);
+    assert.equal(known.headers.get('content-type'), 'application/ld+json');
+    assert.equal(known.headers.get('cache-control'), 'public, max-age=31536000, immutable');
+    const unknown = await worker.fetch(new Request('https://material-identity.eu/release/v2099.01.01'), env);
+    assert.equal(unknown.status, 404);
+    assert.equal(unknown.headers.get('cache-control'), 'public, max-age=60', 'a 404 is never cached as immutable');
+    assert.deepEqual(seen, ['https://origin.example/dictionary/release/v2026.10.01/index.jsonld', 'https://origin.example/dictionary/release/v2099.01.01/index.jsonld']);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

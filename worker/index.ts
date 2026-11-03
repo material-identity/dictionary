@@ -3,7 +3,7 @@
  * per issue #57 — no concept resource, so no /concept/<uuid> route).
  * Stateless mapping: URI + Accept → origin file + headers. No entry knowledge —
  * reproducible on any reverse proxy (D3). Deploys are CI-only (deploy-worker.yml).
- * Routes: /def/<uuid>, /spec/<act>[/<version>[/<file>]], /catalog, /ns (#135), /.well-known/,
+ * Routes: /def/<uuid>, /spec/<act>[/<version>[/<file>]], /catalog, /ns, /release[/<tag>] (#135), /.well-known/,
  * /examples/; everything else passes through.
  */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -14,6 +14,9 @@ const VERSION = 'v\\d+\\.\\d+\\.\\d+';
 const SPEC = new RegExp(`^/spec/(${ACT})/(${VERSION})$`);
 const SPEC_FILE = new RegExp(`^/spec/(${ACT})/(${VERSION})/(context\\.jsonld|compressed\\.schema\\.json|full\\.schema\\.json)$`);
 const SERIES = new RegExp(`^/spec/(${ACT})$`);
+// Dictionary releases (#135): a release tag, vYYYY.MM.DD, as git.ts RELEASE_TAG. An unknown tag of
+// that shape has no origin file and 404s; any other shape falls through (and 404s at the origin).
+const RELEASE = /^\/release\/v\d{4}\.\d{2}\.\d{2}$/;
 
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const SHORT = 'public, max-age=300';
@@ -42,26 +45,32 @@ function negotiated(dir: string, accept: string | null, cache: string | { jsonLd
   };
 }
 
+/**
+ * A fixed, citable resource: immutable JSON-LD, our HTML rendering of it on the short cache, and
+ * RFC 8574 cite-as naming the canonical IRI whatever URL was fetched (HTML also names itself canonical).
+ */
+function fixed(pathname: string, accept: string | null): RouteDecision {
+  const decision = negotiated(pathname, accept, { jsonLd: IMMUTABLE, html: SHORT });
+  const citeAs = `<https://material-identity.eu${pathname}>; rel="cite-as"`;
+  decision.headers.link = wantsHtml(accept) ? `<${pathname}>; rel="canonical", ${citeAs}` : citeAs;
+  return decision;
+}
+
 /** Pure mapping, unit-tested. JSON is the default; HTML only when Accept names text/html (handover §8). */
 export function decide(pathname: string, accept: string | null): RouteDecision {
   // A published content specification never changes (design §2.3): a new contract version is a
   // new IRI, so the spec's JSON-LD and its sub-resources are as immutable as an entry. Its HTML page
   // is not the hand-over but this site's rendering of it (PoC banner, footer, entry labels), so it
   // keeps the short cache: a change to that wording or a takedown must reach readers.
-  const spec = SPEC.exec(pathname);
-  if (spec) {
-    const decision = negotiated(pathname, accept, { jsonLd: IMMUTABLE, html: SHORT });
-    const citeAs = `<https://material-identity.eu${pathname}>; rel="cite-as"`;
-    decision.headers.link = wantsHtml(accept) ? `<${pathname}>; rel="canonical", ${citeAs}` : citeAs;
-    return decision;
-  }
+  // A dictionary release is fixed once tagged in the same way (#135).
+  if (SPEC.test(pathname) || RELEASE.test(pathname)) return fixed(pathname, accept);
   const specFile = SPEC_FILE.exec(pathname);
   if (specFile) {
     const type = specFile[3] === 'context.jsonld' ? JSON_LD : 'application/schema+json';
     return { originPath: pathname, headers: { 'content-type': type, 'cache-control': IMMUTABLE } };
   }
   // Derived listings: a new version or release joins them, so they get the short cache of /feed.xml.
-  if (SERIES.test(pathname) || pathname === '/catalog') return negotiated(pathname, accept, SHORT);
+  if (SERIES.test(pathname) || pathname === '/catalog' || pathname === '/release') return negotiated(pathname, accept, SHORT);
   // The mi: vocabulary (design §3.3, §9 Q6). Turtle on request, since that is what RDF tools ask for.
   if (pathname === '/ns') {
     if (!wantsHtml(accept) && (accept ?? '').includes('text/turtle')) {

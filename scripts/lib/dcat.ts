@@ -11,14 +11,16 @@
  * Deterministic: releases sorted by tag, specs by act then version, keys in a fixed order.
  * Everything is a proof of concept and says so in-band (`adms:status mi:ProofOfConcept`).
  */
-import { CANONICAL_BASE } from './repo.ts';
+import { entrySha256 } from './emit.ts';
+import { type Release, releaseAsset, releaseLandingPage, shippedBy } from './git.ts';
+import { CANONICAL_BASE, DEF_PREFIX, type RepoModel } from './repo.ts';
 import { ADMS, CC0, VOCABULARY } from './rdf.ts';
 import type { HostedSpec, SpecSummary } from './spec.ts';
 
 export const CATALOG_IRI = `${CANONICAL_BASE}/catalog`;
-export const releaseIri = (tag: string): string => `${CANONICAL_BASE}/release/${tag}`;
+export const RELEASES_IRI = `${CANONICAL_BASE}/release`;
+export const releaseIri = (tag: string): string => `${RELEASES_IRI}/${tag}`;
 export const seriesIri = (act: string): string => `${CANONICAL_BASE}/spec/${act}`;
-const releaseLandingPage = (tag: string): string => `https://github.com/material-identity/dictionary/releases/tag/${tag}`;
 
 export const CONTEXT = {
   '@version': 1.1,
@@ -120,9 +122,15 @@ export function buildSeries(act: string, versions: SummarizedSpec[]): Record<str
   };
 }
 
-/** /catalog: the dictionary releases, the spec series, and every hosted spec's own DCAT record. */
-export function buildCatalog(releases: CatalogRelease[], specs: HostedSpec[]): Record<string, unknown> {
-  const releaseDatasets = [...releases].sort((a, b) => a.tag.localeCompare(b.tag, 'en')).map((r) => ({
+const byTag = <T extends CatalogRelease>(releases: T[]): T[] => [...releases].sort((a, b) => a.tag.localeCompare(b.tag, 'en'));
+
+/**
+ * What /catalog and /release say about one release: the same node in both, so the dataset IRIs
+ * agree with what /release/<tag> serves. The tarball is a link only — its digest is not known to an
+ * offline build, so none is stated.
+ */
+function releaseDataset(r: CatalogRelease): Record<string, unknown> {
+  return {
     '@id': releaseIri(r.tag),
     '@type': 'dcat:Dataset',
     'dcterms:title': { '@value': `material-identity dictionary, release ${r.tag}`, '@language': 'en' },
@@ -130,7 +138,86 @@ export function buildCatalog(releases: CatalogRelease[], specs: HostedSpec[]): R
     'dcterms:issued': { '@value': r.date, '@type': 'xsd:date' },
     ...POC,
     'dcat:landingPage': { '@id': releaseLandingPage(r.tag) },
+    'dcat:distribution': {
+      '@id': `${releaseIri(r.tag)}#tarball`,
+      '@type': 'dcat:Distribution',
+      'dcat:downloadURL': { '@id': releaseAsset(r.tag) },
+      'dcat:mediaType': 'application/gzip',
+    },
+  };
+}
+
+/** One entry of a release: its IRI, the SHA-256 of its served bytes, and the release that first shipped it. */
+export interface ReleaseEntry {
+  iri: string;
+  sha256: string;
+  firstShipped: string;
+}
+
+/** A release with every entry it contains (cumulative), sorted by IRI. */
+export interface ReleaseContents extends CatalogRelease {
+  entries: ReleaseEntry[];
+}
+
+/**
+ * Every release's contents, from the tags and getReleases() (published path → first release). An
+ * entry is in a release when shippedBy says so — the rule the pinned-release check applies — and
+ * carries entrySha256, the digest a spec pins. Entries not yet released appear in no release.
+ */
+export function releaseContents(tags: Release[], firstRelease: Map<string, Release>, repo: RepoModel): ReleaseContents[] {
+  const entries = repo.published.filter((f) => f.doc !== undefined && firstRelease.has(f.relPath))
+    .map((f) => ({ iri: `${DEF_PREFIX}${f.stem}`, sha256: entrySha256(f.doc!), first: firstRelease.get(f.relPath)! }))
+    .sort((a, b) => a.iri.localeCompare(b.iri, 'en'));
+  return byTag(tags).map(({ tag, date }) => ({
+    tag,
+    date,
+    entries: entries.filter((e) => shippedBy(e.first, tag)).map(({ iri, sha256, first }) => ({ iri, sha256, firstShipped: first.tag })),
   }));
+}
+
+/**
+ * /release/<tag>: one dictionary release as a dcat:Dataset. `dcterms:hasPart` lists every entry
+ * the release contains, each with its JSON distribution and the SHA-256 a spec pins (the same
+ * shape as a spec's pin); `mi:firstShipped` names the ones this release is the first to contain.
+ * A release is fixed once tagged, so the document is too.
+ */
+export function buildRelease(r: ReleaseContents): Record<string, unknown> {
+  return {
+    '@context': CONTEXT,
+    ...releaseDataset(r),
+    'dcterms:description': langLiterals(POC_DESCRIPTION),
+    'dcterms:publisher': { '@id': `${CANONICAL_BASE}/` },
+    'dcat:inCatalog': { '@id': RELEASES_IRI },
+    'mi:firstShipped': r.entries.filter((e) => e.firstShipped === r.tag).map((e) => ({ '@id': e.iri })),
+    'dcterms:hasPart': r.entries.map((e) => ({
+      '@id': e.iri,
+      'dcat:distribution': {
+        '@type': 'dcat:Distribution',
+        'dcat:downloadURL': { '@id': e.iri },
+        'dcat:mediaType': 'application/json',
+        'spdx:checksum': { 'spdx:algorithm': { '@id': 'spdx:checksumAlgorithm_sha256' }, 'spdx:checksumValue': e.sha256 },
+      },
+    })),
+  };
+}
+
+/** /release: every dictionary release, as a catalogue of release datasets. */
+export function buildReleaseIndex(releases: CatalogRelease[]): Record<string, unknown> {
+  return {
+    '@context': CONTEXT,
+    '@id': RELEASES_IRI,
+    '@type': 'dcat:Catalog',
+    'dcterms:title': { '@value': 'material-identity dictionary releases', '@language': 'en' },
+    'dcterms:description': langLiterals(POC_DESCRIPTION),
+    ...POC,
+    'dcterms:publisher': { '@id': `${CANONICAL_BASE}/` },
+    'dcat:dataset': byTag(releases).map(releaseDataset),
+  };
+}
+
+/** /catalog: the dictionary releases, the spec series, and every hosted spec's own DCAT record. */
+export function buildCatalog(releases: CatalogRelease[], specs: HostedSpec[]): Record<string, unknown> {
+  const releaseDatasets = byTag(releases).map(releaseDataset);
   const acts = byAct(specs);
   const series = [...acts.keys()].map((act) => ({
     '@id': seriesIri(act),

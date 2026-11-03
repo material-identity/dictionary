@@ -528,11 +528,11 @@ test('the catalogue page says so when nothing is hosted yet', () => {
   assert.match(html, /No release in this build\./);
   assert.match(html, /<link rel="canonical" href="https:\/\/material-identity\.eu\/catalog">/);
   const listed = renderCatalogPage([{ tag: 'v2026.08.28', date: '2026-08-28' }], []);
-  assert.match(listed, /<a href="https:\/\/github\.com\/material-identity\/dictionary\/releases\/tag\/v2026\.08\.28" rel="external"><code>v2026\.08\.28<\/code><\/a>/);
+  assert.match(listed, /<a href="\/release\/v2026\.08\.28"><code>v2026\.08\.28<\/code><\/a>/, 'a release links its own /release/<tag> page');
 });
 
 const NEW_TERMS = ['elementId', 'granularity', 'model', 'batch', 'item', 'operator', 'condition', 'ContentSpecification', 'ProofOfConcept',
-  'act', 'dppSchemaVersion', 'passportContext', 'uniqueProductIdentifier', 'dppStatus', 'economicOperatorId', 'facilityId'];
+  'act', 'dppSchemaVersion', 'passportContext', 'uniqueProductIdentifier', 'dppStatus', 'economicOperatorId', 'facilityId', 'firstShipped'];
 
 test('the vocabulary carries every content-specification term with a label and a comment (design §3.3)', () => {
   const terms = new Map(vocabularyTerms().map(([term, kind, label, comment]) => [term, { kind, label, comment }]));

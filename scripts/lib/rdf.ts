@@ -76,6 +76,8 @@ const LOCAL_TERMS: Array<[term: string, kind: TermKind, label: string, comment: 
   ['act', 'Property', 'act', 'The delegated-act key of a content specification, as used in its IRI and file names.'],
   ['dppSchemaVersion', 'Property', 'DPP schema version', 'The EN 18223 Table 1 field naming the metamodel envelope a passport or content specification is derived against.'],
   ['passportContext', 'Property', 'passport context', 'Links a content specification to the JSON-LD context its passports are read with.'],
+  // Dictionary releases (#135): DCAT and DCTerms say what a release contains (dcterms:hasPart), not which part it added.
+  ['firstShipped', 'Property', 'first shipped', 'Links a dictionary release to an entry it is the first release to contain. Every such entry is also a dcterms:hasPart of the release and of every later one.'],
   ['uniqueProductIdentifier', 'Property', 'unique product identifier', 'Passport header: the unique product identifier (EN 18223 Table 1).'],
   ['dppStatus', 'Property', 'DPP status', 'Passport header: the status of the passport (EN 18223 Table 1).'],
   ['economicOperatorId', 'Property', 'economic operator id', 'Passport header: the identifier of the responsible economic operator (EN 18223 Table 1).'],

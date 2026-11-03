@@ -174,6 +174,18 @@ export interface Release {
 /** A dictionary release tag: `vYYYY.MM.DD` (other tags, e.g. `draft-base`, are not releases). */
 export const RELEASE_TAG = /^v\d{4}\.\d{2}\.\d{2}$/;
 
+/** A release's GitHub page and its tarball asset. Linked, never fetched: the build stays offline. */
+export const releaseLandingPage = (tag: string): string => `https://github.com/material-identity/dictionary/releases/tag/${tag}`;
+export const releaseAsset = (tag: string): string => `https://github.com/material-identity/dictionary/releases/download/${tag}/dictionary-${tag}.tar.gz`;
+
+/**
+ * Whether release `tag` contains an entry whose first release (getReleases) is `first`: it shipped
+ * in that release or an earlier one. published/ is add-only, so a release contains every entry any
+ * earlier release did. One rule for /release/<tag> and the pinned-release check, so what a release
+ * lists and what a spec may pin from it cannot disagree. `vYYYY.MM.DD` orders as a string.
+ */
+export const shippedBy = (first: Release | undefined, tag: string): boolean => first !== undefined && first.tag <= tag;
+
 /**
  * Every dictionary release, sorted by tag, for the DCAT catalogue (#135). Silently empty outside a
  * git work-tree top level, like getAddedCommits — a fixture-tree build lists no release.

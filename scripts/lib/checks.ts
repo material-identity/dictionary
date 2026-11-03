@@ -1,5 +1,4 @@
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,8 +7,8 @@ import Ajv2019Module from 'ajv/dist/2019.js';
 import addFormatsModule from 'ajv-formats';
 import { validate as uuidValidate, version as uuidVersion } from 'uuid';
 import { DEF_PREFIX, type RepoFile, type RepoModel, type ValidationIssue } from './repo.ts';
-import { type DiffEntry, type GitContext, getReleases, getReleaseTags, type Release, RELEASE_TAG } from './git.ts';
-import { canonicalJson } from './emit.ts';
+import { type DiffEntry, type GitContext, getReleases, getReleaseTags, type Release, RELEASE_TAG, shippedBy } from './git.ts';
+import { entrySha256 } from './emit.ts';
 import { buildCatalog, CATALOG_IRI, embeddedDataset, jsonLd, releaseIri, seriesIri } from './dcat.ts';
 import { CC0, VOCABULARY } from './rdf.ts';
 import oxigraph from 'oxigraph';
@@ -466,7 +465,7 @@ export function checkSpecs(load: SpecLoad, repo: RepoModel): ValidationIssue[] {
       } else if (pin.sha256 === undefined) {
         add(`pinned ${pin.url} carries no spdx:checksum — a pin without a digest is never publishable`);
       } else {
-        const served = createHash('sha256').update(canonicalJson(doc)).digest('hex');
+        const served = entrySha256(doc);
         if (pin.sha256 !== served) add(`pinned ${pin.url} has checksum ${pin.sha256}, but /def/${uuid} serves ${served}`);
       }
     }
@@ -551,7 +550,7 @@ export function checkSpecReleases(load: SpecLoad, repo: RepoModel, tags: Release
       const path = uuid === undefined ? undefined : pathOf.get(uuid);
       if (path === undefined) continue; // reported by the spec check
       const shipped = firstRelease.get(path);
-      if (shipped === undefined || shipped.tag > version) {
+      if (!shippedBy(shipped, version)) {
         add(`pinned ${url} is not in release ${version} (${shipped === undefined ? 'not released yet' : `first shipped in ${shipped.tag}`}) — a spec pins entries of the release it names`);
       }
     }

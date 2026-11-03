@@ -8,6 +8,8 @@ import { CANONICAL_BASE, DEF_PREFIX, type RepoFile, type RepoModel } from './rep
 import { citation } from './cite.ts';
 import { graphFigure } from './graph.ts';
 import type { HostedSpec, SpecRole, SpecSummary } from './spec.ts';
+import type { ReleaseContents } from './dcat.ts';
+import { releaseAsset, releaseLandingPage } from './git.ts';
 
 export function esc(s: unknown): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -789,7 +791,7 @@ ${row('Licence', licence)}
 ${row('Version series', iriLink(summary.series, refs))}
 ${row('Conforms to', esc(summary.conformsTo ?? ''))}
 ${row('DPP schema version', summary.dppSchemaVersion === undefined ? '' : `<code>${esc(summary.dppSchemaVersion)}</code>`)}
-${row('Dictionary release', summary.releases.map((r) => `<code>${esc(r.version ?? r.iri)}</code>`).join(', '))}
+${row('Dictionary release', summary.releases.map((r) => releaseLink(r.iri, r.version ?? r.iri)).join(', '))}
 </table>
 ${Object.keys(summary.description).length === 0 ? '' : `<section><h2>Description</h2>${langMapHtml(summary.description)}</section>`}
 
@@ -859,7 +861,7 @@ ${rows}
 /** `/catalog`: the DCAT catalogue as a page. */
 export function renderCatalogPage(releases: Array<{ tag: string; date: string }>, specs: Array<{ spec: HostedSpec; summary: SpecSummary }>): string {
   const releaseRows = [...releases].sort((a, b) => a.tag.localeCompare(b.tag, 'en')).map((r) => `<tr>
-<td><a href="https://github.com/material-identity/dictionary/releases/tag/${esc(r.tag)}" rel="external"><code>${esc(r.tag)}</code></a></td>
+<td><a href="/release/${esc(r.tag)}"><code>${esc(r.tag)}</code></a></td>
 <td>${esc(r.date)}</td>
 </tr>`).join('\n');
   const specRows = specs.map(({ spec, summary }) => `<tr>
@@ -890,6 +892,74 @@ ${releaseRows}
   return pageShell('Catalogue', '/catalog', body, {
     alternateLd: '/catalog',
     description: 'Proof of concept: DCAT catalogue of the material-identity dictionary releases and hosted DPP content specifications.',
+  });
+}
+
+/** A release IRI as a site-relative link when it is one of ours; anything else as text, like iriLink. */
+function releaseLink(iri: string, label: string): string {
+  const local = localPath(iri);
+  return local === undefined ? `<code>${esc(label)}</code>` : `<a href="${esc(local)}"><code>${esc(label)}</code></a>`;
+}
+
+/** `/release/<tag>`: one dictionary release, the entries it first shipped and everything it contains. */
+export function renderReleasePage(release: ReleaseContents, refs: RefIndex): string {
+  const path = `/release/${release.tag}`;
+  const added = release.entries.filter((e) => e.firstShipped === release.tag);
+  const rows = release.entries.map((e) => `<tr>
+<td>${refs.link(e.iri)}</td>
+<td><code>${esc(e.iri)}</code></td>
+<td>${e.firstShipped === release.tag ? 'this release' : `<a href="/release/${esc(e.firstShipped)}"><code>${esc(e.firstShipped)}</code></a>`}</td>
+<td><code>${esc(e.sha256)}</code></td>
+</tr>`).join('\n');
+  const body = `${pocBanner()}
+<h1>Release ${esc(release.tag)}</h1>
+<p class="lede">A tagged release of the dictionary. It is fixed once tagged: a release only ever gains successors, never changes.</p>
+<table class="fields">
+${row('Release IRI', `<code>${esc(`${CANONICAL_BASE}${path}`)}</code>`)}
+${row('Version', `<code>${esc(release.tag)}</code>`)}
+${row('Issued', esc(release.date))}
+${row('Licence', externalLink('http://creativecommons.org/publicdomain/zero/1.0/', 'external license', 'CC0 1.0'))}
+${row('Download', externalLink(releaseAsset(release.tag), 'external', `dictionary-${release.tag}.tar.gz`))}
+${row('Release notes', externalLink(releaseLandingPage(release.tag), 'external', 'GitHub release'))}
+${row('Entries', `${release.entries.length} in total, ${added.length} first shipped in this release`)}
+</table>
+<section><h2>Entries</h2>
+<p>Every entry this release contains. The SHA-256 is over the bytes <code>/def/&lt;uuid&gt;</code> serves as JSON: the digest a content specification pinning this release names.</p>
+${rows === '' ? '<p>This release contains no entry.</p>' : `<div class="table-scroll"><table class="versions">
+<thead><tr><th>Entry</th><th>IRI</th><th>First shipped</th><th>SHA-256</th></tr></thead>
+<tbody>
+${rows}
+</tbody>
+</table></div>`}
+</section>
+<p>Machine-readable: <a href="${esc(path)}">JSON-LD (DCAT dataset)</a>, served at this IRI by content negotiation · all releases: <a href="/release">releases</a> · <a href="/catalog">catalogue</a>.</p>`;
+  return pageShell(`Release ${release.tag}`, path, body, {
+    alternateLd: path,
+    description: `Proof of concept: material-identity dictionary release ${release.tag}, ${release.entries.length} entries.`,
+  });
+}
+
+/** `/release`: every dictionary release. */
+export function renderReleaseIndexPage(releases: ReleaseContents[]): string {
+  const rows = [...releases].sort((a, b) => a.tag.localeCompare(b.tag, 'en')).map((r) => `<tr>
+<td><a href="/release/${esc(r.tag)}"><code>${esc(r.tag)}</code></a></td>
+<td>${esc(r.date)}</td>
+<td>${r.entries.filter((e) => e.firstShipped === r.tag).length}</td>
+<td>${r.entries.length}</td>
+</tr>`).join('\n');
+  const body = `${pocBanner()}
+<h1>Releases</h1>
+<p class="lede">Every tagged release of the dictionary. A content specification pins exactly one; there is no "latest" alias to pin.</p>
+${rows === '' ? '<p>No release in this build.</p>' : `<div class="table-scroll"><table class="versions">
+<thead><tr><th>Release</th><th>Issued</th><th>First shipped</th><th>Entries</th></tr></thead>
+<tbody>
+${rows}
+</tbody>
+</table></div>`}
+<p>Machine-readable: <a href="/release">JSON-LD (DCAT catalogue)</a> · everything in the <a href="/catalog">catalogue</a>.</p>`;
+  return pageShell('Releases', '/release', body, {
+    alternateLd: '/release',
+    description: 'Proof of concept: every release of the material-identity dictionary.',
   });
 }
 

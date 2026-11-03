@@ -78,7 +78,7 @@ section for the full explanation).
 - `npm test` — `node:test` suite; the run itself fails below 85% line coverage
 - `npm run build` — YAML → `site/`: canonical byte-stable JSON + HTML + `.csl.json` per entry,
   paginated index, `/tree`, `/graph`, `/schema`, `/about`, `/feed.xml`, `/superseded.json`,
-  `/dictionary.ttl`, `/context.jsonld`, `/ns`, `/catalog`, `/spec/…`; `-- --root <dir>`, `-- --out <dir>`; preview with
+  `/dictionary.ttl`, `/context.jsonld`, `/ns`, `/catalog`, `/spec/…`, `/release/…`; `-- --root <dir>`, `-- --out <dir>`; preview with
   `npx serve site/`. Deterministic: two builds are byte-identical (asserted)
 - Node 24 LTS (`.nvmrc`), install with `npm ci`; `prepare` wires `.githooks/` (pre-push =
   validate + test)
@@ -116,7 +116,8 @@ section for the full explanation).
   `Link: …; rel="cite-as"` on both representations): `/def/<uuid>`, and since #135
   `/spec/<act>/<version>` (JSON-LD default, immutable; HTML, short cache — it is our rendering) with `/context.jsonld`,
   `/compressed.schema.json`, `/full.schema.json` (immutable), `/spec/<act>` and `/catalog` (JSON-LD
-  or HTML, short cache), `/ns` (JSON-LD, Turtle, HTML; short cache). Strict act/version shapes;
+  or HTML, short cache), `/ns` (JSON-LD, Turtle, HTML; short cache), `/release/<tag>` (negotiated like a spec:
+  JSON-LD immutable, HTML short) and `/release` (short). Strict act/version/`vYYYY.MM.DD` shapes;
   anything else passes through. No `/concept/` route; `worker/wrangler.toml` — route
   `material-identity.eu/*`; never `wrangler deploy` locally
 - `.well-known/` — RFC 8615 URIs copied wholesale into `site/` by the builder (add a file, no
@@ -141,7 +142,9 @@ section for the full explanation).
   `<act>.dcat.jsonld`, `compressed.schema.json`, `full.schema.json` as handed over. `lib/spec.ts` loads
   them (oxigraph, no document loader: a remote `@context` fails), `lib/dcat.ts` builds `/catalog` (the
   dictionary releases from git tags + each spec's own DCAT record, embedded with its context so its
-  checksums stay as generated) and the `/spec/<act>` series. The unnumbered `spec` check refuses bad
+  checksums stay as generated), the `/spec/<act>` series, and `/release/<tag>`: each release tag as a
+  dcat:Dataset listing the entries it contains (`shippedBy` in `lib/git.ts` — the same rule the release
+  check applies) with `entrySha256` (`lib/emit.ts`, the digest specs pin). The unnumbered `spec` check refuses bad
   layout, a symlink anywhere under `spec/` (lstat; check 1 also refuses git mode 120000/160000 additions),
   unparseable JSON-LD, a spec whose status/licence is not exactly PoC/CC0, an `@id`/version/act/`dcat:isVersionOf`
   that disagrees with its path, a membership reference (`sh:path`, `mi:itemType`, `mi:accessCategory`) that
