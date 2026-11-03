@@ -62,6 +62,16 @@ pinning, immutability, move purity, the two-yes gate, coverage.
 - [ ] Entries carry no status/lifecycle fields at all — supersession is only ever expressed
       via `replaces`; "current" and "superseded" are derived at build time, never stored.
 
+## 5 Content-specification hand-overs (`spec/`, #135)
+
+CI proves the files parse, are PoC-marked and CC0, sit where their `@id` says, pin published entries
+by their served digest, and that the DCAT checksums match. What only a reviewer can check:
+
+- [ ] The files are a byte-identical copy of a **published** specification in material-identity/schema
+      (`dpp/<version>/specifications/`), and the PR names the source commit.
+- [ ] Every entry it pins was released and live **before** this PR (two-phase rule, design §7.1).
+- [ ] The version is new: nothing under `spec/<act>/` is replaced, only added.
+
 ## Process
 
 Reviewing a publish PR is Yes #2 of the two-yes principle (plan §5.3): confirm the linked

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "https://material-identity.eu/spec/demo/v0.0.1/full.schema.json",
+  "$comment": "SPDX-License-Identifier: CC0-1.0. PROOF OF CONCEPT test fixture.",
+  "type": "object",
+  "required": ["elements"],
+  "properties": { "elements": { "type": "array", "maxItems": 2 } }
+}

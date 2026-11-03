@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "https://material-identity.eu/spec/demo/v0.0.1/compressed.schema.json",
+  "$comment": "SPDX-License-Identifier: CC0-1.0. PROOF OF CONCEPT test fixture.",
+  "type": "object",
+  "required": ["mechanicalProperties"],
+  "properties": {
+    "mechanicalProperties": { "type": "object", "required": ["maxPressure"], "properties": { "maxPressure": { "type": "number" } }, "additionalProperties": false },
+    "steelmakingRoute": { "type": "string", "format": "uri" }
+  }
+}

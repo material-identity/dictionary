@@ -19,6 +19,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-26.04
+    outputs:
+      hosted-paths: ${{ steps.hosted-paths.outputs.paths }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -30,6 +32,19 @@ jobs:
       - run: npm ci
       - run: npm run validate
       - run: npm run build
+      # Hosted specs and release pages (#135) come and go with hand-overs and tags, so their probe
+      # list is read off the build rather than written here: every file served under site/spec/ and
+      # site/release/<tag>/, as an origin path.
+      - id: hosted-paths
+        run: |
+          set -euo pipefail
+          paths=''
+          for dir in spec release; do
+            if [ -d "site/${dir}" ]; then
+              paths="${paths}$(cd site && find "${dir}" -mindepth 2 -type f | LC_ALL=C sort | sed 's|^|/|' | tr '\n' ' ')"
+            fi
+          done
+          echo "paths=${paths}" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site/
@@ -50,12 +65,20 @@ jobs:
       # datacenter IP on ordinary paths but exempts /.well-known/ by design (so ACME and
       # security.txt keep working), so the canonical host is only probeable there.
       - name: smoke — the deployed artifact is complete (origin)
+        env:
+          HOSTED_PATHS: ${{ needs.build.outputs.hosted-paths }}
         run: |
           set -uo pipefail
           fail=0
           # No bot protection here, so this half covers every path — it is the #110 class
           # (a directory silently missing from the artifact), generalized beyond two files.
-          for path in / /feed.xml /well-known/security.txt /well-known/pgp-security.asc; do
+          # The catalogue, the vocabulary and the release index always exist; spec files only once one
+          # is handed over, release pages once a tag is (both read off the build: HOSTED_PATHS).
+          # shellcheck disable=SC2086 # HOSTED_PATHS is a space-separated list by construction
+          for path in / /feed.xml /well-known/security.txt /well-known/pgp-security.asc \
+            /catalog/index.jsonld /catalog/index.html /ns/index.jsonld /ns/index.ttl /ns/index.html \
+            /release/index.jsonld /release/index.html \
+            $HOSTED_PATHS; do
             code=$(curl -fsS -L -o /dev/null -w '%{http_code}' --retry 5 --retry-delay 10 \
               --retry-all-errors "https://material-identity.github.io/dictionary${path}") \
               || { code="${code:-000} FAILED"; fail=1; }

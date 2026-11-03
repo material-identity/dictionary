@@ -19,6 +19,7 @@
   --chip-neutral-bg: #e7efea;    --chip-neutral-fg: #2f4a3b;
   --chip-tier-bg: #ffedd5;       --chip-tier-fg: #c2410c;
   --dead-bg: #fbe4e4;            --dead-edge: #b3423d;
+  --poc-bg: #fef3c7;             --poc-edge: #b45309;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -38,6 +39,7 @@
     --chip-neutral-bg: #1c3529;    --chip-neutral-fg: #d2e3d9;
     --chip-tier-bg: #6a300d;       --chip-tier-fg: #fed7aa;
     --dead-bg: #4a1d1b;            --dead-edge: #e07a75;
+    --poc-bg: #4a3208;             --poc-edge: #f0b44c;
   }
 }
 
@@ -205,3 +207,7 @@ ul.graph-key li { display: flex; align-items: center; gap: 0.45rem; }
 }
 @media (prefers-reduced-motion: no-preference) { a { transition: text-decoration-thickness 120ms; } }
 @media print { .mast, footer, .btn { display: none; } }
+
+/* Proof-of-concept banner (#135): on every page about a hosted specification, the catalogue and /ns. */
+.banner.poc { background: var(--poc-bg); border-color: var(--poc-edge); }
+.banner.poc p { margin: 0.25rem 0; }

@@ -12,6 +12,11 @@ export interface DiffEntry {
   status: string;
   /** Path relative to the repo root. */
   path: string;
+  /**
+   * Git file mode after the change (`100644`, `120000` symlink, `160000` submodule…); `000000` for
+   * a deletion. Absent where a caller builds entries by hand.
+   */
+  mode?: string;
 }
 
 export interface GitContext {
@@ -21,8 +26,29 @@ export interface GitContext {
   readBaseFile: (relPath: string) => string | undefined;
 }
 
+/**
+ * Git's repository-local environment variables (`git rev-parse --local-env-vars`: GIT_DIR,
+ * GIT_WORK_TREE, GIT_INDEX_FILE, GIT_CONFIG_PARAMETERS, GIT_ALTERNATE_OBJECT_DIRECTORIES…), asked
+ * of git itself once rather than kept as a list here. Git exports them to hooks and to anything it
+ * spawns (`rebase --exec`, aliases), and each one overrides `-C <dir>`: inherited, they would point
+ * every git call at the repository that spawned us instead of the one named (code review of #136).
+ */
+let localEnvVars: string[] | undefined;
+function gitLocalEnvVars(): string[] {
+  localEnvVars ??= execFileSync('git', ['rev-parse', '--local-env-vars'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+    .split('\n').map((name) => name.trim()).filter((name) => name !== '');
+  return localEnvVars;
+}
+
+/** The current environment minus git's repository-local variables: what every git child gets. */
+export function gitEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const name of gitLocalEnvVars()) delete env[name];
+  return env;
+}
+
 function git(root: string, args: string[]): string {
-  return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: gitEnv() });
 }
 
 /**
@@ -58,13 +84,7 @@ export function createGitContext(root: string, base: string): GitContext | { una
     return { unavailable: `cannot resolve merge-base of "${base}" and HEAD` };
   }
 
-  const diff: DiffEntry[] = git(root, ['diff', '--name-status', '--no-renames', `${mergeBase}...HEAD`])
-    .split('\n')
-    .filter((line) => line.trim() !== '')
-    .map((line) => {
-      const [status, ...rest] = line.split('\t');
-      return { status: status.trim(), path: rest.join('\t') };
-    });
+  const diff = parseRawDiff(git(root, ['diff', '--raw', '--no-renames', `${mergeBase}...HEAD`]));
 
   const readBaseFile = (relPath: string): string | undefined => {
     try {
@@ -75,6 +95,21 @@ export function createGitContext(root: string, base: string): GitContext | { una
   };
 
   return { base, diff, readBaseFile };
+}
+
+/**
+ * `git diff --raw` lines — `:<old mode> <new mode> <old sha> <new sha> <status>\t<path>` — as entries.
+ * Raw rather than --name-status because the mode is what tells an added symlink from an added file.
+ */
+export function parseRawDiff(output: string): DiffEntry[] {
+  return output
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+    .map((line) => {
+      const [meta, ...rest] = line.split('\t');
+      const [, mode, , , status] = meta.split(' ');
+      return { status: status.trim(), path: rest.join('\t'), mode };
+    });
 }
 
 export function isGitContext(ctx: GitContext | { unavailable: string }): ctx is GitContext {
@@ -136,6 +171,40 @@ export interface Release {
   date: string;
 }
 
+/** A dictionary release tag: `vYYYY.MM.DD` (other tags, e.g. `draft-base`, are not releases). */
+export const RELEASE_TAG = /^v\d{4}\.\d{2}\.\d{2}$/;
+
+/** A release's GitHub page and its tarball asset. Linked, never fetched: the build stays offline. */
+export const releaseLandingPage = (tag: string): string => `https://github.com/material-identity/dictionary/releases/tag/${tag}`;
+export const releaseAsset = (tag: string): string => `https://github.com/material-identity/dictionary/releases/download/${tag}/dictionary-${tag}.tar.gz`;
+
+/**
+ * Whether release `tag` contains an entry whose first release (getReleases) is `first`: it shipped
+ * in that release or an earlier one. published/ is add-only, so a release contains every entry any
+ * earlier release did. One rule for /release/<tag> and the pinned-release check, so what a release
+ * lists and what a spec may pin from it cannot disagree. `vYYYY.MM.DD` orders as a string.
+ */
+export const shippedBy = (first: Release | undefined, tag: string): boolean => first !== undefined && first.tag <= tag;
+
+/**
+ * Every dictionary release, sorted by tag, for the DCAT catalogue (#135). Silently empty outside a
+ * git work-tree top level, like getAddedCommits — a fixture-tree build lists no release.
+ */
+export function getReleaseTags(root: string): Release[] {
+  if (typeof requireToplevel(root) !== 'string') return [];
+  let output: string;
+  try {
+    output = git(root, ['tag', '--list', '--format=%(refname:short) %(creatordate:short)']);
+  } catch {
+    return [];
+  }
+  return output.split('\n')
+    .map((line) => line.trim().split(' '))
+    .filter(([tag, date]) => RELEASE_TAG.test(tag ?? '') && date !== undefined)
+    .map(([tag, date]) => ({ tag, date }))
+    .sort((a, b) => a.tag.localeCompare(b.tag, 'en'));
+}
+
 /**
  * The first tagged release containing each published file (issue #94): an entry is cited by the
  * release it shipped in, not by the day its commit happened to land. Entries merged since the
@@ -152,13 +221,11 @@ export function getReleases(root: string): Map<string, Release> {
     if (!firstReleaseOf.has(sha)) {
       let release: Release | undefined;
       try {
-        // Earliest tag whose history contains the add-commit = the release that first shipped it.
-        const line = git(root, ['tag', '--contains', sha, '--sort=creatordate', '--format=%(refname:short) %(creatordate:short)'])
-          .split('\n')[0].trim();
-        if (line !== '') {
-          const [tag, date] = line.split(' ');
-          release = { tag, date };
-        }
+        // Earliest release tag whose history contains the add-commit = the release that first
+        // shipped it. Other tags (e.g. `draft-base`) are not releases and are skipped.
+        const hit = git(root, ['tag', '--contains', sha, '--sort=creatordate', '--format=%(refname:short) %(creatordate:short)'])
+          .split('\n').map((line) => line.trim().split(' ')).find(([tag, date]) => RELEASE_TAG.test(tag ?? '') && date !== undefined);
+        if (hit !== undefined) release = { tag: hit[0], date: hit[1] };
       } catch { /* no tags, or unreachable history — treated as not yet released */ }
       firstReleaseOf.set(sha, release);
     }

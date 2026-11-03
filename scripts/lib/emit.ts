@@ -3,6 +3,7 @@
  * module — entries are byte-stable across builds, which future hash manifests
  * (trust-ladder step 2) depend on. The build never invents or alters content.
  */
+import { createHash } from 'node:crypto';
 
 // Envelope keys in canonical order: identity/lifecycle block first, then semantics.
 // Keys not listed (langMap languages, crossReferences extras) sort alphabetically after.
@@ -41,4 +42,12 @@ function orderValue(value: unknown): unknown {
 /** Serialize a document canonically: fixed key order, 2-space indent, trailing newline. */
 export function canonicalJson(doc: Record<string, unknown>): string {
   return `${JSON.stringify(orderValue(doc), null, 2)}\n`;
+}
+
+/**
+ * SHA-256 of an entry's served bytes (`/def/<uuid>.json`): the digest a content specification pins
+ * and a release lists (#135). One function, so the two can never hash different bytes.
+ */
+export function entrySha256(doc: Record<string, unknown>): string {
+  return createHash('sha256').update(canonicalJson(doc)).digest('hex');
 }

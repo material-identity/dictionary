@@ -1,5 +1,12 @@
 #!/bin/sh
 # Fast local feedback before CI; CI remains the authority (hooks are bypassable with --no-verify).
 set -e
+# Git exports its repository variables to hooks (from a worktree, GIT_DIR points at it). The tests
+# build throwaway repos with `git -C <tmp>`, which these variables override, so left set they make
+# the tests commit, tag and reconfigure this repository instead of their own. Every git call in
+# scripts/ and test/ already drops them (gitEnv in scripts/lib/git.ts); unsetting git's own list here
+# as well is defence in depth for anything that does not go through it.
+# shellcheck disable=SC2046 # word splitting is intended: one variable name per word
+unset $(git rev-parse --local-env-vars)
 npm run validate
 npm test

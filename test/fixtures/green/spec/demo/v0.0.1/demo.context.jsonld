@@ -1,0 +1,16 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+    "def": "https://material-identity.eu/def/",
+    "mi": "https://material-identity.eu/ns#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "contentSpecificationIds": { "@id": "@type", "@container": "@set" },
+    "dppSchemaVersion": { "@id": "mi:dppSchemaVersion", "@type": "@id" },
+    "mechanicalProperties": {
+      "@id": "def:2f3de2bb-0588-4513-bfc3-41d021815a81",
+      "@context": { "maxPressure": { "@id": "def:c38a85eb-1a37-416d-ab21-7ddcc599754d", "@type": "xsd:float" } }
+    },
+    "steelmakingRoute": { "@id": "def:4eae703a-fa15-4118-8bc4-7926a22a12fb", "@type": "@id" }
+  }
+}

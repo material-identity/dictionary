@@ -15,6 +15,10 @@ import { DEF_PREFIX, type RepoModel } from './repo.ts';
 import { lang, type Doc, type RefIndex } from './render.ts';
 
 const NS = 'https://material-identity.eu/ns#';
+/** The vocabulary document, served at /ns (#135); its terms are `<VOCABULARY>#<term>`. */
+export const VOCABULARY = 'https://material-identity.eu/ns';
+export const CC0 = 'http://creativecommons.org/publicdomain/zero/1.0/';
+export const ADMS = 'http://www.w3.org/ns/adms#';
 
 const PREFIXES: Array<[string, string]> = [
   ['mi', NS],
@@ -27,7 +31,8 @@ const PREFIXES: Array<[string, string]> = [
 ];
 
 /** The local terms, described in the graph itself so the file needs no companion document. */
-const LOCAL_TERMS: Array<[term: string, kind: 'Class' | 'Property', label: string, comment: string]> = [
+export type TermKind = 'Class' | 'Property' | 'Individual';
+const LOCAL_TERMS: Array<[term: string, kind: TermKind, label: string, comment: string]> = [
   ['SingleValuedDataElement', 'Class', 'Single-valued data element', 'Entry kind: one value of the given data type.'],
   ['MultiLanguageDataElement', 'Class', 'Multi-language data element', 'Entry kind: one value per language.'],
   ['MultiValuedDataElement', 'Class', 'Multi-valued data element', 'Entry kind: a list whose items all have the item type.'],
@@ -57,6 +62,26 @@ const LOCAL_TERMS: Array<[term: string, kind: 'Class' | 'Property', label: strin
   ['toUnit', 'Property', 'to unit', 'Target unit of a conversion.'],
   ['factor', 'Property', 'factor', 'Multiplicative factor of a conversion.'],
   ['offset', 'Property', 'offset', 'Additive offset of a conversion.'],
+  // Content-specification terms (#135; schema design content-spec-jsonld.md §3.3). A spec is a
+  // SHACL shapes graph; these say what SHACL, DCAT and DCTerms cannot.
+  ['ContentSpecification', 'Class', 'DPP content specification', 'The set of data elements a passport for one product group carries, published as one SHACL shapes graph. EN 18223 defines no such class.'],
+  ['elementId', 'Property', 'element id', 'The EN 18223 element key of a membership: the JSON key in a passport and the Annex A elementId. A key, not a display label.'],
+  ['granularity', 'Property', 'granularity', 'The level a value is given at: mi:model, mi:batch or mi:item (EN 18219), or mi:operator for economic-operator data. Used on memberships and on the passport header.'],
+  ['model', 'Individual', 'model', 'Granularity: one value for every item of a product model.'],
+  ['batch', 'Individual', 'batch', 'Granularity: one value per batch or heat.'],
+  ['item', 'Individual', 'item', 'Granularity: one value per individual item.'],
+  ['operator', 'Individual', 'operator', 'Granularity: data about the economic operator, not the product. Never taken by a passport header.'],
+  ['condition', 'Property', 'condition', 'The condition under which an optional membership becomes mandatory, per language. Stated, not evaluated: SHACL has no way to express it.'],
+  ['ProofOfConcept', 'Individual', 'proof of concept', 'Value of adms:status: a demonstration resource, never normative. A content specification with this status is not one of the European Union.'],
+  ['act', 'Property', 'act', 'The delegated-act key of a content specification, as used in its IRI and file names.'],
+  ['dppSchemaVersion', 'Property', 'DPP schema version', 'The EN 18223 Table 1 field naming the metamodel envelope a passport or content specification is derived against.'],
+  ['passportContext', 'Property', 'passport context', 'Links a content specification to the JSON-LD context its passports are read with.'],
+  // Dictionary releases (#135): DCAT and DCTerms say what a release contains (dcterms:hasPart), not which part it added.
+  ['firstShipped', 'Property', 'first shipped', 'Links a dictionary release to an entry it is the first release to contain. Every such entry is also a dcterms:hasPart of the release and of every later one.'],
+  ['uniqueProductIdentifier', 'Property', 'unique product identifier', 'Passport header: the unique product identifier (EN 18223 Table 1).'],
+  ['dppStatus', 'Property', 'DPP status', 'Passport header: the status of the passport (EN 18223 Table 1).'],
+  ['economicOperatorId', 'Property', 'economic operator id', 'Passport header: the identifier of the responsible economic operator (EN 18223 Table 1).'],
+  ['facilityId', 'Property', 'facility id', 'Passport header: the identifier of the facility (EN 18223 Table 1).'],
 ];
 
 function literal(value: string): string {
@@ -180,12 +205,19 @@ function entryTriples(uuid: string, doc: Doc, refs: RefIndex, issued: string | u
   return `${iri(doc.id)}\n${block(pairs)} .`;
 }
 
+/** What `a` a local term is: individuals (granularity levels, a status value) are SKOS concepts. */
+function termType(kind: TermKind): string {
+  return kind === 'Class' ? 'rdfs:Class' : kind === 'Property' ? 'rdf:Property' : 'skos:Concept';
+}
+
+function termsTurtle(): string {
+  return LOCAL_TERMS.map(([term, kind, label, comment]) =>
+    `mi:${term}\n  a ${termType(kind)} ;\n  rdfs:label ${literal(label)}@en ;\n  rdfs:comment ${literal(comment)}@en ;\n  rdfs:isDefinedBy <${VOCABULARY}> .`).join('\n\n');
+}
+
 /** The whole dictionary as Turtle. `issued` maps a published path to its release date. */
 export function renderTurtle(repo: RepoModel, refs: RefIndex, issued: Map<string, string> = new Map()): string {
   const header = PREFIXES.map(([p, ns]) => `@prefix ${p}: <${ns}> .`).join('\n');
-
-  const terms = LOCAL_TERMS.map(([term, kind, label, comment]) =>
-    `mi:${term}\n  a rdfs:${kind === 'Class' ? 'Class' : 'Property'} ;\n  rdfs:label ${literal(label)}@en ;\n  rdfs:comment ${literal(comment)}@en ;\n  rdfs:isDefinedBy <${NS}> .`).join('\n\n');
 
   const entries = repo.published
     .filter((f) => f.doc)
@@ -206,10 +238,65 @@ ${header}
 
 # ---------------------------------------------------------------- local terms (self-describing)
 
-${terms}
+${termsTurtle()}
 
 # ---------------------------------------------------------------- entries
 
 ${entries}
 `;
+}
+
+// ------------------------------------------------------------------ the mi: vocabulary at /ns (#135)
+
+const VOCABULARY_TITLE = 'material-identity vocabulary (mi:) — proof of concept';
+const VOCABULARY_DESCRIPTION = 'PROOF OF CONCEPT. The local terms of the material-identity dictionary and of its DPP content specifications. Not a vocabulary of the European Union or of CEN; nothing here is normative.';
+
+/** The mi: terms as their own Turtle document, served at /ns for `Accept: text/turtle`. */
+export function renderVocabularyTurtle(): string {
+  const prefixes: Array<[string, string]> = [...PREFIXES, ['owl', 'http://www.w3.org/2002/07/owl#'], ['adms', ADMS]];
+  return `# The mi: vocabulary (#135). Derived from the term list in scripts/lib/rdf.ts, like /dictionary.ttl.
+
+${prefixes.map(([p, ns]) => `@prefix ${p}: <${ns}> .`).join('\n')}
+
+<${VOCABULARY}>
+  a owl:Ontology ;
+  dcterms:title ${literal(VOCABULARY_TITLE)}@en ;
+  dcterms:description ${literal(VOCABULARY_DESCRIPTION)}@en ;
+  adms:status mi:ProofOfConcept ;
+  dcterms:license <${CC0}> ;
+  dcterms:publisher <https://material-identity.eu/> .
+
+${termsTurtle()}
+`;
+}
+
+/** The same vocabulary as JSON-LD (the default representation of /ns), inline context only. */
+export function renderVocabularyJsonLd(): string {
+  const graph: Array<Record<string, unknown>> = [
+    {
+      '@id': VOCABULARY,
+      '@type': 'owl:Ontology',
+      'dcterms:title': { '@value': VOCABULARY_TITLE, '@language': 'en' },
+      'dcterms:description': { '@value': VOCABULARY_DESCRIPTION, '@language': 'en' },
+      'adms:status': { '@id': 'mi:ProofOfConcept' },
+      'dcterms:license': { '@id': CC0 },
+      'dcterms:publisher': { '@id': 'https://material-identity.eu/' },
+    },
+    ...LOCAL_TERMS.map(([term, kind, label, comment]) => ({
+      '@id': `mi:${term}`,
+      '@type': termType(kind),
+      'rdfs:label': { '@value': label, '@language': 'en' },
+      'rdfs:comment': { '@value': comment, '@language': 'en' },
+      'rdfs:isDefinedBy': { '@id': VOCABULARY },
+    })),
+  ];
+  const context: Record<string, string> = Object.fromEntries([
+    ...PREFIXES, ['owl', 'http://www.w3.org/2002/07/owl#'], ['adms', ADMS],
+  ]);
+  return `${JSON.stringify({ '@context': context, '@graph': graph }, null, 2)}\n`;
+}
+
+/** The term list for the HTML page — read-only view of the one source. */
+export function vocabularyTerms(): ReadonlyArray<readonly [term: string, kind: TermKind, label: string, comment: string]> {
+  return LOCAL_TERMS;
 }
